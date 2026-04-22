@@ -15,6 +15,7 @@ window.loadStudents = async function () {
         <td>
           <input id="room-${student.id}" placeholder="Room ID">
           <button onclick="assignRoom('${student.id}')">Assign</button>
+          <button onclick="removeRoom('${student.id}')">Remove</button>
         </td>
       </tr>
     `;
@@ -22,6 +23,36 @@ window.loadStudents = async function () {
   });
 };
 
+// 🔥 AUTO UPDATE ROOM COUNTS
+async function updateRoomOccupancy(roomId) {
+  const { data: students } = await supabase
+    .from("students")
+    .select("*")
+    .eq("room_id", roomId);
+
+  const count = students.length;
+
+  const { data: room } = await supabase
+    .from("rooms")
+    .select("*")
+    .eq("id", roomId)
+    .single();
+
+  let type = "vacant";
+  if (count === 0) type = "vacant";
+  else if (count < room.capacity) type = "partial";
+  else type = "full";
+
+  await supabase
+    .from("rooms")
+    .update({
+      occupancy_count: count,
+      type: type
+    })
+    .eq("id", roomId);
+}
+
+// ASSIGN ROOM
 window.assignRoom = async function (studentId) {
   const roomId = document.getElementById(`room-${studentId}`).value;
 
@@ -30,6 +61,35 @@ window.assignRoom = async function (studentId) {
     .update({ room_id: roomId })
     .eq("id", studentId);
 
-  alert("Room assigned");
+  await updateRoomOccupancy(roomId);
+
+  alert("Room assigned & updated");
   loadStudents();
 };
+
+// REMOVE ROOM
+window.removeRoom = async function (studentId) {
+  const { data } = await supabase
+    .from("students")
+    .select("room_id")
+    .eq("id", studentId)
+    .single();
+
+  await supabase
+    .from("students")
+    .update({ room_id: null })
+    .eq("id", studentId);
+
+  if (data.room_id) await updateRoomOccupancy(data.room_id);
+
+  alert("Removed");
+  loadStudents();
+};
+
+// 🔴 REAL-TIME LISTENER
+supabase
+  .channel("rooms")
+  .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, () => {
+    console.log("Room updated in real-time");
+  })
+  .subscribe();
