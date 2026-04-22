@@ -1,50 +1,33 @@
 import { supabase } from "./supabaseClient.js";
 
-// STUDENT LOGIN
+// STUDENT LOGIN (EMAIL = reg number)
 export async function studentLogin(regNumber, password) {
-  const { data, error } = await supabase
-    .from("students")
-    .select("*")
-    .eq("reg_number", regNumber)
-    .single();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: regNumber + "@student.com",
+    password: password
+  });
 
-  if (error || !data) {
-    alert("Student not found");
+  if (error) {
+    alert(error.message);
     return;
   }
 
-  const expectedPassword =
-    regNumber.slice(0, 2) +
-    regNumber.slice(-4) +
-    data.name
-      .split(" ")
-      .map(n => n[0])
-      .join("")
-      .toLowerCase();
-
-  if (password !== expectedPassword) {
-    alert("Wrong password");
-    return;
-  }
-
-  localStorage.setItem("student", JSON.stringify(data));
+  localStorage.setItem("session", JSON.stringify(data.session));
   window.location.href = "student.html";
 }
 
 // ADMIN LOGIN
-export async function adminLogin(username, password) {
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("username", username)
-    .eq("password", password)
-    .single();
+export async function adminLogin(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
 
-  if (error || !data) {
-    alert("Invalid admin credentials");
+  if (error) {
+    alert(error.message);
     return;
   }
 
-  localStorage.setItem("admin", JSON.stringify(data));
+  localStorage.setItem("session", JSON.stringify(data.session));
   window.location.href = "admin.html";
 }
