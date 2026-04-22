@@ -16,12 +16,12 @@ export async function loadNotices(containerId) {
       n.priority === "info" ? "blue" : "green";
 
     container.innerHTML += `
-      <div style="border-left:5px solid ${color}; padding:10px; margin:10px;">
-        <h4>${n.title}</h4>
-        <p>${n.message}</p>
-        <small>${n.priority.toUpperCase()}</small>
-      </div>
-    `;
+  <div class="card" style="border-left:6px solid ${color}">
+    <h4>${n.title}</h4>
+    <p>${n.message}</p>
+    <small>${n.priority}</small>
+  </div>
+`;
   });
 }
 
