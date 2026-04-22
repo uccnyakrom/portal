@@ -8,17 +8,19 @@ window.loadStudents = async function () {
 
   data.forEach(student => {
     const row = `
-      <tr>
-        <td>${student.name}</td>
-        <td>${student.reg_number}</td>
-        <td>${student.room_id || "None"}</td>
-        <td>
-          <input id="room-${student.id}" placeholder="Room ID">
-          <button onclick="assignRoom('${student.id}')">Assign</button>
-          <button onclick="removeRoom('${student.id}')">Remove</button>
-        </td>
-      </tr>
-    `;
+<tr>
+  <td>${student.name}</td>
+  <td>${student.reg_number}</td>
+  <td>${student.room_id || "None"}</td>
+  <td>
+    <button onclick="enrolStudent('${student.id}')">Enroll</button>
+  </td>
+  <td>
+    <input id="room-${student.id}">
+    <button onclick="assignRoom('${student.id}')">Assign</button>
+  </td>
+</tr>
+`;
     table.innerHTML += row;
   });
 };
