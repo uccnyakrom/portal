@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<!--
+  student.html — UCC Campus Accommodation Portal (Student Dashboard)
+  ──────────────────────────────────────────────────────────────────────────────
+  PLACE THIS FILE AT: /student.html
+
+  ⚠️  Replace meta tag content values with your real Supabase credentials.
+  ──────────────────────────────────────────────────────────────────────────────
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal — UCC Accommodation</title>
+
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
+
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="dash-layout">
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       SIDEBAR
+       ════════════════════════════════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-brand">
+      <div class="sidebar-logo">
+        UCC Accommodation
+        <span>Student Portal</span>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <strong id="studentWelcome">Welcome!</strong>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">My Account</div>
+      <a href="#" class="nav-link" data-section="profile">
+        <span class="nav-icon">👤</span> My Profile
+      </a>
+      <a href="#" class="nav-link" data-section="room">
+        <span class="nav-icon">🏠</span> My Room
+      </a>
+
+      <div class="nav-group-label">Accommodation</div>
+      <a href="#" class="nav-link" data-section="apply">
+        <span class="nav-icon">📋</span> Apply for Room
+      </a>
+
+      <div class="nav-group-label">Information</div>
+      <a href="#" class="nav-link" data-section="notices">
+        <span class="nav-icon">📢</span> Notice Board
+      </a>
+      <a href="#" class="nav-link" data-section="facilities">
+        <span class="nav-icon">🏛️</span> Facilities
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" id="logoutBtn">⇦ Sign Out</button>
+    </div>
+
+  </aside><!-- /sidebar -->
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       MAIN CONTENT
+       ════════════════════════════════════════════════════════════════════════ -->
+  <main class="dash-main">
+
+    <div class="dash-topbar">
+      <h1 class="dash-page-title">Student Portal</h1>
+      <div class="topbar-right">
+        <a href="index.html" style="font-size:12px;color:var(--gray-400)">← Back to Home</a>
+      </div>
+    </div>
+
+    <div class="dash-content">
+
+      <!-- ── MY PROFILE ─────────────────────────────────────────────────────── -->
+      <section id="section-profile" class="dash-section">
+        <div class="profile-card">
+          <div class="profile-header">
+            <div class="profile-avatar" id="profileInitials">?</div>
+            <div>
+              <div class="profile-name" id="profileName">—</div>
+              <div class="profile-reg"  id="profileReg">—</div>
+            </div>
+          </div>
+          <div class="profile-body">
+            <div class="profile-field">
+              <span class="profile-field-label">Programme</span>
+              <span class="profile-field-value" id="profileProgram">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="profile-field-label">Level</span>
+              <span class="profile-field-value" id="profileLevel">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="profile-field-label">Sex</span>
+              <span class="profile-field-value" id="profileSex">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="profile-field-label">Residential Status</span>
+              <span class="profile-field-value" id="profileStatus">—</span>
+            </div>
+
+            <!-- Auto-generated password display -->
+            <div class="password-box">
+              <h4>🔑 Your Portal Password</h4>
+              <code id="passwordHint">—</code>
+              <small>
+                This password is auto-generated from your registration number and name initials.
+                Keep it safe — it is not stored and cannot be recovered if lost.
+              </small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── MY ROOM ────────────────────────────────────────────────────────── -->
+      <section id="section-room" class="dash-section hidden">
+        <div id="roomPanel">
+          <p style="color:var(--gray-400)">Loading room details…</p>
+        </div>
+      </section>
+
+      <!-- ── APPLY ──────────────────────────────────────────────────────────── -->
+      <section id="section-apply" class="dash-section hidden">
+        <div id="applySection">
+          <p style="color:var(--gray-400)">Loading…</p>
+        </div>
+      </section>
+
+      <!-- ── NOTICES ────────────────────────────────────────────────────────── -->
+      <section id="section-notices" class="dash-section hidden">
+
+        <!-- Filter bar -->
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem">
+          <h3 style="font-family:var(--font-display);color:var(--navy)">Notice Board</h3>
+          <select id="noticeFilter" style="width:auto;min-width:130px;font-size:12px">
+            <option value="all">All Notices</option>
+            <option value="urgent">🔴 Urgent</option>
+            <option value="info">🔵 Info</option>
+            <option value="general">🟢 General</option>
+          </select>
+        </div>
+
+        <div id="noticesFeed">
+          <p style="color:var(--gray-400)">Loading notices…</p>
+        </div>
+
+      </section>
+
+      <!-- ── FACILITIES ─────────────────────────────────────────────────────── -->
+      <section id="section-facilities" class="dash-section hidden">
+        <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:1.2rem">Campus Facilities</h3>
+        <div id="facilitiesContent">
+          <p style="color:var(--gray-400)">Loading…</p>
+        </div>
+      </section>
+
+    </div><!-- /dash-content -->
+  </main><!-- /dash-main -->
+
+</div><!-- /dash-layout -->
+
+<!-- ── Profile avatar initials (inline since it reads session directly) ──────── -->
+<script type="module">
+  import { getSession } from "./js/auth.js";
+  const s = getSession();
+  if (s) {
+    const el = document.getElementById("profileInitials");
+    if (el) el.textContent = s.name.split(" ").map(w => w[0]).join("").substring(0, 2);
+  }
+</script>
+
+<!-- ── Main student script ──────────────────────────────────────────────────── -->
+<script type="module" src="js/student.js"></script>
+
+</body>
+</html>
