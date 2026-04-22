@@ -109,3 +109,20 @@ supabase
     console.log("Room updated in real-time");
   })
   .subscribe();
+
+//EXPORT CSV
+window.exportCSV = async function () {
+  const { data } = await supabase.from("students").select("*");
+
+  let csv = "Name,Reg,Room\n";
+
+  data.forEach(s => {
+    csv += `${s.name},${s.reg_number},${s.room_id}\n`;
+  });
+
+  const blob = new Blob([csv]);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "students.csv";
+  a.click();
+};
