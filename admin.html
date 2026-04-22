@@ -7,6 +7,11 @@
 
 <h2>Admin Dashboard</h2>
 
+<!-- ✅ INSERT IT RIGHT HERE -->
+<h3>Student Distribution</h3>
+<canvas id="chart"></canvas>
+
+<!-- EXISTING CONTENT -->
 <button onclick="loadStudents()">Load Students</button>
 
 <table border="1">
@@ -21,6 +26,10 @@
   <tbody id="studentsTable"></tbody>
 </table>
 
+<!-- Chart.js MUST come before your script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Your admin logic -->
 <script type="module" src="js/admin.js"></script>
 
 </body>
