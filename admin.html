@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<!--
+  admin.html — UCC Campus Accommodation Portal (Admin Dashboard)
+  ──────────────────────────────────────────────────────────────────────────────
+  PLACE THIS FILE AT: /admin.html
+
+  ⚠️  Replace meta tag content values with your real Supabase credentials.
+  ──────────────────────────────────────────────────────────────────────────────
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — UCC Accommodation Portal</title>
+
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
+
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="dash-layout">
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       SIDEBAR
+       ════════════════════════════════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-brand">
+      <div class="sidebar-logo">
+        UCC Accommodation
+        <span>Admin Console</span>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      Logged in as<br>
+      <strong id="adminName">Admin</strong>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Overview</div>
+      <a href="#" class="nav-link" data-section="overview">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+
+      <div class="nav-group-label">Management</div>
+      <a href="#" class="nav-link" data-section="students">
+        <span class="nav-icon">🎓</span> All Students
+      </a>
+      <a href="#" class="nav-link" data-section="rooms">
+        <span class="nav-icon">🏠</span> Room Map
+      </a>
+      <a href="#" class="nav-link" data-section="allocations">
+        <span class="nav-icon">🔑</span> Allocations
+      </a>
+      <a href="#" class="nav-link" data-section="applications">
+        <span class="nav-icon">📋</span> Applications
+      </a>
+
+      <div class="nav-group-label">Analytics</div>
+      <a href="#" class="nav-link" data-section="reports">
+        <span class="nav-icon">📈</span> Reports
+      </a>
+
+      <div class="nav-group-label">Administration</div>
+      <a href="#" class="nav-link" data-section="users">
+        <span class="nav-icon">👤</span> User Management
+      </a>
+      <a href="#" class="nav-link" data-section="notices">
+        <span class="nav-icon">📢</span> Notices
+      </a>
+      <a href="#" class="nav-link" data-section="export">
+        <span class="nav-icon">💾</span> Export Data
+      </a>
+      <a href="#" class="nav-link" data-section="audit">
+        <span class="nav-icon">📝</span> Audit Log
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" id="logoutBtn">⇦ Sign Out</button>
+    </div>
+
+  </aside><!-- /sidebar -->
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       MAIN CONTENT
+       ════════════════════════════════════════════════════════════════════════ -->
+  <main class="dash-main">
+
+    <div class="dash-topbar">
+      <h1 class="dash-page-title" id="pageTitle">Dashboard</h1>
+      <div class="topbar-right">
+        <span id="liveTime"></span>
+        <span>🟢 Connected</span>
+      </div>
+    </div>
+
+    <div class="dash-content">
+
+      <!-- ── OVERVIEW ──────────────────────────────────────────────────────── -->
+      <section id="section-overview" class="dash-section">
+        <div class="stat-cards">
+          <div class="stat-card"><div class="stat-card-icon">🎓</div><div class="stat-card-value" id="statTotal">—</div><div class="stat-card-label">Total Students</div></div>
+          <div class="stat-card"><div class="stat-card-icon">🏠</div><div class="stat-card-value" id="statResidents">—</div><div class="stat-card-label">Residents</div></div>
+          <div class="stat-card"><div class="stat-card-icon">🛏️</div><div class="stat-card-value" id="statHoused">—</div><div class="stat-card-label">Housed</div></div>
+          <div class="stat-card"><div class="stat-card-icon">⚠️</div><div class="stat-card-value" id="statUnhoused">—</div><div class="stat-card-label">Unhoused</div></div>
+          <div class="stat-card"><div class="stat-card-icon">🛏️</div><div class="stat-card-value" id="statBeds">—</div><div class="stat-card-label">Available Beds</div></div>
+          <div class="stat-card"><div class="stat-card-icon">🟢</div><div class="stat-card-value" id="statVacant">—</div><div class="stat-card-label">Vacant Rooms</div></div>
+          <div class="stat-card"><div class="stat-card-icon">📋</div><div class="stat-card-value" id="statPending">—</div><div class="stat-card-label">Pending Apps</div></div>
+          <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-value" id="statOccRate">—</div><div class="stat-card-label">Occ. Rate</div></div>
+        </div>
+
+        <div class="chart-row">
+          <div class="chart-card">
+            <canvas id="blockChart" width="400" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <canvas id="programChart" width="220" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <canvas id="sexChart" width="220" height="200"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── ALL STUDENTS ───────────────────────────────────────────────────── -->
+      <section id="section-students" class="dash-section hidden">
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-card-title">All Students</span>
+            <div class="table-filters">
+              <input  id="filterSearch"  type="text"   placeholder="Search name / reg…">
+              <select id="filterProgram"><option value="">All Programmes</option><option>Nursing</option><option>Nutrition</option></select>
+              <select id="filterLevel">  <option value="">All Levels</option>   <option value="100">Level 100</option><option value="200">Level 200</option></select>
+              <select id="filterSex">    <option value="">All Sexes</option>     <option>Male</option><option>Female</option></select>
+              <select id="filterStatus"> <option value="">All Status</option>    <option value="resident">Resident</option><option value="non-resident">Non-Resident</option></select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Reg. Number</th><th>Programme</th>
+                  <th>Level</th><th>Sex</th><th>Status</th><th>Room</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="studentTableBody">
+                <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── ROOM MAP ───────────────────────────────────────────────────────── -->
+      <section id="section-rooms" class="dash-section hidden">
+        <div id="roomMapGrid"></div>
+        <!-- Room info slide-in panel -->
+        <div class="room-info-panel" id="roomInfoPanel">
+          <button onclick="document.getElementById('roomInfoPanel').classList.remove('open')"
+                  style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400)">×</button>
+          <p style="color:var(--gray-400);margin-top:2rem">Click a room to view details</p>
+        </div>
+      </section>
+
+      <!-- ── ALLOCATIONS ────────────────────────────────────────────────────── -->
+      <section id="section-allocations" class="dash-section hidden">
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-card-title">Room Allocations</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Level</th><th>Room</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="allocTableBody">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── APPLICATIONS ───────────────────────────────────────────────────── -->
+      <section id="section-applications" class="dash-section hidden">
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-card-title">Accommodation Applications</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="appTableBody">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── REPORTS ────────────────────────────────────────────────────────── -->
+      <section id="section-reports" class="dash-section hidden">
+        <div class="table-card" style="margin-bottom:1.5rem">
+          <div class="table-card-header">
+            <span class="table-card-title">Room Utilisation by Block</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Block</th><th>Rooms</th><th>Capacity</th><th>Occupied</th><th>Available</th><th>Utilisation</th></tr>
+              </thead>
+              <tbody id="utilTableBody">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── USER MANAGEMENT ────────────────────────────────────────────────── -->
+      <section id="section-users" class="dash-section hidden">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+
+          <!-- Create Admin -->
+          <div class="form-card">
+            <h3>Create Admin User</h3>
+            <form id="createAdminForm">
+              <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="newAdminUser" placeholder="admin_username" required>
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="newAdminPass" placeholder="Strong password" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Create Admin</button>
+            </form>
+          </div>
+
+          <!-- Enrol Student -->
+          <div class="form-card">
+            <h3>Enrol Student</h3>
+            <p style="font-size:13px;color:var(--gray-400);margin-bottom:.8rem">
+              Enrolling a student gives them access to the student portal.
+              The student must already exist in the Students table.
+            </p>
+            <form id="enrolStudentForm">
+              <div class="form-group">
+                <label>Registration Number</label>
+                <input type="text" id="enrolReg" placeholder="e.g. SN/NSU/25/001" required>
+              </div>
+              <button type="submit" class="btn btn-gold">Enrol Student</button>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Users Table -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-card-title">All Portal Users</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Username</th><th>Role</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── NOTICES ────────────────────────────────────────────────────────── -->
+      <section id="section-notices" class="dash-section hidden">
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:1.5rem">
+
+          <!-- Create Notice form -->
+          <div class="form-card">
+            <h3>Publish New Notice</h3>
+            <form id="noticeForm">
+              <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="noticeTitle" placeholder="Notice title" required>
+              </div>
+              <div class="form-group">
+                <label>Message</label>
+                <textarea id="noticeMsg" placeholder="Notice content…" required></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Priority</label>
+                  <select id="noticePriority">
+                    <option value="general">🟢 General</option>
+                    <option value="info">🔵 Info</option>
+                    <option value="urgent">🔴 Urgent</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Audience</label>
+                  <select id="noticeAudience">
+                    <option value="all">All Students</option>
+                    <option value="nursing">Nursing Only</option>
+                    <option value="nutrition">Nutrition Only</option>
+                    <option value="admin">Admins Only</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Expiry Date (optional)</label>
+                <input type="date" id="noticeExpiry">
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;gap:.5rem">
+                <input type="checkbox" id="noticePinned" style="width:auto">
+                <label for="noticePinned" style="margin:0">Pin this notice</label>
+              </div>
+              <button type="submit" class="btn btn-primary btn-full">Publish Notice</button>
+            </form>
+          </div>
+
+          <!-- Notice list -->
+          <div>
+            <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:1rem">Published Notices</h3>
+            <div id="noticeAdminList">
+              <p style="color:var(--gray-400)">Loading…</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── EXPORT ─────────────────────────────────────────────────────────── -->
+      <section id="section-export" class="dash-section hidden">
+        <p style="color:var(--gray-600);margin-bottom:1.5rem">
+          All exports require admin password confirmation. Data is downloaded directly to your browser.
+        </p>
+        <div class="export-grid">
+          <div class="export-card">
+            <h3>🎓 Students</h3>
+            <button class="btn-sm btn-primary" onclick="exportData('students','csv')">CSV</button>
+            <button class="btn-sm btn-secondary" onclick="exportData('students','json')">JSON</button>
+          </div>
+          <div class="export-card">
+            <h3>🏠 Rooms</h3>
+            <button class="btn-sm btn-primary" onclick="exportData('rooms','csv')">CSV</button>
+            <button class="btn-sm btn-secondary" onclick="exportData('rooms','json')">JSON</button>
+          </div>
+          <div class="export-card">
+            <h3>📋 Applications</h3>
+            <button class="btn-sm btn-primary" onclick="exportData('applications','csv')">CSV</button>
+            <button class="btn-sm btn-secondary" onclick="exportData('applications','json')">JSON</button>
+          </div>
+          <div class="export-card">
+            <h3>📝 Audit Log</h3>
+            <button class="btn-sm btn-primary" onclick="exportData('audit','csv')">CSV</button>
+            <button class="btn-sm btn-secondary" onclick="exportData('audit','json')">JSON</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── AUDIT LOG ──────────────────────────────────────────────────────── -->
+      <section id="section-audit" class="dash-section hidden">
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-card-title">Audit Log (last 200 events)</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Timestamp</th><th>User</th><th>Action</th></tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /dash-content -->
+  </main><!-- /dash-main -->
+
+</div><!-- /dash-layout -->
+
+<!-- ── Assign Room Modal ────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Assign Room to <span id="assignStudentName"></span></span>
+      <button class="modal-close" id="assignModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="assignForm">
+        <input type="hidden" id="assignStudentId">
+        <div class="form-group">
+          <label>Select Room</label>
+          <select id="assignRoomSelect" required>
+            <option value="">Loading rooms…</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Confirm Assignment</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── Clock ────────────────────────────────────────────────────────────────── -->
+<script>
+  // Live clock in topbar
+  function updateClock() {
+    const el = document.getElementById("liveTime");
+    if (el) el.textContent = new Date().toLocaleTimeString();
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
+
+<!-- ── Main admin script ────────────────────────────────────────────────────── -->
+<script type="module" src="js/admin.js"></script>
+
+</body>
+</html>
