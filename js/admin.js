@@ -22,6 +22,20 @@ window.loadStudents = async function () {
     table.innerHTML += row;
   });
 };
+window.loadStudents = async function () {
+  ...
+};
+
+// ✅ ENROLL STUDENT
+window.enrolStudent = async function (id) {
+  await supabase
+    .from("students")
+    .update({ enrolled: true })
+    .eq("id", id);
+
+  alert("Student enrolled");
+  loadStudents();
+};
 
 // 🔥 AUTO UPDATE ROOM COUNTS
 async function updateRoomOccupancy(roomId) {
