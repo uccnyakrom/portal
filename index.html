@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<!--
+  index.html — UCC Campus Accommodation Portal (Landing Page)
+  ──────────────────────────────────────────────────────────────────────────────
+  PLACE THIS FILE AT: /index.html (root of your GitHub Pages repo)
+
+  ⚠️  CONFIGURATION:
+  Replace the two meta tag content values below with your real Supabase
+  Project URL and Anon Key. Do NOT commit secrets to a public repository —
+  consider using a GitHub Actions secret or environment substitution if this
+  repo is public.
+  ──────────────────────────────────────────────────────────────────────────────
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UCC Nyakrom — Campus Accommodation Portal</title>
+
+  <!-- ╔══════════════════════════════════════════════════════════════════════╗
+       ║  SUPABASE CREDENTIALS (replace content values below)               ║
+       ╚══════════════════════════════════════════════════════════════════════╝ -->
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
+
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Supabase JS SDK (loaded from CDN — no npm/bundler needed) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- ── Top Navigation ──────────────────────────────────────────────────────── -->
+<nav class="landing-nav">
+  <div class="nav-brand">
+    <div class="nav-brand-icon">U</div>
+    <div class="nav-brand-text">
+      <span class="nav-brand-name">UCC Nyakrom Campus</span>
+      <span class="nav-brand-sub">Accommodation Portal</span>
+    </div>
+  </div>
+  <button class="btn btn-outline" id="signInBtn">Sign In →</button>
+</nav>
+
+<!-- ── Hero Section ────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div style="position:relative;z-index:1">
+    <div class="hero-crest">🏛️</div>
+    <p class="hero-eyebrow">University of Cape Coast · Nyakrom Campus</p>
+    <h1 class="hero-title">Campus<br><span>Accommodation</span><br>Portal</h1>
+    <p class="hero-subtitle">
+      Manage room allocations, track availability, and access your accommodation
+      details — all in one place.
+    </p>
+    <div class="hero-actions">
+      <button class="btn btn-gold" id="signInBtnHero">Sign In to Dashboard</button>
+      <a href="#availability" class="btn btn-outline">View Availability ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Live Stats Strip ────────────────────────────────────────────────────── -->
+<div class="stats-strip">
+  <div class="stat-item">
+    <div class="stat-number" id="stripTotal">505</div>
+    <div class="stat-label">Total Students</div>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <div class="stat-number" id="stripBeds">—</div>
+    <div class="stat-label">Available Beds</div>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <div class="stat-number" id="stripVacant">—</div>
+    <div class="stat-label">Vacant Rooms</div>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <div class="stat-number" id="stripOccRate">—</div>
+    <div class="stat-label">Occupancy Rate</div>
+  </div>
+</div>
+
+<!-- ── Room Availability Grid ─────────────────────────────────────────────── -->
+<section class="availability-section" id="availability">
+  <h2 class="section-title">Room Availability</h2>
+  <p class="section-subtitle">Live view of accommodation blocks — click a room for details</p>
+  <div id="publicRoomGrid">
+    <p style="color:var(--gray-400);text-align:center;padding:3rem">Loading availability…</p>
+  </div>
+</section>
+
+<!-- ── Footer ──────────────────────────────────────────────────────────────── -->
+<footer class="landing-footer">
+  <p>
+    &copy; 2025 <strong>University of Cape Coast</strong> · Nyakrom Campus ·
+    Centre for African and International Studies ·
+    All rights reserved.
+  </p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     LOGIN MODAL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">🔑 Sign In to Portal</span>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Tab buttons -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="student">Student</button>
+        <button class="tab-btn"        data-tab="admin">Admin</button>
+      </div>
+
+      <!-- Student Panel -->
+      <div class="tab-panel active" data-panel="student">
+        <form id="studentLoginForm">
+          <div class="form-group">
+            <label for="studentReg">Registration Number</label>
+            <input type="text" id="studentReg" placeholder="e.g. SN/NSU/25/001" autocomplete="username" required>
+          </div>
+          <div class="form-group">
+            <label for="studentPass">Password</label>
+            <input type="password" id="studentPass" placeholder="Your auto-generated password" autocomplete="current-password" required>
+            <p class="password-hint">
+              Password format: first 2 chars of reg + last 4 chars + your initials<br>
+              <em>Example: SN/NSU/25/001, "Ama Kumi" → SN001AK</em>
+            </p>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        </form>
+      </div>
+
+      <!-- Admin Panel -->
+      <div class="tab-panel" data-panel="admin">
+        <form id="adminLoginForm">
+          <div class="form-group">
+            <label for="adminUser">Username</label>
+            <input type="text" id="adminUser" placeholder="Admin username" autocomplete="username" required>
+          </div>
+          <div class="form-group">
+            <label for="adminPass">Password</label>
+            <input type="password" id="adminPass" placeholder="Admin password" autocomplete="current-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        </form>
+      </div>
+
+    </div><!-- /modal-body -->
+  </div><!-- /modal-box -->
+</div><!-- /loginModal -->
+
+<!-- ── Scripts ─────────────────────────────────────────────────────────────── -->
+<script type="module">
+  import { initLoginModal }   from "./js/auth.js";
+  import { fetchRooms }       from "./js/rooms.js";
+  import { renderRoomGrid }   from "./js/rooms.js";
+  import { supabase }         from "./js/supabaseClient.js";
+
+  // Wire second sign-in button
+  document.getElementById("signInBtnHero").addEventListener("click", () => {
+    document.getElementById("loginModal").classList.add("open");
+  });
+
+  // Initialise the login modal
+  initLoginModal();
+
+  // ── Load live stats ──────────────────────────────────────────────────────
+  async function loadPublicStats() {
+    const { data: rooms } = await supabase.from("rooms").select("capacity, occupancy_count, type");
+    if (!rooms) return;
+
+    const totalBeds    = rooms.reduce((a, r) => a + r.capacity, 0);
+    const occupiedBeds = rooms.reduce((a, r) => a + r.occupancy_count, 0);
+    const availBeds    = totalBeds - occupiedBeds;
+    const vacantRooms  = rooms.filter(r => r.type === "vacant").length;
+    const occRate      = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+
+    document.getElementById("stripBeds").textContent    = availBeds;
+    document.getElementById("stripVacant").textContent  = vacantRooms;
+    document.getElementById("stripOccRate").textContent = occRate + "%";
+  }
+
+  // ── Load public room grid ────────────────────────────────────────────────
+  async function loadPublicGrid() {
+    const rooms = await fetchRooms();
+    renderRoomGrid("publicRoomGrid", rooms); // no click handler for public view
+  }
+
+  loadPublicStats();
+  loadPublicGrid();
+
+  // ── Real-time updates on landing page ───────────────────────────────────
+  supabase.channel("landing-rooms")
+    .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, () => {
+      loadPublicStats();
+      loadPublicGrid();
+    })
+    .subscribe();
+</script>
+
+</body>
+</html>
