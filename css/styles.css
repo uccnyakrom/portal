@@ -1080,3 +1080,51 @@ tbody td { padding: .6rem 1rem; color: var(--gray-800); vertical-align: middle; 
   .stat-cards { grid-template-columns: 1fr 1fr; }
   .room-grid  { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  FACILITIES                                                                  */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+.fac-summary {
+  display: flex; gap: 1.2rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.fac-sum-card {
+  background: var(--white); border-radius: var(--radius); padding: 1rem 1.5rem;
+  box-shadow: var(--shadow-sm); border-top: 3px solid var(--gold);
+  display: flex; flex-direction: column; gap: .2rem; min-width: 140px;
+}
+.fac-sum-num { font-family: var(--font-display); font-size: 2rem; color: var(--navy); font-weight: 700; line-height: 1; }
+.fac-sum-lbl { font-size: 11px; color: var(--gray-400); text-transform: uppercase; letter-spacing: .07em; }
+
+.fac-filter-bar {
+  display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1.2rem; align-items: center;
+}
+.fac-filter-bar input, .fac-filter-bar select { width: auto; min-width: 130px; font-size: 12px; }
+
+.fac-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem;
+}
+.fac-card {
+  background: var(--white); border-radius: var(--radius); padding: 1.1rem;
+  box-shadow: var(--shadow-sm); border-top: 3px solid var(--gold);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.fac-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.fac-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+.fac-icon { font-size: 1.6rem; }
+.fac-status-dot { width: 10px; height: 10px; border-radius: 50%; }
+.fac-card-name { font-weight: 700; color: var(--navy); font-size: 14px; margin-bottom: .15rem; }
+.fac-card-cat  { font-size: 12px; color: var(--gray-600); }
+.fac-card-block{ font-size: 11px; color: var(--gray-400); margin-bottom: .3rem; }
+.fac-card-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .6rem; }
+.fac-card-actions { display: flex; gap: .3rem; flex-wrap: wrap; }
+
+/* Booking badges */
+.badge-suite      { background: #ede9fe; color: #5b21b6; }
+.badge-staff_room { background: #dbeafe; color: #1e40af; }
+.badge-NSP        { background: #f3e8ff; color: #6b21a8; }
+.badge-facility   { background: #d1fae5; color: #065f46; }
+.badge-ended      { background: var(--gray-100); color: var(--gray-400); }
+.badge-open       { background: #fee2e2; color: #991b1b; }
+.badge-in_progress{ background: #fef3c7; color: #92400e; }
+.badge-resolved   { background: #d1fae5; color: #065f46; }
+.badge-closed     { background: var(--gray-100); color: var(--gray-400); }
