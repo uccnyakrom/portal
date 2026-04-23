@@ -710,3 +710,37 @@ window.togglePin = async (id, pinned) => {
 function escHtml(str) {
   return String(str).replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FACILITIES SECTIONS (injected into admin navigation)
+// ─────────────────────────────────────────────────────────────────────────────
+import {
+  loadFacilitiesList, loadBookings, loadMaintenance,
+  initFacStatusModal, initBookingModal, initMaintenanceModal
+} from "./facilities.js";
+
+document.addEventListener("DOMContentLoaded", () => {
+  initFacStatusModal();
+  initBookingModal();
+  initMaintenanceModal();
+});
+
+// Extend navigateTo loaders
+const _origLoaders = {
+  facilities:  () => loadFacilitiesList("facilitiesContainer"),
+  bookings:    () => loadBookings("bookingsContainer"),
+  maintenance: () => loadMaintenance("maintenanceContainer"),
+};
+
+// Patch into existing navigateTo by re-registering via event
+document.querySelectorAll(".nav-link").forEach(link => {
+  if (["facilities","bookings","maintenance"].includes(link.dataset.section)) {
+    link.addEventListener("click", e => {
+      e.preventDefault();
+      document.querySelectorAll(".nav-link").forEach(l => l.classList.toggle("active", l === link));
+      document.querySelectorAll(".dash-section").forEach(s =>
+        s.classList.toggle("hidden", s.id !== `section-${link.dataset.section}`));
+      _origLoaders[link.dataset.section]?.();
+    });
+  }
+});
