@@ -10,6 +10,15 @@
  */
 
 import { supabase, showToast, logAudit } from "./supabaseClient.js";
+import {
+  loadStudents, initAddStudentModal, initEditStudentModal,
+  initAssignRoomModal, bulkEnrolAll
+} from "./admin_students.js";
+
+// Export bulkEnrolAll to window for HTML onclick
+window.bulkEnrolAll = bulkEnrolAll;
+
+
 import { requireAuth, getSession, logout, hashPassword } from "./auth.js";
 import {
   fetchRooms, fetchAvailableRooms, fetchRoomWithOccupants,
@@ -27,6 +36,9 @@ const ADMIN = getSession();
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("adminName").textContent = ADMIN.username || "Admin";
   document.getElementById("logoutBtn").addEventListener("click", logout);
+  initAddStudentModal();
+  initEditStudentModal();
+  initAssignRoomModal();
 
   // Sidebar navigation
   document.querySelectorAll(".nav-link").forEach(link => {
@@ -62,7 +74,7 @@ function navigateTo(section) {
   // Load section content
   const loaders = {
     overview:    loadOverview,
-    students:    loadStudents,
+    students:    () => loadStudents(),
     rooms:       loadRoomMap,
     allocations: loadAllocations,
     applications:loadApplications,
