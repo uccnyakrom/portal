@@ -346,3 +346,20 @@ function loadFacilities() {
       </div>
     </div>`;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OVERRIDE: Replace static facilities with real data + maintenance reporting
+// ─────────────────────────────────────────────────────────────────────────────
+import {
+  loadFacilitiesList, initMaintenanceModal
+} from "./facilities.js";
+
+// Re-wire facilities section to use real data
+document.addEventListener("DOMContentLoaded", () => {
+  initMaintenanceModal();
+});
+
+// Override the static loadFacilities function defined earlier
+window._loadRealFacilities = () => {
+  loadFacilitiesList("facilitiesContent");
+};
