@@ -21,7 +21,7 @@ const STUDENT = getSession();
 // ─────────────────────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("studentWelcome").textContent = `Welcome, ${STUDENT.name.split(" ")[0]}!`;
+  document.getElementById("studentWelcome").textContent = `Welcome, ${STUDENT.full_name.split(" ")[0]}!`;
   document.getElementById("logoutBtn").addEventListener("click", logout);
 
   document.querySelectorAll(".nav-link").forEach(link => {
@@ -68,12 +68,12 @@ function navigateTo(section) {
 
 function loadProfile() {
   const fields = {
-    "profileName":    STUDENT.name,
+    "profileName":    STUDENT.full_name,
     "profileReg":     STUDENT.reg_number,
     "profileProgram": STUDENT.program,
     "profileLevel":   `Level ${STUDENT.level}`,
     "profileSex":     STUDENT.sex,
-    "profileStatus":  STUDENT.residential_status,
+    "profileStatus":  STUDENT.program,
   };
   Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
@@ -83,7 +83,7 @@ function loadProfile() {
   // Show auto-generated password hint
   const pwHint = document.getElementById("passwordHint");
   if (pwHint) {
-    pwHint.textContent = generateStudentPassword(STUDENT.reg_number, STUDENT.name);
+    pwHint.textContent = generateStudentPassword(STUDENT.reg_number, STUDENT.full_name);
   }
 }
 
@@ -95,7 +95,7 @@ async function loadRoom() {
   const panel = document.getElementById("roomPanel");
   if (!panel) return;
 
-  if (!STUDENT.room_id) {
+  if (!STUDENT.room) {
     panel.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">🏠</div>
@@ -105,7 +105,7 @@ async function loadRoom() {
     return;
   }
 
-  const { room, occupants } = await fetchRoomWithOccupants(STUDENT.room_id);
+  const { room, occupants } = await fetchRoomWithOccupants(STUDENT.room);
   if (!room) { panel.innerHTML = "<p>Room details unavailable.</p>"; return; }
 
   const pct = room.capacity > 0
@@ -142,9 +142,9 @@ async function loadRoom() {
         : `<div class="roommate-list">
             ${roommates.map(r => `
               <div class="roommate-card">
-                <div class="roommate-avatar">${r.name.split(" ").map(w=>w[0]).join("").substring(0,2)}</div>
+                <div class="roommate-avatar">${r.full_name.split(" ").map(w=>w[0]).join("").substring(0,2)}</div>
                 <div>
-                  <div class="roommate-name">${r.name}</div>
+                  <div class="roommate-name">${r.full_name}</div>
                   <div class="roommate-info">${r.program} · Level ${r.level}</div>
                 </div>
               </div>`).join("")}
@@ -187,7 +187,7 @@ async function loadApply() {
   }
 
   // No existing application — show form
-  if (STUDENT.room_id) {
+  if (STUDENT.room) {
     container.innerHTML = `
       <div class="apply-status-card">
         <div class="apply-icon">🏠</div>
@@ -204,7 +204,7 @@ async function loadApply() {
       <form id="applyForm">
         <div class="form-group">
           <label>Full Name</label>
-          <input type="text" value="${STUDENT.name}" readonly class="input-readonly">
+          <input type="text" value="${STUDENT.full_name}" readonly class="input-readonly">
         </div>
         <div class="form-group">
           <label>Registration Number</label>
