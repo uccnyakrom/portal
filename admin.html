@@ -13,8 +13,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -140,12 +140,17 @@
         <div class="table-card">
           <div class="table-card-header">
             <span class="table-card-title">All Students</span>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+              <button class="btn btn-primary" id="openAddStudentBtn">+ Add Student</button>
+              <button class="btn btn-gold" onclick="bulkEnrolAll()">🔑 Bulk Enrol All</button>
+            </div>
+          </div>
+          <div class="table-card-header" style="border-top:1px solid var(--gray-100)">
             <div class="table-filters">
               <input  id="filterSearch"  type="text"   placeholder="Search name / reg…">
-              <select id="filterProgram"><option value="">All Programmes</option><option>Nursing</option><option>Nutrition</option></select>
-              <select id="filterLevel">  <option value="">All Levels</option>   <option value="100">Level 100</option><option value="200">Level 200</option></select>
-              <select id="filterSex">    <option value="">All Sexes</option>     <option>Male</option><option>Female</option></select>
-              <select id="filterStatus"> <option value="">All Status</option>    <option value="resident">Resident</option><option value="non-resident">Non-Resident</option></select>
+              <select id="filterProgram"><option value="">All Programmes</option><option value="BSc Nursing">BSc Nursing</option><option value="BSc Nutrition">BSc Nutrition</option></select>
+              <select id="filterLevel">  <option value="">All Levels</option><option value="100">Level 100</option><option value="200">Level 200</option></select>
+              <select id="filterSex">    <option value="">All Sexes</option><option value="M">Male</option><option value="F">Female</option></select>
             </div>
           </div>
           <div class="table-wrap">
@@ -153,11 +158,11 @@
               <thead>
                 <tr>
                   <th>Name</th><th>Reg. Number</th><th>Programme</th>
-                  <th>Level</th><th>Sex</th><th>Status</th><th>Room</th><th>Actions</th>
+                  <th>Level</th><th>Sex</th><th>Room (text)</th><th>Room (assigned)</th><th>Enrolled</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody id="studentTableBody">
-                <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+                <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -415,6 +420,124 @@
   </main><!-- /dash-main -->
 
 </div><!-- /dash-layout -->
+
+
+<!-- ── Add Student Modal ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="addStudentModal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title">+ Add New Student</span>
+      <button class="modal-close" id="addStudentModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="addStudentForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="addName" placeholder="e.g. Ama Mensah" required>
+          </div>
+          <div class="form-group">
+            <label>Registration Number</label>
+            <input type="text" id="addReg" placeholder="e.g. SN/NSU/25/001" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Programme</label>
+            <select id="addProgram" required>
+              <option value="">Select…</option>
+              <option value="BSc Nursing">BSc Nursing</option>
+              <option value="BSc Nutrition">BSc Nutrition</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Level</label>
+            <select id="addLevel" required>
+              <option value="">Select…</option>
+              <option value="100">Level 100</option>
+              <option value="200">Level 200</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sex</label>
+            <select id="addSex" required>
+              <option value="">Select…</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Room Number (text, optional)</label>
+            <input type="text" id="addRoom" placeholder="e.g. B3">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Add Student</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Student Modal ─────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="editStudentModal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Student</span>
+      <button class="modal-close" id="editStudentModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="editStudentForm">
+        <input type="hidden" id="editStudentId">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="editName" required>
+          </div>
+          <div class="form-group">
+            <label>Registration Number</label>
+            <input type="text" id="editReg" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Programme</label>
+            <select id="editProgram" required>
+              <option value="BSc Nursing">BSc Nursing</option>
+              <option value="BSc Nutrition">BSc Nutrition</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Level</label>
+            <select id="editLevel" required>
+              <option value="100">Level 100</option>
+              <option value="200">Level 200</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sex</label>
+            <select id="editSex" required>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Room Number (text)</label>
+            <input type="text" id="editRoom" placeholder="e.g. B3">
+          </div>
+        </div>
+        <div class="password-box" style="margin-bottom:1rem">
+          <h4>🔑 Auto-generated Portal Password</h4>
+          <code id="editPasswordDisplay">—</code>
+          <small>This is the password the student will use to log in.</small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- ── Assign Room Modal ────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="assignModal">
