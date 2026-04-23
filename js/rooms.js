@@ -52,7 +52,7 @@ export async function fetchAvailableRooms() {
 export async function fetchRoomWithOccupants(roomId) {
   const [roomRes, occupantsRes] = await Promise.all([
     supabase.from("rooms").select("*").eq("id", roomId).single(),
-    supabase.from("students").select("id, name, reg_number, program, level, sex").eq("room_id", roomId)
+    supabase.from("students").select("id, name, reg_number, program, level, sex").eq("room", roomId)
   ]);
   return {
     room:      roomRes.data,
@@ -81,16 +81,16 @@ export async function assignRoom(studentId, roomId, actorName = "admin") {
 
   // 3. Get student's current room (if any) to decrement that room's count
   const { data: student } = await supabase
-    .from("students").select("room_id, name, reg_number").eq("id", studentId).single();
+    .from("students").select("room, full_name, reg_number").eq("id", studentId).single();
 
-  if (student?.room_id) {
-    await decrementRoom(student.room_id);
+  if (student?.room) {
+    await decrementRoom(student.room);
   }
 
   // 4. Update student record
   const { error: sErr } = await supabase
     .from("students")
-    .update({ room_id: roomId })
+    .update({ room: roomId })
     .eq("id", studentId);
   if (sErr) return { success: false, error: sErr.message };
 
@@ -118,15 +118,15 @@ export async function assignRoom(studentId, roomId, actorName = "admin") {
  */
 export async function removeRoomAssignment(studentId, actorName = "admin") {
   const { data: student } = await supabase
-    .from("students").select("room_id, reg_number").eq("id", studentId).single();
+    .from("students").select("room, reg_number").eq("id", studentId).single();
 
-  if (!student?.room_id) return { success: false, error: "Student has no room assigned." };
+  if (!student?.room) return { success: false, error: "Student has no room assigned." };
 
-  await decrementRoom(student.room_id);
+  await decrementRoom(student.room);
 
   const { error } = await supabase
     .from("students")
-    .update({ room_id: null })
+    .update({ room: null })
     .eq("id", studentId);
 
   if (error) return { success: false, error: error.message };
