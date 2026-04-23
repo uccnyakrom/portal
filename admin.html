@@ -14,7 +14,7 @@
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
   <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
-  <meta name="sb-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnamFjZWloZ2N2aHZxcmlzeGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MzMwNzQsImV4cCI6MjA5MjQwOTA3NH0.sBkNWbxqQgAAcaqI86qVD7d0KLChQigbUmq4-C1diFE">
+  <meta name="sb-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6dW5rZnpwa2dydGtpaXZic3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDkwMzgsImV4cCI6MjA5MjE4NTAzOH0.6I_rOlRoa2ZpA8si3MCxWHvuBQe8FCsMtRSlAUQlLH8">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -73,6 +73,15 @@
       </a>
       <a href="#" class="nav-link" data-section="export">
         <span class="nav-icon">💾</span> Export Data
+      </a>
+      <a href="#" class="nav-link" data-section="facilities">
+        <span class="nav-icon">🏛️</span> Facilities
+      </a>
+      <a href="#" class="nav-link" data-section="bookings">
+        <span class="nav-icon">📅</span> Bookings
+      </a>
+      <a href="#" class="nav-link" data-section="maintenance">
+        <span class="nav-icon">🔧</span> Maintenance
       </a>
       <a href="#" class="nav-link" data-section="audit">
         <span class="nav-icon">📝</span> Audit Log
@@ -387,6 +396,21 @@
         </div>
       </section>
 
+          <!-- ── FACILITIES ─────────────────────────────────────────────────────── -->
+      <section id="section-facilities" class="dash-section hidden">
+        <div id="facilitiesContainer"><p style="color:var(--gray-400)">Loading facilities…</p></div>
+      </section>
+
+      <!-- ── BOOKINGS ───────────────────────────────────────────────────────── -->
+      <section id="section-bookings" class="dash-section hidden">
+        <div id="bookingsContainer"><p style="color:var(--gray-400)">Loading bookings…</p></div>
+      </section>
+
+      <!-- ── MAINTENANCE ────────────────────────────────────────────────────── -->
+      <section id="section-maintenance" class="dash-section hidden">
+        <div id="maintenanceContainer"><p style="color:var(--gray-400)">Loading maintenance requests…</p></div>
+      </section>
+
     </div><!-- /dash-content -->
   </main><!-- /dash-main -->
 
@@ -426,6 +450,103 @@
 </script>
 
 <!-- ── Main admin script ────────────────────────────────────────────────────── -->
+<!-- ── Facility Status Modal ──────────────────────────────────────────────── -->
+<div class="modal-overlay" id="facStatusModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Update Status: <span id="facStatusName"></span></span>
+      <button class="modal-close" id="facStatusModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="facStatusForm">
+        <input type="hidden" id="facStatusId">
+        <div class="form-group">
+          <label>New Status</label>
+          <select id="facStatusSelect">
+            <option value="available">Available</option>
+            <option value="occupied">Occupied</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Update Status</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── New Booking Modal ───────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="newBookingModal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title">📅 New Booking / Assignment</span>
+      <button class="modal-close" id="newBookingModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="newBookingForm">
+        <div class="form-group">
+          <label>Location (Suite / Staff Room / NSP / Facility)</label>
+          <select id="bookingLocationSelect" required><option value="">Loading…</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Assignee Name</label><input type="text" id="bookingAssignee" placeholder="Full name" required></div>
+          <div class="form-group"><label>Department</label><input type="text" id="bookingDept" placeholder="Department / Unit"></div>
+        </div>
+        <div class="form-group"><label>Purpose / Reason</label><textarea id="bookingPurpose" rows="2" placeholder="Reason for booking…"></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>Start Date</label><input type="date" id="bookingStart" required></div>
+          <div class="form-group"><label>End Date (optional)</label><input type="date" id="bookingEnd"></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Submit Booking</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── Maintenance Modal ───────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="maintenanceModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title">🔧 Report Maintenance Issue</span>
+      <button class="modal-close" id="maintenanceModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="maintenanceForm">
+        <input type="hidden" id="maintFacId">
+        <input type="hidden" id="maintRoomNum">
+        <input type="hidden" id="maintBlock">
+        <div id="maintLocationDisplay" style="font-weight:700;color:var(--navy);margin-bottom:.8rem"></div>
+        <div class="form-row" id="maintManualLocation">
+          <div class="form-group"><label>Block</label><select id="maintBlockInput"><option value="">Select</option><option>NE</option><option>N</option><option>NW</option><option>ADM</option><option>S</option></select></div>
+          <div class="form-group"><label>Room / Area</label><input type="text" id="maintRoomInput" placeholder="e.g. A1, Library"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Category</label>
+            <select id="maintCategory">
+              <option value="electrical">Electrical</option>
+              <option value="plumbing">Plumbing</option>
+              <option value="furniture">Furniture</option>
+              <option value="cleaning">Cleaning</option>
+              <option value="structural">Structural</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Priority</label>
+            <select id="maintPriority">
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Description</label><textarea id="maintDescription" rows="3" placeholder="Describe the issue…" required></textarea></div>
+        <button type="submit" class="btn btn-primary btn-full">Submit Report</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="js/admin.js"></script>
 
 </body>
