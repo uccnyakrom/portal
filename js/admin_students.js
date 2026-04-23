@@ -1,0 +1,355 @@
+/**
+ * admin_students.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * PLACE THIS FILE AT: /js/admin_students.js
+ *
+ * Handles all student management in the admin dashboard:
+ *   • Add new student
+ *   • Edit student details
+ *   • Delete student
+ *   • Enrol student for portal access
+ *   • Bulk enrol all students
+ *   • Assign / change / remove room
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+import { supabase, showToast, logAudit, generateStudentPassword } from "./supabaseClient.js";
+import { getSession } from "./auth.js";
+import { fetchAvailableRooms, assignRoom, removeRoomAssignment } from "./rooms.js";
+
+const ADMIN = getSession();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOAD STUDENTS TABLE
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function loadStudents() {
+  const { data, error } = await supabase
+    .from("students")
+    .select("*, rooms(block, room_number)")
+    .order("full_name");
+
+  if (error) { showToast("Error loading students: " + error.message, "error"); return; }
+
+  window._allStudents = data || [];
+  renderStudentTable(window._allStudents);
+  bindStudentFilters();
+}
+
+function renderStudentTable(students) {
+  const tbody = document.getElementById("studentTableBody");
+  if (!tbody) return;
+
+  if (students.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--gray-400)">No students found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = students.map(s => `
+    <tr>
+      <td>${s.full_name || s.name || "—"}</td>
+      <td>${s.reg_number}</td>
+      <td>${s.program || "—"}</td>
+      <td>${s.level || "—"}</td>
+      <td>${s.sex || "—"}</td>
+      <td>${s.room || "—"}</td>
+      <td>${s.rooms ? `${s.rooms.block}-${s.rooms.room_number}` : "—"}</td>
+      <td>
+        <span class="enrol-status" id="enrol-${s.id}">
+          <span style="color:var(--gray-400);font-size:12px">Checking…</span>
+        </span>
+      </td>
+      <td>
+        <button class="btn-sm btn-primary"   onclick="openEditStudentModal('${s.id}')">✏️ Edit</button>
+        <button class="btn-sm btn-secondary" onclick="openAssignRoomModal('${s.id}','${escHtml(s.full_name || s.name)}')">🏠 Room</button>
+        <button class="btn-sm btn-gold"      onclick="enrolStudent('${s.id}','${s.reg_number}','${escHtml(s.full_name || s.name)}')">🔑 Enrol</button>
+        <button class="btn-sm btn-danger"    onclick="deleteStudent('${s.id}','${escHtml(s.full_name || s.name)}')">🗑</button>
+      </td>
+    </tr>`).join("");
+
+  // Check enrolment status for each student
+  checkEnrolmentStatus(students);
+}
+
+async function checkEnrolmentStatus(students) {
+  const regNumbers = students.map(s => s.reg_number);
+  const { data: users } = await supabase
+    .from("users")
+    .select("username")
+    .in("username", regNumbers);
+
+  const enrolledSet = new Set((users || []).map(u => u.username));
+
+  students.forEach(s => {
+    const el = document.getElementById(`enrol-${s.id}`);
+    if (!el) return;
+    if (enrolledSet.has(s.reg_number)) {
+      el.innerHTML = `<span style="color:var(--green);font-size:12px;font-weight:700">✓ Enrolled</span>`;
+    } else {
+      el.innerHTML = `<span style="color:var(--red);font-size:12px;font-weight:700">✕ Not Enrolled</span>`;
+    }
+  });
+}
+
+function bindStudentFilters() {
+  const applyFilter = () => {
+    const prog   = document.getElementById("filterProgram")?.value || "";
+    const level  = document.getElementById("filterLevel")?.value   || "";
+    const sex    = document.getElementById("filterSex")?.value     || "";
+    const search = (document.getElementById("filterSearch")?.value || "").toLowerCase();
+
+    const filtered = (window._allStudents || []).filter(s =>
+      (!prog   || s.program       === prog)  &&
+      (!level  || String(s.level) === level) &&
+      (!sex    || s.sex           === sex)   &&
+      (!search || (s.full_name || s.name || "").toLowerCase().includes(search) ||
+                  s.reg_number.toLowerCase().includes(search))
+    );
+    renderStudentTable(filtered);
+  };
+
+  ["filterProgram","filterLevel","filterSex","filterSearch"]
+    .forEach(id => document.getElementById(id)?.addEventListener("input", applyFilter));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADD STUDENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function initAddStudentModal() {
+  document.getElementById("addStudentForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Adding…";
+
+    const payload = {
+      full_name:  document.getElementById("addName").value.trim(),
+      reg_number: document.getElementById("addReg").value.trim().toUpperCase(),
+      program:    document.getElementById("addProgram").value,
+      level:      parseInt(document.getElementById("addLevel").value),
+      sex:        document.getElementById("addSex").value,
+      room:       document.getElementById("addRoom").value.trim() || null,
+    };
+
+    // Check reg_number doesn't already exist
+    const { data: existing } = await supabase
+      .from("students")
+      .select("id")
+      .eq("reg_number", payload.reg_number)
+      .limit(1);
+
+    if (existing?.length > 0) {
+      showToast("A student with this registration number already exists.", "error");
+      btn.disabled = false; btn.textContent = "Add Student";
+      return;
+    }
+
+    const { error } = await supabase.from("students").insert([payload]);
+    if (error) {
+      showToast("Error: " + error.message, "error");
+      btn.disabled = false; btn.textContent = "Add Student";
+      return;
+    }
+
+    await logAudit(`Added student: ${payload.reg_number}`, ADMIN?.username);
+    showToast(`Student ${payload.full_name} added successfully!`, "success");
+    document.getElementById("addStudentModal").classList.remove("open");
+    e.target.reset();
+    btn.disabled = false; btn.textContent = "Add Student";
+    loadStudents();
+  });
+
+  document.getElementById("addStudentModalClose")?.addEventListener("click", () => {
+    document.getElementById("addStudentModal").classList.remove("open");
+  });
+
+  document.getElementById("openAddStudentBtn")?.addEventListener("click", () => {
+    document.getElementById("addStudentModal").classList.add("open");
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EDIT STUDENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+window.openEditStudentModal = async (studentId) => {
+  const { data: s } = await supabase
+    .from("students").select("*").eq("id", studentId).single();
+  if (!s) { showToast("Student not found.", "error"); return; }
+
+  document.getElementById("editStudentId").value        = s.id;
+  document.getElementById("editName").value             = s.full_name || s.name || "";
+  document.getElementById("editReg").value              = s.reg_number;
+  document.getElementById("editProgram").value          = s.program || "";
+  document.getElementById("editLevel").value            = s.level || "";
+  document.getElementById("editSex").value              = s.sex || "";
+  document.getElementById("editRoom").value             = s.room || "";
+
+  // Show auto-generated password
+  const pwd = generateStudentPassword(s.reg_number, s.full_name || s.name || "");
+  document.getElementById("editPasswordDisplay").textContent = pwd;
+
+  document.getElementById("editStudentModal").classList.add("open");
+};
+
+export function initEditStudentModal() {
+  document.getElementById("editStudentForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Saving…";
+
+    const id = document.getElementById("editStudentId").value;
+    const payload = {
+      full_name:  document.getElementById("editName").value.trim(),
+      reg_number: document.getElementById("editReg").value.trim().toUpperCase(),
+      program:    document.getElementById("editProgram").value,
+      level:      parseInt(document.getElementById("editLevel").value),
+      sex:        document.getElementById("editSex").value,
+      room:       document.getElementById("editRoom").value.trim() || null,
+    };
+
+    const { error } = await supabase.from("students").update(payload).eq("id", id);
+    if (error) {
+      showToast("Error: " + error.message, "error");
+      btn.disabled = false; btn.textContent = "Save Changes";
+      return;
+    }
+
+    await logAudit(`Edited student: ${payload.reg_number}`, ADMIN?.username);
+    showToast("Student updated successfully!", "success");
+    document.getElementById("editStudentModal").classList.remove("open");
+    btn.disabled = false; btn.textContent = "Save Changes";
+    loadStudents();
+  });
+
+  document.getElementById("editStudentModalClose")?.addEventListener("click", () => {
+    document.getElementById("editStudentModal").classList.remove("open");
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE STUDENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+window.deleteStudent = async (studentId, name) => {
+  if (!confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return;
+
+  const { error } = await supabase.from("students").delete().eq("id", studentId);
+  if (error) { showToast("Error: " + error.message, "error"); return; }
+
+  await logAudit(`Deleted student: ${name}`, ADMIN?.username);
+  showToast(`${name} deleted.`, "success");
+  loadStudents();
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENROL STUDENT (grant portal access)
+// ─────────────────────────────────────────────────────────────────────────────
+
+window.enrolStudent = async (studentId, regNumber, name) => {
+  // Check if already enrolled
+  const { data: existing } = await supabase
+    .from("users").select("id").eq("username", regNumber).limit(1);
+
+  if (existing?.length > 0) {
+    showToast(`${name} is already enrolled.`, "warning");
+    return;
+  }
+
+  const { error } = await supabase.from("users").insert([{
+    username: regNumber,
+    password: "auto",
+    role:     "student"
+  }]);
+
+  if (error) { showToast("Error: " + error.message, "error"); return; }
+
+  await logAudit(`Enrolled student: ${regNumber}`, ADMIN?.username);
+  showToast(`${name} enrolled successfully! They can now log in.`, "success");
+  loadStudents(); // Refresh to update enrolment status
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BULK ENROL ALL STUDENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function bulkEnrolAll() {
+  if (!confirm("This will enrol ALL students who are not yet enrolled. Continue?")) return;
+
+  const { data: students } = await supabase.from("students").select("id, reg_number, full_name");
+  const { data: users }    = await supabase.from("users").select("username").eq("role","student");
+
+  const enrolledSet = new Set((users || []).map(u => u.username));
+  const toEnrol = (students || []).filter(s => !enrolledSet.has(s.reg_number));
+
+  if (toEnrol.length === 0) {
+    showToast("All students are already enrolled!", "info");
+    return;
+  }
+
+  const inserts = toEnrol.map(s => ({
+    username: s.reg_number,
+    password: "auto",
+    role:     "student"
+  }));
+
+  const { error } = await supabase.from("users").insert(inserts);
+  if (error) { showToast("Error: " + error.message, "error"); return; }
+
+  await logAudit(`Bulk enrolled ${toEnrol.length} students`, ADMIN?.username);
+  showToast(`${toEnrol.length} students enrolled successfully!`, "success");
+  loadStudents();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ASSIGN ROOM MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+window.openAssignRoomModal = async (studentId, studentName) => {
+  const rooms = await fetchAvailableRooms();
+  const select = document.getElementById("assignRoomSelect");
+  select.innerHTML = `<option value="">— Select Room —</option>` +
+    rooms.map(r =>
+      `<option value="${r.id}">Block ${r.block} – ${r.room_number} (${r.occupancy_count}/${r.capacity} – ${r.type})</option>`
+    ).join("");
+
+  document.getElementById("assignStudentId").value          = studentId;
+  document.getElementById("assignStudentName").textContent  = studentName;
+  document.getElementById("assignModal").classList.add("open");
+};
+
+export function initAssignRoomModal() {
+  document.getElementById("assignForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const studentId = document.getElementById("assignStudentId").value;
+    const roomId    = document.getElementById("assignRoomSelect").value;
+    if (!roomId) { showToast("Please select a room.", "warning"); return; }
+
+    const result = await assignRoom(studentId, roomId, ADMIN?.username);
+    if (result.success) {
+      showToast("Room assigned successfully!", "success");
+      document.getElementById("assignModal").classList.remove("open");
+      loadStudents();
+    } else {
+      showToast(result.error, "error");
+    }
+  });
+
+  document.getElementById("assignModalClose")?.addEventListener("click", () => {
+    document.getElementById("assignModal").classList.remove("open");
+  });
+}
+
+window.removeRoom = async (studentId) => {
+  if (!confirm("Remove this student's room assignment?")) return;
+  const result = await removeRoomAssignment(studentId, ADMIN?.username);
+  if (result.success) { showToast("Room removed.", "success"); loadStudents(); }
+  else showToast(result.error, "error");
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITY
+// ─────────────────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+}
