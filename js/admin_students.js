@@ -38,36 +38,74 @@ export async function loadStudents() {
 
 function renderStudentTable(students) {
   const tbody = document.getElementById("studentTableBody");
+  const footer = document.getElementById("studentTableFooter");
   if (!tbody) return;
 
   if (students.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--gray-400)">No students found</td></tr>`;
+    tbody.innerHTML = `
+      <tr><td colspan="8">
+        <div class="table-empty">
+          <div class="table-empty-icon">🎓</div>
+          <h4>No students found</h4>
+          <p>Try adjusting your filters or add a new student.</p>
+        </div>
+      </td></tr>`;
+    if (footer) footer.textContent = "0 students";
     return;
   }
 
-  tbody.innerHTML = students.map(s => `
+  tbody.innerHTML = students.map(s => {
+    const name     = s.full_name || s.name || "—";
+    const initials = name.split(" ").map(w => w[0]).join("").substring(0,2).toUpperCase();
+    const isFemale = (s.sex || "").toUpperCase() === "F";
+    const prog     = (s.program || "").toLowerCase();
+    const isNursing = prog.includes("nurs");
+    const roomAssigned = s.rooms ? `${s.rooms.block}-${s.rooms.room_number}` : null;
+
+    return `
     <tr>
-      <td>${s.full_name || s.name || "—"}</td>
-      <td>${s.reg_number}</td>
-      <td>${s.program || "—"}</td>
-      <td>${s.level || "—"}</td>
-      <td>${s.sex || "—"}</td>
-      <td>${s.room || "—"}</td>
-      <td>${s.rooms ? `${s.rooms.block}-${s.rooms.room_number}` : "—"}</td>
       <td>
-        <span class="enrol-status" id="enrol-${s.id}">
-          <span style="color:var(--gray-400);font-size:12px">Checking…</span>
+        <div class="student-name-cell">
+          <div class="student-avatar ${isFemale ? "female" : ""}">${initials}</div>
+          <div>
+            <div class="student-name-text">${name}</div>
+            <div class="student-reg-text">${s.reg_number}</div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span class="prog-pill ${isNursing ? "nursing" : "nutrition"}">
+          ${isNursing ? "🏥" : "🥗"} ${s.program || "—"}
+        </span>
+      </td>
+      <td><span class="level-badge">Level ${s.level || "—"}</span></td>
+      <td>
+        <span class="sex-indicator ${isFemale ? "female" : "male"}">
+          ${isFemale ? "♀ Female" : "♂ Male"}
         </span>
       </td>
       <td>
-        <button class="btn-sm btn-primary"   onclick="openEditStudentModal('${s.id}')">✏️ Edit</button>
-        <button class="btn-sm btn-secondary" onclick="openAssignRoomModal('${s.id}','${escHtml(s.full_name || s.name)}')">🏠 Room</button>
-        <button class="btn-sm btn-gold"      onclick="enrolStudent('${s.id}','${s.reg_number}','${escHtml(s.full_name || s.name)}')">🔑 Enrol</button>
-        <button class="btn-sm btn-danger"    onclick="deleteStudent('${s.id}','${escHtml(s.full_name || s.name)}')">🗑</button>
+        ${roomAssigned
+          ? `<span class="room-cell assigned">🏠 ${roomAssigned}</span>`
+          : `<span class="room-cell unassigned">Not assigned</span>`}
       </td>
-    </tr>`).join("");
+      <td>
+        <span class="enrol-badge not-enrolled" id="enrol-${s.id}">
+          ⏳ Checking
+        </span>
+      </td>
+      <td>
+        <div class="table-actions">
+          <button class="btn-sm btn-primary"   onclick="openEditStudentModal('${s.id}')">✏️ Edit</button>
+          <button class="btn-sm btn-secondary" onclick="openAssignRoomModal('${s.id}','${escHtml(name)}')">🏠 Room</button>
+          <button class="btn-sm btn-gold"      onclick="enrolStudent('${s.id}','${s.reg_number}','${escHtml(name)}')">🔑 Enrol</button>
+          <button class="btn-sm btn-danger"    onclick="deleteStudent('${s.id}','${escHtml(name)}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
 
-  // Check enrolment status for each student
+  if (footer) footer.textContent = `${students.length} student${students.length !== 1 ? "s" : ""}`;
   checkEnrolmentStatus(students);
 }
 
@@ -84,9 +122,11 @@ async function checkEnrolmentStatus(students) {
     const el = document.getElementById(`enrol-${s.id}`);
     if (!el) return;
     if (enrolledSet.has(s.reg_number)) {
-      el.innerHTML = `<span style="color:var(--green);font-size:12px;font-weight:700">✓ Enrolled</span>`;
+      el.className = "enrol-badge enrolled";
+      el.innerHTML = "✓ Enrolled";
     } else {
-      el.innerHTML = `<span style="color:var(--red);font-size:12px;font-weight:700">✕ Not Enrolled</span>`;
+      el.className = "enrol-badge not-enrolled";
+      el.innerHTML = "✕ Not Enrolled";
     }
   });
 }
