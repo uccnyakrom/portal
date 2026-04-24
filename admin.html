@@ -13,8 +13,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
-<meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-<meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -89,6 +89,10 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button class="btn-sm btn-secondary" onclick="openChangePasswordModal()" 
+        style="width:100%;margin-bottom:.5rem;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15)">
+        🔐 Change Password
+      </button>
       <button class="logout-btn" id="logoutBtn">⇦ Sign Out</button>
     </div>
 
@@ -696,6 +700,34 @@
         </div>
         <div class="form-group"><label>Description</label><textarea id="maintDescription" rows="3" placeholder="Describe the issue…" required></textarea></div>
         <button type="submit" class="btn btn-primary btn-full">Submit Report</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Change Password Modal ──────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="changePasswordModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">🔐 Change Password</span>
+      <button class="modal-close" id="changePwdModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="changePasswordForm">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="currentPwd" placeholder="Enter current password" required>
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="newPwd" placeholder="Enter new password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" id="confirmPwd" placeholder="Confirm new password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Update Password</button>
       </form>
     </div>
   </div>
