@@ -690,3 +690,231 @@ document.querySelectorAll(".nav-link").forEach(link => {
     });
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADD ROOM
+// ─────────────────────────────────────────────────────────────────────────────
+
+window.openAddRoomModal = () => {
+  document.getElementById("addRoomModal")?.classList.add("open");
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("addRoomModalClose")?.addEventListener("click", () => {
+    document.getElementById("addRoomModal")?.classList.remove("open");
+  });
+
+  document.getElementById("addRoomForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true;
+    btn.textContent = "Adding…";
+
+    const block     = document.getElementById("addRoomBlock").value;
+    const roomNum   = document.getElementById("addRoomNumber").value.trim();
+    const capacity  = parseInt(document.getElementById("addRoomCapacity").value);
+    const occupancy = parseInt(document.getElementById("addRoomOccupancy").value) || 0;
+    const type      = document.getElementById("addRoomType").value;
+
+    // Check if room already exists
+    const { data: existing } = await supabase
+      .from("rooms")
+      .select("id")
+      .eq("block", block)
+      .eq("room_number", roomNum)
+      .limit(1);
+
+    if (existing?.length > 0) {
+      showToast(`Room ${block}-${roomNum} already exists.`, "error");
+      btn.disabled = false;
+      btn.textContent = "Add Room";
+      return;
+    }
+
+    const { error } = await supabase.from("rooms").insert([{
+      block,
+      room_number:     roomNum,
+      capacity,
+      occupancy_count: Math.min(occupancy, capacity),
+      type
+    }]);
+
+    if (error) {
+      showToast("Error: " + error.message, "error");
+      btn.disabled = false;
+      btn.textContent = "Add Room";
+      return;
+    }
+
+    await logAudit(`Added room: ${block}-${roomNum} (${type}, cap:${capacity})`, ADMIN?.username);
+    showToast(`Room ${block}-${roomNum} added successfully!`, "success");
+    document.getElementById("addRoomModal")?.classList.remove("open");
+    e.target.reset();
+    btn.disabled = false;
+    btn.textContent = "Add Room";
+    loadRoomMap(); // Refresh the room map
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MANAGE ROOMS SECTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadManageRooms() {
+  const block  = document.getElementById("manageRoomBlockFilter")?.value || "";
+  const search = (document.getElementById("manageRoomSearch")?.value || "").toLowerCase();
+
+  let query = supabase.from("rooms").select("*").order("block").order("room_number");
+  if (block) query = query.eq("block", block);
+
+  const { data: rooms, error } = await query;
+  if (error) { showToast("Error loading rooms", "error"); return; }
+
+  const filtered = (rooms || []).filter(r =>
+    !search || r.room_number.toLowerCase().includes(search)
+  );
+
+  const tbody = document.getElementById("manageRoomsTableBody");
+  const footer = document.getElementById("manageRoomsCount");
+  if (!tbody) return;
+
+  const typeColors = {
+    vacant:  "#22c55e", partial: "#f59e0b",
+    full:    "#ef4444", staff:   "#3b82f6",
+    NSP:     "#a855f7", suite:   "#6366f1"
+  };
+  const typeLabels = {
+    vacant: "Vacant", partial: "Partial", full: "Full",
+    staff: "Staff", NSP: "NSP", suite: "Suite"
+  };
+
+  tbody.innerHTML = filtered.length === 0
+    ? `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">No rooms found</td></tr>`
+    : filtered.map(r => `
+      <tr>
+        <td><span class="level-badge">Block ${r.block}</span></td>
+        <td><strong>${r.room_number}</strong></td>
+        <td>${r.capacity}</td>
+        <td>${r.occupancy_count}</td>
+        <td>
+          <span style="background:${typeColors[r.type]}20;color:${typeColors[r.type]};
+            padding:.2rem .6rem;border-radius:999px;font-size:11px;font-weight:700">
+            ${typeLabels[r.type] || r.type}
+          </span>
+        </td>
+        <td>
+          <div class="table-actions">
+            <button class="btn-sm btn-warning" onclick="openEditRoomModal('${r.id}','${r.block}','${r.room_number}',${r.capacity},'${r.type}')">✏️</button>
+            <button class="btn-sm btn-danger"  onclick="deleteRoom('${r.id}','${r.block}-${r.room_number}')">🗑</button>
+          </div>
+        </td>
+      </tr>`).join("");
+
+  if (footer) footer.textContent = `${filtered.length} room${filtered.length !== 1 ? "s" : ""}`;
+}
+
+// Wire filters
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("manageRoomBlockFilter")?.addEventListener("change", loadManageRooms);
+  document.getElementById("manageRoomSearch")?.addEventListener("input", loadManageRooms);
+
+  // Add Room form
+  document.getElementById("addRoomForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Adding…";
+
+    const block  = document.getElementById("newRoomBlock").value;
+    const number = document.getElementById("newRoomNumber").value.trim();
+    const cap    = parseInt(document.getElementById("newRoomCapacity").value);
+    const type   = document.getElementById("newRoomType").value;
+
+    const { error } = await supabase.from("rooms").insert([{
+      block, room_number: number, capacity: cap, occupancy_count: 0, type
+    }]);
+
+    if (error) {
+      showToast("Error: " + error.message, "error");
+    } else {
+      showToast(`Room ${block}-${number} added!`, "success");
+      await logAudit(`Added room: ${block}-${number}`, ADMIN?.username);
+      e.target.reset();
+      loadManageRooms();
+    }
+    btn.disabled = false; btn.textContent = "Add Room";
+  });
+});
+
+// Edit Room
+window.openEditRoomModal = (id, block, number, capacity, type) => {
+  document.getElementById("editRoomId").value       = id;
+  document.getElementById("editRoomBlock").value    = block;
+  document.getElementById("editRoomNumber").value   = number;
+  document.getElementById("editRoomCapacity").value = capacity;
+  document.getElementById("editRoomType").value     = type;
+  document.getElementById("editRoomModal").classList.add("open");
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("editRoomForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const id  = document.getElementById("editRoomId").value;
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Saving…";
+
+    const payload = {
+      block:       document.getElementById("editRoomBlock").value,
+      room_number: document.getElementById("editRoomNumber").value.trim(),
+      capacity:    parseInt(document.getElementById("editRoomCapacity").value),
+      type:        document.getElementById("editRoomType").value,
+    };
+
+    const { error } = await supabase.from("rooms").update(payload).eq("id", id);
+    if (error) {
+      showToast("Error: " + error.message, "error");
+    } else {
+      showToast("Room updated!", "success");
+      await logAudit(`Updated room: ${payload.block}-${payload.room_number}`, ADMIN?.username);
+      document.getElementById("editRoomModal").classList.remove("open");
+      loadManageRooms();
+    }
+    btn.disabled = false; btn.textContent = "Save Changes";
+  });
+
+  document.getElementById("editRoomModalClose")?.addEventListener("click", () => {
+    document.getElementById("editRoomModal").classList.remove("open");
+  });
+});
+
+// Delete Room
+window.deleteRoom = async (roomId, label) => {
+  if (!confirm(`Delete room ${label}? This cannot be undone.`)) return;
+
+  // Check if any students are assigned
+  const { data: assigned } = await supabase
+    .from("students").select("id").eq("room_id", roomId).limit(1);
+
+  if (assigned?.length > 0) {
+    showToast("Cannot delete — students are assigned to this room. Remove assignments first.", "error");
+    return;
+  }
+
+  const { error } = await supabase.from("rooms").delete().eq("id", roomId);
+  if (error) { showToast("Error: " + error.message, "error"); return; }
+  await logAudit(`Deleted room: ${label}`, ADMIN?.username);
+  showToast(`Room ${label} deleted.`, "success");
+  loadManageRooms();
+};
+
+// Register manage rooms in navigation
+document.querySelectorAll(".nav-link").forEach(link => {
+  if (link.dataset.section === "managerooms") {
+    link.addEventListener("click", e => {
+      e.preventDefault();
+      document.querySelectorAll(".nav-link").forEach(l => l.classList.toggle("active", l === link));
+      document.querySelectorAll(".dash-section").forEach(s =>
+        s.classList.toggle("hidden", s.id !== "section-managerooms"));
+      loadManageRooms();
+    });
+  }
+});
