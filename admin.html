@@ -10,12 +10,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -53,9 +52,6 @@
       </a>
       <a href="#" class="nav-link" data-section="rooms">
         <span class="nav-icon">🏠</span> Room Map
-      </a>
-      <a href="#" class="nav-link" data-section="managerooms">
-        <span class="nav-icon">➕</span> Manage Rooms
       </a>
       <a href="#" class="nav-link" data-section="allocations">
         <span class="nav-icon">🔑</span> Allocations
@@ -205,173 +201,6 @@
 
       <!-- ── MANAGE ROOMS ──────────────────────────────────────────────────────── -->
       <section id="section-managerooms" class="dash-section hidden">
-        <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:1.5rem">
-
-          <!-- Add Room Form -->
-          <div class="form-card">
-            <h3>➕ Add New Room</h3>
-            <form id="addRoomForm">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Block</label>
-                  <select id="newRoomBlock" required>
-                    <option value="">Select Block</option>
-                    <option value="NE">Block NE</option>
-                    <option value="N">Block N</option>
-                    <option value="NW">Block NW</option>
-                    <option value="ADM">Block ADM</option>
-                    <option value="S">Block S</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Room Number</label>
-                  <input type="text" id="newRoomNumber" placeholder="e.g. A25, B3" required>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Capacity</label>
-                  <input type="number" id="newRoomCapacity" min="1" max="20" value="4" required>
-                </div>
-                <div class="form-group">
-                  <label>Room Type</label>
-                  <select id="newRoomType" required>
-                    <option value="vacant">Student (Vacant)</option>
-                    <option value="staff">Staff</option>
-                    <option value="NSP">NSP</option>
-                    <option value="suite">Suite</option>
-                  </select>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary btn-full">Add Room</button>
-            </form>
-          </div>
-
-          <!-- Rooms List -->
-          <div class="table-card">
-            <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
-              <span class="table-card-title">🏠 All Rooms</span>
-              <div class="table-filters" style="margin:0">
-                <select id="manageRoomBlockFilter" style="font-size:12px;width:auto">
-                  <option value="">All Blocks</option>
-                  <option value="NE">NE</option>
-                  <option value="N">N</option>
-                  <option value="NW">NW</option>
-                  <option value="ADM">ADM</option>
-                  <option value="S">S</option>
-                </select>
-                <input type="text" id="manageRoomSearch" placeholder="Search room…" style="font-size:12px;width:120px">
-              </div>
-            </div>
-            <div class="table-wrap" style="max-height:500px;overflow-y:auto">
-              <table class="beautiful-table">
-                <thead>
-                  <tr><th>Block</th><th>Room</th><th>Capacity</th><th>Occupied</th><th>Type</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="manageRoomsTableBody">
-                  <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="table-footer">
-              <span id="manageRoomsCount">Loading…</span>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ── ROOM MAP ───────────────────────────────────────────────────────── -->
-      <section id="section-rooms" class="dash-section hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
-          <h2 style="font-family:var(--font-display);color:var(--navy);font-size:1.2rem">Room Map</h2>
-          <div style="display:flex;gap:.5rem">
-            <button class="btn btn-primary" onclick="openAddRoomModal()">+ Add Room</button>
-            <button class="btn btn-secondary" onclick="loadRoomMap()">🔄 Refresh</button>
-          </div>
-        </div>
-        <div id="roomMapGrid"></div>
-        <!-- Room info slide-in panel -->
-        <div class="room-info-panel" id="roomInfoPanel">
-          <button onclick="document.getElementById('roomInfoPanel').classList.remove('open')"
-                  style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400)">×</button>
-          <p style="color:var(--gray-400);margin-top:2rem">Click a room to view details</p>
-        </div>
-      </section>
-
-      <!-- ── ALLOCATIONS ────────────────────────────────────────────────────── -->
-      <section id="section-allocations" class="dash-section hidden">
-        <div class="table-card">
-          <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
-            <span class="table-card-title">🔑 Room Allocations</span>
-            <span style="font-size:12px;color:rgba(255,255,255,.6)" id="allocCount">Loading…</span>
-          </div>
-          <div class="table-wrap">
-            <table class="beautiful-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Programme</th>
-                  <th>Level</th>
-                  <th>Sex</th>
-                  <th>Assigned Room</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="allocTableBody">
-                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading allocations…</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="table-footer">
-            <span id="allocTableFooter">Loading…</span>
-            <span style="color:var(--navy);font-weight:600">UCC Nyakrom Campus</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── APPLICATIONS ───────────────────────────────────────────────────── -->
-      <section id="section-applications" class="dash-section hidden">
-        <div class="table-card">
-          <div class="table-card-header">
-            <span class="table-card-title">Accommodation Applications</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Date</th><th>Status</th><th>Actions</th></tr>
-              </thead>
-              <tbody id="appTableBody">
-                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── PUBLIC APPLICATIONS ──────────────────────────────────────────────── -->
-      <section id="section-publicapps" class="dash-section hidden">
-        <div class="table-card">
-          <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
-            <span class="table-card-title">📩 Public Applications</span>
-            <span style="font-size:12px;color:rgba(255,255,255,.6)">Applications from unregistered students</span>
-          </div>
-          <div class="table-wrap">
-            <table class="beautiful-table">
-              <thead>
-                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Level</th><th>Sex</th><th>Phone</th><th>Preferred Room</th><th>Status</th><th>Date</th><th>Actions</th></tr>
-              </thead>
-              <tbody id="publicAppsBody">
-                <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="table-footer"><span id="publicAppsFooter">Loading…</span></div>
-        </div>
-      </section>
-
-      <!-- ── MANAGE ROOMS ──────────────────────────────────────────────────────── -->
-      <section id="section-managerooms" class="dash-section hidden">
         <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.5rem">
 
           <!-- Add Room Form -->
@@ -398,7 +227,7 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>Capacity</label>
-                  <input type="number" id="newRoomCapacity" min="1" max="20" placeholder="e.g. 4" required>
+                  <input type="number" id="newRoomCapacity" min="1" max="20" value="4" required>
                 </div>
                 <div class="form-group">
                   <label>Type</label>
@@ -418,12 +247,10 @@
           <div class="table-card">
             <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
               <span class="table-card-title">All Rooms</span>
-              <div style="display:flex;gap:.5rem">
-                <select id="filterRoomBlock" style="font-size:12px;padding:.3rem .5rem;width:auto;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:4px">
-                  <option value="">All Blocks</option>
-                  <option>NE</option><option>N</option><option>NW</option><option>ADM</option><option>S</option>
-                </select>
-              </div>
+              <select id="filterRoomBlock" style="font-size:12px;padding:.3rem .5rem;width:auto;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:4px">
+                <option value="">All Blocks</option>
+                <option>NE</option><option>N</option><option>NW</option><option>ADM</option><option>S</option>
+              </select>
             </div>
             <div class="table-wrap" style="max-height:450px;overflow-y:auto">
               <table class="beautiful-table">
