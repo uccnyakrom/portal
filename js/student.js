@@ -9,7 +9,7 @@
  */
 
 import { supabase, showToast, generateStudentPassword } from "./supabaseClient.js";
-import { requireAuth, getSession, logout } from "./auth.js";
+import { requireAuth, getSession, logout, initChangePasswordModal } from "./auth.js";
 import { fetchRoomWithOccupants } from "./rooms.js";
 
 // ── Guard ─────────────────────────────────────────────────────────────────────
@@ -23,6 +23,7 @@ const STUDENT = getSession();
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("studentWelcome").textContent = `Welcome, ${STUDENT.full_name.split(" ")[0]}!`;
   document.getElementById("logoutBtn").addEventListener("click", logout);
+  initChangePasswordModal();
   initReportModal();
 
   document.querySelectorAll(".nav-link").forEach(link => {
