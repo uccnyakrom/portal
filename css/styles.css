@@ -1159,3 +1159,272 @@ tbody td { padding: .6rem 1rem; color: var(--gray-800); vertical-align: middle; 
   cursor: pointer;
 }
 .room-type-select:focus { border-color: var(--navy); }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  BEAUTIFUL TABLES — All Students & Allocations                              */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Enhanced Table Card ─────────────────────────────────────────────────── */
+.table-card {
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px rgba(30,58,95,.08);
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+}
+
+.table-card-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  padding: 1.2rem 1.5rem;
+  border-bottom: none;
+}
+
+.table-card-title {
+  color: var(--white) !important;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+/* ── Filter bar inside table ─────────────────────────────────────────────── */
+.table-filter-bar {
+  background: var(--gray-50);
+  padding: .9rem 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.table-filter-bar input,
+.table-filter-bar select {
+  width: auto;
+  min-width: 130px;
+  font-size: 12.5px;
+  padding: .4rem .7rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  color: var(--gray-800);
+}
+
+.table-filter-bar input:focus,
+.table-filter-bar select:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(30,58,95,.08);
+}
+
+/* ── Table itself ────────────────────────────────────────────────────────── */
+.beautiful-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.beautiful-table thead tr {
+  background: var(--gray-50);
+  border-bottom: 2px solid var(--gold);
+}
+
+.beautiful-table thead th {
+  padding: .85rem 1.1rem;
+  text-align: left;
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--navy);
+  font-weight: 800;
+  white-space: nowrap;
+  border-bottom: none;
+}
+
+.beautiful-table thead th:first-child { padding-left: 1.5rem; }
+.beautiful-table thead th:last-child  { padding-right: 1.5rem; text-align: right; }
+
+/* ── Body rows ───────────────────────────────────────────────────────────── */
+.beautiful-table tbody tr {
+  border-bottom: 1px solid var(--gray-100);
+  transition: background var(--transition);
+}
+
+.beautiful-table tbody tr:last-child { border-bottom: none; }
+
+.beautiful-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(201,168,76,.04) 0%, rgba(30,58,95,.03) 100%);
+}
+
+.beautiful-table tbody td {
+  padding: .85rem 1.1rem;
+  color: var(--gray-800);
+  vertical-align: middle;
+}
+
+.beautiful-table tbody td:first-child { padding-left: 1.5rem; }
+.beautiful-table tbody td:last-child  { padding-right: 1.5rem; text-align: right; }
+
+/* ── Avatar + name cell ──────────────────────────────────────────────────── */
+.student-name-cell {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+
+.student-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+}
+
+.student-avatar.female {
+  background: linear-gradient(135deg, #be185d 0%, #ec4899 100%);
+}
+
+.student-name-text {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 13.5px;
+  line-height: 1.2;
+}
+
+.student-reg-text {
+  font-size: 11px;
+  color: var(--gray-400);
+  font-weight: 400;
+}
+
+/* ── Programme pill ──────────────────────────────────────────────────────── */
+.prog-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .7rem;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.prog-pill.nursing {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.prog-pill.nutrition {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* ── Level badge ─────────────────────────────────────────────────────────── */
+.level-badge {
+  display: inline-block;
+  padding: .2rem .6rem;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--gold-pale);
+  color: var(--navy);
+  border: 1px solid rgba(201,168,76,.3);
+}
+
+/* ── Sex indicator ───────────────────────────────────────────────────────── */
+.sex-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sex-indicator.male   { color: #3b82f6; }
+.sex-indicator.female { color: #ec4899; }
+
+/* ── Room cell ───────────────────────────────────────────────────────────── */
+.room-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .6rem;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.room-cell.assigned {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.room-cell.unassigned {
+  background: var(--gray-100);
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+/* ── Enrolment badge ─────────────────────────────────────────────────────── */
+.enrol-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  font-size: 11px;
+  font-weight: 700;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+}
+
+.enrol-badge.enrolled {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.enrol-badge.not-enrolled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ── Action buttons in table ─────────────────────────────────────────────── */
+.table-actions {
+  display: flex;
+  gap: .3rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.table-actions .btn-sm {
+  padding: .3rem .65rem;
+  font-size: 11.5px;
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Empty state inside table ────────────────────────────────────────────── */
+.table-empty {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--gray-400);
+}
+
+.table-empty-icon { font-size: 2.5rem; margin-bottom: .5rem; }
+.table-empty h4   { color: var(--gray-600); margin-bottom: .3rem; }
+
+/* ── Row counter ─────────────────────────────────────────────────────────── */
+.table-footer {
+  background: var(--gray-50);
+  padding: .7rem 1.5rem;
+  border-top: 1px solid var(--gray-200);
+  font-size: 12px;
+  color: var(--gray-400);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
