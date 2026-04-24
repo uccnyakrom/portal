@@ -53,14 +53,23 @@ export async function loginStudent(regNumber, password) {
 
     const { data: userRows, error: uErr } = await supabase
       .from("users")
-      .select("id, role")
+      .select("id, role, password")
       .eq("username", regNumber.trim().toUpperCase())
-      .eq("role", "student")
       .limit(1);
 
     if (uErr) throw uErr;
     if (!userRows || userRows.length === 0) {
-      return { success: false, error: "Your account has not been enrolled yet. Please contact the accommodation office." };
+      return {
+        success: false,
+        error: "Your account has not been enrolled yet. Please contact the General Office."
+      };
+    }
+
+    // Make sure it is a student account not an admin
+    if (!["student", "auto", null].includes(userRows[0].role) && userRows[0].role !== "student") {
+      if (userRows[0].role !== "student") {
+        return { success: false, error: "Please use the Admin tab to log in." };
+      }
     }
 
     const expectedPassword = generateStudentPassword(student.reg_number, student.full_name);
@@ -81,12 +90,13 @@ export async function loginStudent(regNumber, password) {
 // ADMIN LOGIN — plain text, no hashing
 export async function loginAdmin(username, password) {
   try {
+    // Accept all non-student roles: admin, superadmin, accommodation, facilities, monitor, readonly, staff
     const { data: admins, error } = await supabase
       .from("users")
       .select("*")
       .eq("username", username.trim())
       .eq("password", password.trim())
-      .eq("role", "admin")
+      .not("role", "eq", "student")
       .limit(1);
 
     if (error) throw error;
@@ -96,7 +106,7 @@ export async function loginAdmin(username, password) {
 
     const admin = admins[0];
     saveSession(admin, "admin");
-    await logAudit(`Admin login: ${admin.username}`, admin.username);
+    await logAudit(`Admin login: ${admin.username} (${admin.role})`, admin.username);
     return { success: true, admin };
 
   } catch (err) {
