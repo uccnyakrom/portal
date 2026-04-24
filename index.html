@@ -20,8 +20,8 @@
   <!-- ╔══════════════════════════════════════════════════════════════════════╗
        ║  SUPABASE CREDENTIALS (replace content values below)               ║
        ╚══════════════════════════════════════════════════════════════════════╝ -->
-<meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-<meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
 
@@ -93,13 +93,27 @@
 </section>
 
 <!-- ── Public Application Section ─────────────────────────────────────────── -->
-<section style="background:var(--white);padding:4rem 2rem" id="apply">
-  <div style="max-width:600px;margin:0 auto">
+<section style="background:var(--gray-50);padding:4rem 2rem;border-top:1px solid var(--gray-200)" id="apply">
+  <div style="max-width:680px;margin:0 auto">
     <h2 class="section-title" style="text-align:center">Apply for Accommodation</h2>
     <p class="section-subtitle" style="text-align:center;margin-bottom:2rem">
       Not yet in the system? Submit your accommodation request below and the General Office will process it.
     </p>
-    <div style="background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:2rem;border-top:4px solid var(--gold)">
+
+    <!-- Alert box for existing students -->
+    <div id="existingStudentAlert" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:var(--radius);padding:1.2rem 1.5rem;margin-bottom:1.5rem;text-align:center">
+      <div style="font-size:1.8rem;margin-bottom:.5rem">⚠️</div>
+      <h3 style="color:#92400e;margin-bottom:.4rem">You are already in our system!</h3>
+      <p style="color:#78350f;font-size:14px;margin-bottom:.8rem">
+        A student record with this registration number already exists. Please log in to your student portal to manage your accommodation.
+      </p>
+      <button onclick="document.getElementById('loginModal').classList.add('open')" 
+        class="btn btn-gold" style="font-size:13px;padding:.5rem 1.5rem">
+        Sign In to Student Portal →
+      </button>
+    </div>
+
+    <div id="applyFormWrap" style="background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:2rem;border-top:4px solid var(--gold)">
       <form id="publicApplyForm">
         <div class="form-row">
           <div class="form-group">
@@ -108,7 +122,8 @@
           </div>
           <div class="form-group">
             <label>Registration Number</label>
-            <input type="text" id="pubReg" placeholder="e.g. SN/NSU/25/001" required>
+            <input type="text" id="pubReg" placeholder="e.g. SN/NSU/25/001" required
+              onblur="checkExistingStudent(this.value)">
           </div>
         </div>
         <div class="form-row">
@@ -118,6 +133,7 @@
               <option value="">Select Programme</option>
               <option value="BSc Nursing">BSc Nursing</option>
               <option value="BSc Nutrition">BSc Nutrition</option>
+              <option value="MBChB-COBES">MBChB-COBES</option>
             </select>
           </div>
           <div class="form-group">
@@ -126,6 +142,10 @@
               <option value="">Select Level</option>
               <option value="100">Level 100</option>
               <option value="200">Level 200</option>
+              <option value="300">Level 300</option>
+              <option value="400">Level 400</option>
+              <option value="500">Level 500</option>
+              <option value="600">Level 600</option>
             </select>
           </div>
         </div>
@@ -144,17 +164,27 @@
           </div>
         </div>
         <div class="form-group">
-          <label>Any special requests or notes (optional)</label>
-          <textarea id="pubNotes" rows="2" placeholder="e.g. medical needs, preferred block…"></textarea>
+          <label>Preferred Room (optional)</label>
+          <select id="pubRoom">
+            <option value="">No preference</option>
+          </select>
+          <p style="font-size:11px;color:var(--gray-400);margin-top:.3rem">
+            Room preferences are subject to availability and admin approval.
+          </p>
         </div>
-        <button type="submit" class="btn btn-primary btn-full" style="font-size:15px;padding:.8rem">
+        <div class="form-group">
+          <label>Any special requests or notes (optional)</label>
+          <textarea id="pubNotes" rows="2" placeholder="e.g. medical needs, disability requirements…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="pubSubmitBtn" style="font-size:15px;padding:.8rem">
           Submit Application
         </button>
       </form>
       <div id="publicApplyResult" style="display:none;text-align:center;padding:1.5rem">
         <div style="font-size:3rem">✅</div>
         <h3 style="color:var(--navy);margin:.5rem 0">Application Submitted!</h3>
-        <p style="color:var(--gray-600)">Your application has been received. The General Office will contact you with further instructions.</p>
+        <p style="color:var(--gray-600)">Your application has been received. The General Office will contact you shortly with further instructions.</p>
+        <p style="color:var(--gray-400);font-size:13px;margin-top:.5rem">Reference: <strong id="appRefNum"></strong></p>
       </div>
     </div>
   </div>
@@ -163,9 +193,10 @@
 <!-- ── Footer ──────────────────────────────────────────────────────────────── -->
 <footer class="landing-footer">
   <p>
-    &copy; 2025 <strong>University of Cape Coast</strong> · Nyakrom Campus ·
-    Centre for African and International Studies ·
-    All rights reserved.
+    &copy; 2025 <strong>University of Cape Coast</strong> · Nyakrom Campus · All rights reserved.
+  </p>
+  <p style="margin-top:.4rem;font-size:12px;color:rgba(255,255,255,.35)">
+    Developed by <strong style="color:var(--gold)">Mr Emmanuel Aidoo</strong> · Senior Assistant Registrar · UCC Nyakrom Campus
   </p>
 </footer>
 
