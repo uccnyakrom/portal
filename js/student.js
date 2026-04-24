@@ -53,11 +53,12 @@ function navigateTo(section) {
     s.classList.toggle("hidden", s.id !== `section-${section}`));
 
   const loaders = {
-    profile:    loadProfile,
-    room:       loadRoom,
-    apply:      loadApply,
-    notices:    loadNotices,
-    facilities: loadFacilities,
+    profile:     loadProfile,
+    room:        loadRoom,
+    apply:       loadApply,
+    notices:     loadNotices,
+    facilities:  loadFacilities,
+    maintenance: loadMyMaintenance,
   };
   if (loaders[section]) loaders[section]();
 }
@@ -363,3 +364,201 @@ document.addEventListener("DOMContentLoaded", () => {
 window._loadRealFacilities = () => {
   loadFacilitiesList("facilitiesContent");
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION: REPORT & TRACK MAINTENANCE ISSUES
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadMyMaintenance() {
+  const container = document.getElementById("maintenanceStudentSection");
+  if (!container) return;
+
+  // Load student's own reports
+  const { data: myReports } = await supabase
+    .from("maintenance_requests")
+    .select("*")
+    .eq("reported_by", STUDENT.full_name || STUDENT.name)
+    .order("created_at", { ascending: false });
+
+  const priorityColors = {
+    urgent: { bg: "#fee2e2", color: "#991b1b", icon: "🔴" },
+    high:   { bg: "#fef3c7", color: "#92400e", icon: "🟠" },
+    normal: { bg: "#dbeafe", color: "#1e40af", icon: "🔵" },
+    low:    { bg: "#d1fae5", color: "#065f46", icon: "🟢" },
+  };
+
+  const statusColors = {
+    open:        { bg: "#fee2e2", color: "#991b1b", label: "Open"        },
+    in_progress: { bg: "#fef3c7", color: "#92400e", label: "In Progress" },
+    resolved:    { bg: "#d1fae5", color: "#065f46", label: "Resolved"    },
+    closed:      { bg: "#f3f4f6", color: "#6b7280", label: "Closed"      },
+  };
+
+  const reports = myReports || [];
+
+  container.innerHTML = `
+    <!-- Report Form -->
+    <div class="maint-form-card">
+      <h3>🔧 Report a Room or Facility Issue</h3>
+      <p>Use this form to report any problems in your room or common areas. Your report will be reviewed by the accommodation office.</p>
+
+      <form id="studentMaintenanceForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Location / Area</label>
+            <input type="text" id="smLocation" placeholder="e.g. Block NE – Room A3, Common bathroom" required
+              value="${STUDENT.room ? `Block – Room ${STUDENT.room}` : ""}">
+          </div>
+          <div class="form-group">
+            <label>Block</label>
+            <select id="smBlock" required>
+              <option value="">Select block…</option>
+              <option value="NE">Block NE</option>
+              <option value="N">Block N</option>
+              <option value="NW">Block NW</option>
+              <option value="ADM">Block ADM</option>
+              <option value="S">Block S</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Room / Area Number</label>
+            <input type="text" id="smRoomNum" placeholder="e.g. A3, Library, Corridor"
+              value="${STUDENT.room || ""}">
+          </div>
+          <div class="form-group">
+            <label>Issue Category</label>
+            <select id="smCategory" required>
+              <option value="">Select category…</option>
+              <option value="electrical">⚡ Electrical</option>
+              <option value="plumbing">🚿 Plumbing</option>
+              <option value="furniture">🪑 Furniture</option>
+              <option value="cleaning">🧹 Cleaning</option>
+              <option value="structural">🏗️ Structural</option>
+              <option value="other">📌 Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="smPriority">
+              <option value="normal">🔵 Normal</option>
+              <option value="high">🟠 High</option>
+              <option value="urgent">🔴 Urgent</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <!-- spacer -->
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description of Issue</label>
+          <textarea id="smDescription" rows="4"
+            placeholder="Please describe the issue in detail. The more information you provide, the faster it can be resolved…"
+            required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">Submit Report</button>
+      </form>
+    </div>
+
+    <!-- My Reports -->
+    <div class="maint-history-card">
+      <h3>📋 My Reported Issues (${reports.length})</h3>
+      ${reports.length === 0
+        ? `<div class="empty-state">
+             <div class="empty-icon">✅</div>
+             <h3>No issues reported yet</h3>
+             <p>Use the form above to report any problems.</p>
+           </div>`
+        : reports.map(r => {
+            const p = priorityColors[r.priority] || priorityColors.normal;
+            const s = statusColors[r.status]   || statusColors.open;
+            return `
+            <div class="maint-report-card">
+              <div class="maint-report-header">
+                <div class="maint-report-title">
+                  <span class="maint-category-icon">${getCategoryIcon(r.category)}</span>
+                  <span>${r.category.charAt(0).toUpperCase() + r.category.slice(1)} Issue</span>
+                </div>
+                <div style="display:flex;gap:.4rem;align-items:center">
+                  <span class="maint-badge" style="background:${p.bg};color:${p.color}">
+                    ${p.icon} ${r.priority}
+                  </span>
+                  <span class="maint-badge" style="background:${s.bg};color:${s.color}">
+                    ${s.label}
+                  </span>
+                </div>
+              </div>
+              <div class="maint-report-location">📍 Block ${r.block} – ${r.room_number}</div>
+              <div class="maint-report-desc">${r.description}</div>
+              <div class="maint-report-footer">
+                Reported on ${new Date(r.created_at).toLocaleDateString("en-GB", {
+                  day: "numeric", month: "short", year: "numeric"
+                })}
+                ${r.assigned_to ? `· Assigned to: <strong>${r.assigned_to}</strong>` : ""}
+              </div>
+            </div>`;
+          }).join("")}
+    </div>`;
+
+  // Wire form submit
+  document.getElementById("studentMaintenanceForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Submitting…";
+
+    const block   = document.getElementById("smBlock").value;
+    const roomNum = document.getElementById("smRoomNum").value.trim() || STUDENT.room || "—";
+    const payload = {
+      location:     document.getElementById("smLocation").value.trim(),
+      block,
+      room_number:  roomNum,
+      category:     document.getElementById("smCategory").value,
+      priority:     document.getElementById("smPriority").value,
+      description:  document.getElementById("smDescription").value.trim(),
+      status:       "open",
+      reported_by:  STUDENT.full_name || STUDENT.name || "Student",
+      reporter_role:"student",
+    };
+
+    const { error } = await supabase.from("maintenance_requests").insert([payload]);
+    if (error) {
+      showToast("Failed to submit: " + error.message, "error");
+      btn.disabled = false; btn.textContent = "Submit Report";
+      return;
+    }
+
+    showToast("Issue reported successfully! The accommodation office will review it.", "success");
+    e.target.reset();
+    btn.disabled = false; btn.textContent = "Submit Report";
+    loadMyMaintenance(); // Refresh to show new report
+  });
+}
+
+function getCategoryIcon(cat) {
+  const icons = {
+    electrical: "⚡", plumbing: "🚿", furniture: "🪑",
+    cleaning: "🧹", structural: "🏗️", other: "📌"
+  };
+  return icons[cat] || "📌";
+}
+
+async function loadNoticeCount() {
+  const { count } = await supabase
+    .from("notices")
+    .select("*", { count: "exact", head: true })
+    .or("audience.eq.all,audience.eq." + (STUDENT.program || "").toLowerCase());
+  
+  const badge = document.getElementById("noticeBadge");
+  if (badge && count > 0) {
+    badge.textContent = count;
+    badge.style.display = "inline-block";
+  }
+}
