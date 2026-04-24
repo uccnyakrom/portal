@@ -1428,3 +1428,107 @@ tbody td { padding: .6rem 1rem; color: var(--gray-800); vertical-align: middle; 
   justify-content: space-between;
   align-items: center;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  STUDENT MAINTENANCE REPORTING                                               */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.maint-form-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-top: 4px solid var(--navy);
+}
+
+.maint-form-card h3 {
+  font-family: var(--font-display);
+  color: var(--navy);
+  font-size: 1.15rem;
+  margin-bottom: .4rem;
+}
+
+.maint-form-card p {
+  color: var(--gray-400);
+  font-size: 13px;
+  margin-bottom: 1.2rem;
+}
+
+.maint-history-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.8rem;
+}
+
+.maint-history-card h3 {
+  font-family: var(--font-display);
+  color: var(--navy);
+  font-size: 1.1rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: .6rem;
+  border-bottom: 2px solid var(--gold);
+}
+
+.maint-report-card {
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin-bottom: .9rem;
+  border-left: 4px solid var(--navy);
+  transition: box-shadow var(--transition);
+}
+
+.maint-report-card:hover { box-shadow: var(--shadow-md); }
+
+.maint-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .4rem;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.maint-report-title {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.maint-category-icon { font-size: 1rem; }
+
+.maint-badge {
+  display: inline-block;
+  padding: .15rem .55rem;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.maint-report-location {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-bottom: .4rem;
+}
+
+.maint-report-desc {
+  font-size: 13.5px;
+  color: var(--gray-600);
+  margin-bottom: .5rem;
+  line-height: 1.5;
+}
+
+.maint-report-footer {
+  font-size: 11px;
+  color: var(--gray-400);
+  border-top: 1px solid var(--gray-200);
+  padding-top: .4rem;
+  margin-top: .4rem;
+}
