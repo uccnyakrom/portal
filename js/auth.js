@@ -167,3 +167,121 @@ export function initLoginModal() {
 export async function hashPassword(plain) {
   return plain;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGE PASSWORD
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * initChangePasswordModal()
+ * Works for both admin and student dashboards.
+ * Students: verifies current password (auto-generated or custom),
+ *           then stores new password in users table.
+ * Admins:   same flow but compares against stored plain text password.
+ */
+export function initChangePasswordModal() {
+  const role    = getRole();
+  const session = getSession();
+
+  // Show auto-password hint for students
+  if (role === "student") {
+    const hint = document.getElementById("currentAutoPassword");
+    if (hint && session) {
+      hint.textContent = generateStudentPassword(session.reg_number, session.full_name || session.name || "");
+    }
+  }
+
+  // Open modal
+  window.openChangePasswordModal = () => {
+    document.getElementById("changePasswordModal")?.classList.add("open");
+  };
+
+  // Close modal
+  document.getElementById("changePwdModalClose")?.addEventListener("click", () => {
+    document.getElementById("changePasswordModal")?.classList.remove("open");
+    document.getElementById("changePasswordForm")?.reset();
+  });
+
+  // Form submit
+  document.getElementById("changePasswordForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn         = e.target.querySelector("button[type=submit]");
+    const currentPwd  = document.getElementById("currentPwd").value.trim();
+    const newPwd      = document.getElementById("newPwd").value.trim();
+    const confirmPwd  = document.getElementById("confirmPwd").value.trim();
+
+    // Validate
+    if (newPwd !== confirmPwd) {
+      showToast("New passwords do not match.", "error");
+      return;
+    }
+    if (newPwd.length < 6) {
+      showToast("New password must be at least 6 characters.", "error");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Updating…";
+
+    try {
+      // Determine username
+      const username = role === "student"
+        ? session.reg_number
+        : session.username;
+
+      // Verify current password
+      const { data: userRows, error: fetchErr } = await supabase
+        .from("users")
+        .select("id, password")
+        .eq("username", username)
+        .limit(1);
+
+      if (fetchErr || !userRows?.length) {
+        showToast("Could not verify your account.", "error");
+        return;
+      }
+
+      const storedPwd = userRows[0].password;
+
+      // For students: current password could be auto-generated OR a previously set custom password
+      let currentValid = false;
+      if (role === "student") {
+        const autoPwd = generateStudentPassword(session.reg_number, session.full_name || session.name || "");
+        currentValid  = currentPwd === storedPwd || currentPwd === autoPwd || storedPwd === "auto";
+      } else {
+        // Admin: plain text comparison
+        currentValid = currentPwd === storedPwd;
+      }
+
+      if (!currentValid) {
+        showToast("Current password is incorrect.", "error");
+        btn.disabled = false;
+        btn.textContent = "Update Password";
+        return;
+      }
+
+      // Update password in users table (plain text)
+      const { error: updateErr } = await supabase
+        .from("users")
+        .update({ password: newPwd })
+        .eq("username", username);
+
+      if (updateErr) {
+        showToast("Error updating password: " + updateErr.message, "error");
+        return;
+      }
+
+      await logAudit(`Password changed for: ${username}`, username);
+      showToast("Password updated successfully! Use your new password next time you log in.", "success");
+      document.getElementById("changePasswordModal")?.classList.remove("open");
+      document.getElementById("changePasswordForm")?.reset();
+
+    } catch (err) {
+      console.error("changePassword error:", err);
+      showToast("Something went wrong. Please try again.", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Update Password";
+    }
+  });
+}
