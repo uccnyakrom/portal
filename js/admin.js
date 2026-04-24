@@ -918,3 +918,180 @@ document.querySelectorAll(".nav-link").forEach(link => {
     });
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION: PUBLIC APPLICATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadPublicApps() {
+  const { data, error } = await supabase
+    .from("public_applications")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const tbody  = document.getElementById("publicAppsBody");
+  const footer = document.getElementById("publicAppsFooter");
+  if (!tbody) return;
+
+  const list = data || [];
+  if (footer) footer.textContent = `${list.length} application${list.length !== 1 ? "s" : ""}`;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10">
+      <div class="table-empty"><div class="table-empty-icon">📩</div>
+      <h4>No public applications yet</h4></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(a => `
+    <tr>
+      <td><strong>${a.full_name}</strong></td>
+      <td>${a.reg_number}</td>
+      <td>${a.program}</td>
+      <td>Level ${a.level}</td>
+      <td>${a.sex === "M" ? "♂ Male" : "♀ Female"}</td>
+      <td>${a.phone || "—"}</td>
+      <td>${a.preferred_room || "No preference"}</td>
+      <td><span class="badge badge-${a.status}">${a.status}</span></td>
+      <td>${new Date(a.created_at).toLocaleDateString()}</td>
+      <td>
+        <div class="table-actions">
+          ${a.status === "pending" ? `
+            <button class="btn-sm btn-success" onclick="enrollPublicApplicant('${a.id}','${escHtml(a.full_name)}','${a.reg_number}','${a.program}',${a.level},'${a.sex}')">✓ Enrol</button>
+            <button class="btn-sm btn-danger"  onclick="rejectPublicApp('${a.id}')">✕ Reject</button>
+          ` : "—"}
+        </div>
+      </td>
+    </tr>`).join("");
+}
+
+window.enrollPublicApplicant = async (appId, name, regNumber, program, level, sex) => {
+  if (!confirm(`Enrol ${name} (${regNumber}) as a student?`)) return;
+
+  // 1. Add to students table
+  const { error: sErr } = await supabase.from("students").insert([{
+    full_name: name, reg_number: regNumber,
+    program, level, sex, created_at: new Date().toISOString()
+  }]);
+  if (sErr) { showToast("Error adding student: " + sErr.message, "error"); return; }
+
+  // 2. Add to users table
+  await supabase.from("users").insert([{
+    username: regNumber, password: "auto", role: "student"
+  }]);
+
+  // 3. Update application status
+  await supabase.from("public_applications").update({ status: "enrolled" }).eq("id", appId);
+
+  await logAudit(`Enrolled public applicant: ${regNumber}`, ADMIN?.username);
+  showToast(`${name} enrolled successfully!`, "success");
+  loadPublicApps();
+};
+
+window.rejectPublicApp = async (appId) => {
+  if (!confirm("Reject this application?")) return;
+  await supabase.from("public_applications").update({ status: "rejected" }).eq("id", appId);
+  await logAudit(`Rejected public application: ${appId}`, ADMIN?.username);
+  showToast("Application rejected.", "info");
+  loadPublicApps();
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION: MANAGE ROOMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadManageRooms() {
+  const block = document.getElementById("filterRoomBlock")?.value || "";
+  let query = supabase.from("rooms").select("*").order("block").order("room_number");
+  if (block) query = query.eq("block", block);
+
+  const { data, error } = await query;
+  const tbody  = document.getElementById("manageRoomsBody");
+  const footer = document.getElementById("manageRoomsFooter");
+  if (!tbody) return;
+
+  const list = data || [];
+  if (footer) footer.textContent = `${list.length} room${list.length !== 1 ? "s" : ""}`;
+
+  const typeColors = {
+    vacant: "#22c55e", partial: "#f59e0b", full: "#ef4444",
+    staff: "#3b82f6", NSP: "#a855f7", suite: "#6366f1"
+  };
+
+  tbody.innerHTML = list.map(r => `
+    <tr>
+      <td><strong>Block ${r.block}</strong></td>
+      <td>${r.room_number}</td>
+      <td>${r.capacity}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <div style="flex:1;height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden">
+            <div style="width:${r.capacity>0?Math.round(r.occupancy_count/r.capacity*100):0}%;height:100%;background:${typeColors[r.type]||'#9ca3af'}"></div>
+          </div>
+          ${r.occupancy_count}/${r.capacity}
+        </div>
+      </td>
+      <td><span class="badge" style="background:${typeColors[r.type]||'#9ca3af'}20;color:${typeColors[r.type]||'#9ca3af'}">${r.type}</span></td>
+      <td>
+        <div class="table-actions">
+          <button class="btn-sm btn-warning" onclick="openEditRoomModal('${r.id}','${r.block}','${r.room_number}',${r.capacity},'${r.type}')">✏️</button>
+          <button class="btn-sm btn-danger"  onclick="deleteRoom('${r.id}','${r.block}','${r.room_number}')">🗑</button>
+        </div>
+      </td>
+    </tr>`).join("");
+}
+
+// Add room form
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("addRoomForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const block    = document.getElementById("newRoomBlock").value;
+    const roomNum  = document.getElementById("newRoomNumber").value.trim();
+    const capacity = parseInt(document.getElementById("newRoomCapacity").value);
+    const type     = document.getElementById("newRoomType").value;
+
+    const { error } = await supabase.from("rooms").insert([{
+      block, room_number: roomNum, capacity, occupancy_count: 0, type
+    }]);
+
+    if (error) { showToast("Error: " + error.message, "error"); return; }
+    await logAudit(`Added room: Block ${block} ${roomNum}`, ADMIN?.username);
+    showToast(`Room ${block}-${roomNum} added!`, "success");
+    e.target.reset();
+    loadManageRooms();
+  });
+
+  document.getElementById("filterRoomBlock")?.addEventListener("change", loadManageRooms);
+});
+
+window.deleteRoom = async (roomId, block, roomNum) => {
+  if (!confirm(`Delete Room ${block}-${roomNum}? This cannot be undone.`)) return;
+  const { error } = await supabase.from("rooms").delete().eq("id", roomId);
+  if (error) { showToast("Error: " + error.message, "error"); return; }
+  await logAudit(`Deleted room: ${block}-${roomNum}`, ADMIN?.username);
+  showToast("Room deleted.", "success");
+  loadManageRooms();
+};
+
+window.openEditRoomModal = (id, block, roomNum, capacity, type) => {
+  document.getElementById("editRoomId").value       = id;
+  document.getElementById("editRoomBlock").value    = block;
+  document.getElementById("editRoomNumber").value   = roomNum;
+  document.getElementById("editRoomCapacity").value = capacity;
+  document.getElementById("editRoomType").value     = type;
+  document.getElementById("editRoomModal").classList.add("open");
+};
+
+// Register new loaders in navigateTo
+document.querySelectorAll(".nav-link").forEach(link => {
+  if (["publicapps","managerooms"].includes(link.dataset.section)) {
+    link.addEventListener("click", e => {
+      e.preventDefault();
+      document.querySelectorAll(".nav-link").forEach(l => l.classList.toggle("active", l === link));
+      document.querySelectorAll(".dash-section").forEach(s =>
+        s.classList.toggle("hidden", s.id !== `section-${link.dataset.section}`));
+      if (link.dataset.section === "publicapps")  loadPublicApps();
+      if (link.dataset.section === "managerooms") loadManageRooms();
+    });
+  }
+});
