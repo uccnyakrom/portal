@@ -114,35 +114,42 @@ function setupRealtimeSubscriptions() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function loadOverview() {
-  const [studentsRes, roomsRes, appsRes] = await Promise.all([
-    supabase.from("students").select("id, program, level, sex, room"),
+  // Fetch all data in parallel
+  const [roomsRes, appsRes, studentsRes, housedRes, totalRes] = await Promise.all([
     supabase.from("rooms").select("*"),
-    supabase.from("applications").select("id, status")
+    supabase.from("applications").select("id, status"),
+    supabase.from("students").select("id, program, level, sex"),
+    // Count students WITH room_id (housed)
+    supabase.from("students").select("id", { count: "exact", head: true }).not("room_id", "is", null),
+    // Count ALL students
+    supabase.from("students").select("id", { count: "exact", head: true })
   ]);
 
-  const students = studentsRes.data || [];
   const rooms    = roomsRes.data    || [];
   const apps     = appsRes.data     || [];
+  const students = studentsRes.data || [];
 
-  const totalStudents  = students.length;
-  const residents      = students.filter(s => "-" === "resident").length;
-  const housed         = students.filter(s => s.room).length;
-  const unhoused       = residents - housed;
-  const totalBeds      = rooms.reduce((a, r) => a + r.capacity, 0);
-  const occupiedBeds   = rooms.reduce((a, r) => a + r.occupancy_count, 0);
-  const availableBeds  = totalBeds - occupiedBeds;
-  const vacantRooms    = rooms.filter(r => r.type === "vacant").length;
-  const pendingApps    = apps.filter(a => a.status === "pending").length;
+  const totalStudents = totalRes.count  || 0;
+  const housed        = housedRes.count || 0;
+  const unhoused      = totalStudents - housed;
+
+  const totalBeds    = rooms.reduce((a, r) => a + r.capacity, 0);
+  const occupiedBeds = rooms.reduce((a, r) => a + r.occupancy_count, 0);
+  const availableBeds = totalBeds - occupiedBeds;
+  const vacantRooms  = rooms.filter(r => r.type === "vacant").length;
+  const partialRooms = rooms.filter(r => r.type === "partial").length;
+  const pendingApps  = apps.filter(a => a.status === "pending").length;
+  const occRate      = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
   // Stat cards
   setCard("statTotal",     totalStudents);
-  setCard("statResidents", residents);
+  setCard("statResidents", housed);
   setCard("statHoused",    housed);
   setCard("statUnhoused",  unhoused);
   setCard("statBeds",      availableBeds);
-  setCard("statVacant",    vacantRooms);
+  setCard("statVacant",    vacantRooms + partialRooms);
   setCard("statPending",   pendingApps);
-  setCard("statOccRate",   totalBeds > 0 ? Math.round((occupiedBeds/totalBeds)*100)+"%" : "—");
+  setCard("statOccRate",   occRate + "%");
 
   // Charts
   drawBlockChart(rooms);
