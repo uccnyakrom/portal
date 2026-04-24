@@ -10,6 +10,7 @@
  */
 
 import { supabase, showToast, logAudit } from "./supabaseClient.js";
+import { getPermissions, filterSidebarByRole, getRoleBadgeHTML } from "./roles.js";
 import {
   loadStudents, initAddStudentModal, initEditStudentModal,
   initAssignRoomModal, bulkEnrolAll
@@ -36,6 +37,34 @@ const ADMIN = getSession();
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("adminName").textContent = ADMIN.username || "Admin";
   document.getElementById("logoutBtn").addEventListener("click", logout);
+
+  // Apply role-based access control
+  const userRole = ADMIN.role || "readonly";
+  const perms = getPermissions(userRole);
+
+  // Show role badge in sidebar
+  const roleEl = document.getElementById("adminRoleBadge");
+  if (roleEl) roleEl.innerHTML = getRoleBadgeHTML(userRole);
+
+  // Filter sidebar based on role
+  filterSidebarByRole(userRole);
+
+  // Hide enrolment controls for accommodation officers
+  if (!["admin","superadmin"].includes(userRole)) {
+    // Hide Bulk Enrol button
+    const bulkBtn = document.getElementById("bulkEnrolBtn");
+    if (bulkBtn) bulkBtn.style.display = "none";
+
+    // Override enrolStudent to block it
+    window._canEnrol = false;
+  } else {
+    window._canEnrol = true;
+  }
+
+  // Redirect superadmin and readonly to overview only
+  if (["superadmin","readonly"].includes(userRole)) {
+    document.querySelectorAll(".nav-link").forEach(l => l.style.display = "none");
+  }
   initAddStudentModal();
   initEditStudentModal();
   initAssignRoomModal();
@@ -443,7 +472,7 @@ async function loadUserManagement() {
     tbody.innerHTML = (users || []).map(u => `
       <tr>
         <td>${u.username}</td>
-        <td><span class="badge badge-${u.role}">${u.role}</span></td>
+        <td>${getRoleBadgeHTML(u.role)}</td>
         <td>
           ${u.id !== ADMIN.id ? `<button class="btn-sm btn-danger" onclick="deleteUser('${u.id}','${escHtml(u.username)}')">Delete</button>` : "—"}
         </td>
@@ -463,14 +492,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Create admin user
   document.getElementById("createAdminForm")?.addEventListener("submit", async e => {
     e.preventDefault();
-    const username = document.getElementById("newAdminUser").value;
-    const password = document.getElementById("newAdminPass").value;
-    const hashed   = await hashPassword(password);
+    const username = document.getElementById("newAdminUser").value.trim();
+    const password = document.getElementById("newAdminPass").value.trim();
+    const role     = document.getElementById("newAdminRole")?.value || "admin";
 
-    const { error } = await supabase.from("users").insert([{ username, password: hashed, role: "admin" }]);
+    const { error } = await supabase.from("users").insert([{ username, password, role }]);
     if (error) { showToast("Error: " + error.message, "error"); return; }
-    await logAudit(`Created admin user: ${username}`, ADMIN.username);
-    showToast("Admin user created.", "success");
+    await logAudit(`Created user: ${username} (${role})`, ADMIN.username);
+    showToast(`User "${username}" created as ${role}.`, "success");
     e.target.reset();
     loadUserManagement();
   });

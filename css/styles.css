@@ -1532,3 +1532,202 @@ tbody td { padding: .6rem 1rem; color: var(--gray-800); vertical-align: middle; 
   padding-top: .4rem;
   margin-top: .4rem;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  STUDENT MAINTENANCE REPORTING                                               */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.maint-form-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-top: 4px solid var(--gold);
+  max-width: 680px;
+}
+
+.maint-form-card h3 {
+  font-family: var(--font-display);
+  color: var(--navy);
+  font-size: 1.15rem;
+  margin-bottom: .4rem;
+}
+
+.maint-form-card p {
+  color: var(--gray-400);
+  font-size: 13px;
+  margin-bottom: 1.2rem;
+}
+
+.maint-reports-card {
+  max-width: 680px;
+}
+
+.maint-reports-card h3 {
+  font-family: var(--font-display);
+  color: var(--navy);
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.maint-report-item {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+  margin-bottom: .8rem;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--gold);
+}
+
+.maint-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .5rem;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.maint-report-location {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.maint-report-cat {
+  font-size: 12px;
+  color: var(--gray-600);
+  margin-bottom: .3rem;
+}
+
+.maint-report-desc {
+  font-size: 13.5px;
+  color: var(--gray-800);
+  line-height: 1.5;
+  margin-bottom: .4rem;
+}
+
+.maint-report-date {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+.maint-resolved-note {
+  margin-top: .5rem;
+  font-size: 12px;
+  color: #065f46;
+  background: #d1fae5;
+  padding: .4rem .7rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.mini-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  STUDENT MAINTENANCE REPORTING                                               */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.report-issue-box {
+  margin-top: 1.8rem;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.5rem;
+  color: var(--white);
+}
+
+.report-issue-box h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin-bottom: .3rem;
+  color: var(--white);
+}
+
+.report-issue-box p {
+  font-size: 13px;
+  color: rgba(255,255,255,.7);
+  margin-bottom: .9rem;
+}
+
+.report-issue-box .btn {
+  background: var(--gold);
+  color: var(--navy-dark);
+  font-weight: 700;
+  padding: .5rem 1.3rem;
+  font-size: 13px;
+}
+
+.report-issue-box .btn:hover {
+  background: var(--gold-light);
+}
+
+/* ── My Reports List ─────────────────────────────────────────────────────── */
+.my-reports-box {
+  margin-top: 1.5rem;
+}
+
+.my-reports-box h3 {
+  font-family: var(--font-display);
+  color: var(--navy);
+  font-size: 1rem;
+  margin-bottom: .8rem;
+}
+
+.my-report-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: .9rem 1.1rem;
+  margin-bottom: .7rem;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--gold);
+}
+
+.my-report-header {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .4rem;
+  flex-wrap: wrap;
+}
+
+.my-report-category {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.my-report-priority {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.my-report-status {
+  font-size: 10px;
+  font-weight: 700;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+  margin-left: auto;
+}
+
+.my-report-desc {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin-bottom: .4rem;
+  line-height: 1.5;
+}
+
+.my-report-meta {
+  font-size: 11px;
+  color: var(--gray-400);
+}

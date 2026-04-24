@@ -98,7 +98,7 @@ function renderStudentTable(students) {
         <div class="table-actions">
           <button class="btn-sm btn-primary"   onclick="openEditStudentModal('${s.id}')">✏️ Edit</button>
           <button class="btn-sm btn-secondary" onclick="openAssignRoomModal('${s.id}','${escHtml(name)}')">🏠 Room</button>
-          <button class="btn-sm btn-gold"      onclick="enrolStudent('${s.id}','${s.reg_number}','${escHtml(name)}')">🔑 Enrol</button>
+          ${window._canEnrol !== false ? `<button class="btn-sm btn-gold" onclick="enrolStudent('${s.id}','${s.reg_number}','${escHtml(name)}')">🔑 Enrol</button>` : ""}
           <button class="btn-sm btn-danger"    onclick="deleteStudent('${s.id}','${escHtml(name)}')">🗑</button>
         </div>
       </td>
@@ -287,6 +287,11 @@ window.deleteStudent = async (studentId, name) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 window.enrolStudent = async (studentId, regNumber, name) => {
+  // Check enrolment permission
+  if (window._canEnrol === false) {
+    showToast("You do not have permission to enrol students. Please contact the Administrator.", "error");
+    return;
+  }
   // Check if already enrolled
   const { data: existing } = await supabase
     .from("users").select("id").eq("username", regNumber).limit(1);

@@ -10,12 +10,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
-<meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-<meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
+  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -37,7 +36,8 @@
 
     <div class="sidebar-user">
       Logged in as<br>
-      <strong id="adminName">Admin</strong>
+      <strong id="adminName">Admin</strong><br>
+      <span id="adminRoleBadge" style="margin-top:.3rem;display:inline-block"></span>
     </div>
 
     <nav class="sidebar-nav">
@@ -156,7 +156,7 @@
             <span class="table-card-title">🎓 All Students</span>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
               <button class="btn btn-gold" id="openAddStudentBtn" style="background:var(--gold);color:#fff;padding:.5rem 1rem;font-size:13px">+ Add Student</button>
-              <button class="btn btn-secondary" onclick="bulkEnrolAll()" style="padding:.5rem 1rem;font-size:13px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🔑 Bulk Enrol All</button>
+              <button class="btn btn-secondary" onclick="bulkEnrolAll()" id="bulkEnrolBtn" style="padding:.5rem 1rem;font-size:13px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🔑 Bulk Enrol All</button>
             </div>
           </div>
           <div class="table-filter-bar">
@@ -476,7 +476,18 @@
                 <label>Password</label>
                 <input type="password" id="newAdminPass" placeholder="Strong password" required>
               </div>
-              <button type="submit" class="btn btn-primary">Create Admin</button>
+              <div class="form-group">
+                <label>Role / Access Level</label>
+                <select id="newAdminRole" required>
+                  <option value="admin">Administrator (Full Access)</option>
+                  <option value="accommodation">Accommodation Officer</option>
+                  <option value="facilities">Facilities Officer</option>
+                  <option value="monitor">Hall Monitor</option>
+                  <option value="readonly">Read-Only Staff</option>
+                  <option value="superadmin">Super Admin (View Only)</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary">Create User</button>
             </form>
           </div>
 
@@ -506,7 +517,7 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Username</th><th>Role</th><th>Actions</th></tr>
+                <tr><th>Username</th><th>Role / Access Level</th><th>Actions</th></tr>
               </thead>
               <tbody id="usersTableBody">
                 <tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
