@@ -1,33 +1,24 @@
 /**
  * rooms.js
- * ─────────────────────────────────────────────────────────────────────────────
  * PLACE THIS FILE AT: /js/rooms.js
- *
- * Shared room-related helpers:
- *   • Fetch all rooms (with optional block filter)
- *   • Assign a student to a room
- *   • Remove a student from a room
- *   • Render the colour-coded room grid
- * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import { supabase, showToast, logAudit } from "./supabaseClient.js";
 
 // ── Room type colour map ──────────────────────────────────────────────────────
 export const ROOM_COLORS = {
-  vacant:  { bg: "#22c55e", label: "Vacant"  },
-  partial: { bg: "#f59e0b", label: "Partial" },
-  full:    { bg: "#ef4444", label: "Full"    },
-  staff:   { bg: "#3b82f6", label: "Staff"   },
-  NSP:     { bg: "#a855f7", label: "NSP"     },
-  suite:   { bg: "#6366f1", label: "Suite"   },
+  vacant:  { bg: "#22c55e", label: "Vacant"      },
+  partial: { bg: "#f59e0b", label: "Partial"     },
+  full:    { bg: "#ef4444", label: "Full"         },
+  staff:   { bg: "#3b82f6", label: "Full (Staff)" },
+  NSP:     { bg: "#a855f7", label: "Full (NSP)"   },
+  suite:   { bg: "#6366f1", label: "Suite"        },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA FETCHING
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Fetch all rooms, optionally filtered by block */
 export async function fetchRooms(block = null) {
   let query = supabase.from("rooms").select("*").order("block").order("room_number");
   if (block) query = query.eq("block", block);
@@ -36,7 +27,6 @@ export async function fetchRooms(block = null) {
   return data || [];
 }
 
-/** Fetch available (not full, not staff, not NSP) rooms */
 export async function fetchAvailableRooms() {
   const { data, error } = await supabase
     .from("rooms")
@@ -48,11 +38,10 @@ export async function fetchAvailableRooms() {
   return data || [];
 }
 
-/** Get a single room by ID, including its current occupants */
 export async function fetchRoomWithOccupants(roomId) {
   const [roomRes, occupantsRes] = await Promise.all([
     supabase.from("rooms").select("*").eq("id", roomId).single(),
-    supabase.from("students").select("id, name, reg_number, program, level, sex").eq("room", roomId)
+    supabase.from("students").select("id, full_name, reg_number, program, level, sex").eq("room_id", roomId)
   ]);
   return {
     room:      roomRes.data,
@@ -64,74 +53,71 @@ export async function fetchRoomWithOccupants(roomId) {
 // ROOM ASSIGNMENT
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * assignRoom(studentId, roomId, actorName)
- * Assigns a student to a room and updates the room's occupancy_count & type.
- */
 export async function assignRoom(studentId, roomId, actorName = "admin") {
-  // 1. Get the room
   const { data: room, error: rErr } = await supabase
     .from("rooms").select("*").eq("id", roomId).single();
   if (rErr || !room) return { success: false, error: "Room not found." };
 
-  // 2. Check capacity
   if (room.occupancy_count >= room.capacity) {
     return { success: false, error: "Room is already at full capacity." };
   }
 
-  // 3. Get student's current room (if any) to decrement that room's count
   const { data: student } = await supabase
-    .from("students").select("room, full_name, reg_number").eq("id", studentId).single();
+    .from("students").select("room_id, full_name, reg_number").eq("id", studentId).single();
 
-  if (student?.room) {
-    await decrementRoom(student.room);
+  if (student?.room_id) {
+    await decrementRoom(student.room_id);
   }
 
-  // 4. Update student record
   const { error: sErr } = await supabase
     .from("students")
-    .update({ room: roomId })
+    .update({ room_id: roomId })
     .eq("id", studentId);
   if (sErr) return { success: false, error: sErr.message };
 
-  // 5. Update room occupancy
   const newCount = room.occupancy_count + 1;
   const newType  = determineRoomType(room, newCount);
-  const { error: uErr } = await supabase
-    .from("rooms")
+  await supabase.from("rooms")
     .update({ occupancy_count: newCount, type: newType })
     .eq("id", roomId);
-  if (uErr) return { success: false, error: uErr.message };
 
-  // 6. Log it
   await logAudit(
     `Assigned student ${student?.reg_number} to room ${room.block}-${room.room_number}`,
     actorName
   );
-
   return { success: true };
 }
 
-/**
- * removeRoomAssignment(studentId, actorName)
- * Removes a student's room assignment and decrements the old room.
- */
 export async function removeRoomAssignment(studentId, actorName = "admin") {
   const { data: student } = await supabase
-    .from("students").select("room, reg_number").eq("id", studentId).single();
+    .from("students").select("room_id, reg_number").eq("id", studentId).single();
 
-  if (!student?.room) return { success: false, error: "Student has no room assigned." };
+  if (!student?.room_id) return { success: false, error: "Student has no room assigned." };
 
-  await decrementRoom(student.room);
+  await decrementRoom(student.room_id);
 
   const { error } = await supabase
-    .from("students")
-    .update({ room: null })
-    .eq("id", studentId);
+    .from("students").update({ room_id: null }).eq("id", studentId);
 
   if (error) return { success: false, error: error.message };
 
   await logAudit(`Removed room from student ${student.reg_number}`, actorName);
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGE ROOM TYPE (admin only)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function changeRoomType(roomId, newType, actorName = "admin") {
+  const { error } = await supabase
+    .from("rooms")
+    .update({ type: newType })
+    .eq("id", roomId);
+
+  if (error) return { success: false, error: error.message };
+
+  await logAudit(`Changed room ${roomId} type to ${newType}`, actorName);
   return { success: true };
 }
 
@@ -143,7 +129,6 @@ async function decrementRoom(roomId) {
   const { data: room } = await supabase
     .from("rooms").select("*").eq("id", roomId).single();
   if (!room) return;
-
   const newCount = Math.max(0, room.occupancy_count - 1);
   const newType  = determineRoomType(room, newCount);
   await supabase.from("rooms")
@@ -152,7 +137,6 @@ async function decrementRoom(roomId) {
 }
 
 function determineRoomType(room, count) {
-  // Preserve staff/NSP/suite types
   if (["staff", "NSP", "suite"].includes(room.type)) return room.type;
   if (count === 0)            return "vacant";
   if (count >= room.capacity) return "full";
@@ -163,11 +147,6 @@ function determineRoomType(room, count) {
 // ROOM GRID RENDERER
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * renderRoomGrid(containerId, rooms, onClickCallback)
- * Renders a colour-coded grid of room cards into the given container element.
- * onClickCallback(room) is called when a card is clicked.
- */
 export function renderRoomGrid(containerId, rooms, onClickCallback = null) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -180,6 +159,29 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null) {
   });
 
   container.innerHTML = "";
+
+  // Summary counts
+  const total   = rooms.length;
+  const vacant  = rooms.filter(r => r.type === "vacant").length;
+  const partial = rooms.filter(r => r.type === "partial").length;
+  const full    = rooms.filter(r => r.type === "full").length;
+  const staff   = rooms.filter(r => r.type === "staff").length;
+  const nsp     = rooms.filter(r => r.type === "NSP").length;
+  const suite   = rooms.filter(r => r.type === "suite").length;
+
+  // Summary strip
+  const summary = document.createElement("div");
+  summary.className = "room-summary-strip";
+  summary.innerHTML = `
+    <div class="room-sum-item"><span style="color:#22c55e">●</span> Vacant: <strong>${vacant}</strong></div>
+    <div class="room-sum-item"><span style="color:#f59e0b">●</span> Partial: <strong>${partial}</strong></div>
+    <div class="room-sum-item"><span style="color:#ef4444">●</span> Full: <strong>${full}</strong></div>
+    <div class="room-sum-item"><span style="color:#3b82f6">●</span> Staff: <strong>${staff}</strong></div>
+    <div class="room-sum-item"><span style="color:#a855f7">●</span> NSP: <strong>${nsp}</strong></div>
+    <div class="room-sum-item"><span style="color:#6366f1">●</span> Suite: <strong>${suite}</strong></div>
+    <div class="room-sum-item">Total: <strong>${total}</strong></div>
+  `;
+  container.appendChild(summary);
 
   // Legend
   const legend = document.createElement("div");
@@ -209,7 +211,6 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null) {
 
       const card = document.createElement("div");
       card.className = "room-card";
-      card.style.setProperty("--room-color", color.bg);
       card.innerHTML = `
         <div class="room-card-header" style="background:${color.bg}">
           ${room.room_number}
@@ -220,13 +221,43 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null) {
           <div class="room-bar-wrap">
             <div class="room-bar" style="width:${pct}%; background:${color.bg}"></div>
           </div>
+          <div class="room-type-change">
+            <select class="room-type-select" data-room-id="${room.id}" data-block="${room.block}" data-num="${room.room_number}" title="Change room type">
+              <option value="vacant"  ${room.type==="vacant" ?"selected":""}>Student (Vacant)</option>
+              <option value="partial" ${room.type==="partial"?"selected":""}>Student (Partial)</option>
+              <option value="full"    ${room.type==="full"   ?"selected":""}>Student (Full)</option>
+              <option value="staff"   ${room.type==="staff"  ?"selected":""}>Staff</option>
+              <option value="NSP"     ${room.type==="NSP"    ?"selected":""}>NSP</option>
+              <option value="suite"   ${room.type==="suite"  ?"selected":""}>Suite</option>
+            </select>
+          </div>
         </div>
       `;
 
       if (onClickCallback) {
         card.classList.add("clickable");
-        card.addEventListener("click", () => onClickCallback(room));
+        card.querySelector(".room-card-header").addEventListener("click", () => onClickCallback(room));
       }
+
+      // Wire type change dropdown
+      card.querySelector(".room-type-select").addEventListener("change", async (e) => {
+        e.stopPropagation();
+        const newType  = e.target.value;
+        const roomId   = e.target.dataset.roomId;
+        const label    = `${e.target.dataset.block}-${e.target.dataset.num}`;
+        const result   = await changeRoomType(roomId, newType);
+        if (result.success) {
+          showToast(`${label} changed to ${ROOM_COLORS[newType]?.label || newType}`, "success");
+          // Update card header color immediately
+          const header = card.querySelector(".room-card-header");
+          const typeLabel = card.querySelector(".room-type-label");
+          header.style.background = ROOM_COLORS[newType]?.bg || "#9ca3af";
+          typeLabel.textContent   = ROOM_COLORS[newType]?.label || newType;
+        } else {
+          showToast("Failed to update: " + result.error, "error");
+          e.target.value = room.type; // revert
+        }
+      });
 
       grid.appendChild(card);
     });
