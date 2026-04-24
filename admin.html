@@ -13,8 +13,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -138,33 +138,52 @@
       <!-- ── ALL STUDENTS ───────────────────────────────────────────────────── -->
       <section id="section-students" class="dash-section hidden">
         <div class="table-card">
-          <div class="table-card-header">
-            <span class="table-card-title">All Students</span>
+          <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="table-card-title">🎓 All Students</span>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
-              <button class="btn btn-primary" id="openAddStudentBtn">+ Add Student</button>
-              <button class="btn btn-gold" onclick="bulkEnrolAll()">🔑 Bulk Enrol All</button>
+              <button class="btn btn-gold" id="openAddStudentBtn" style="background:var(--gold);color:#fff;padding:.5rem 1rem;font-size:13px">+ Add Student</button>
+              <button class="btn btn-secondary" onclick="bulkEnrolAll()" style="padding:.5rem 1rem;font-size:13px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🔑 Bulk Enrol All</button>
             </div>
           </div>
-          <div class="table-card-header" style="border-top:1px solid var(--gray-100)">
-            <div class="table-filters">
-              <input  id="filterSearch"  type="text"   placeholder="Search name / reg…">
-              <select id="filterProgram"><option value="">All Programmes</option><option value="BSc Nursing">BSc Nursing</option><option value="BSc Nutrition">BSc Nutrition</option></select>
-              <select id="filterLevel">  <option value="">All Levels</option><option value="100">Level 100</option><option value="200">Level 200</option></select>
-              <select id="filterSex">    <option value="">All Sexes</option><option value="M">Male</option><option value="F">Female</option></select>
-            </div>
+          <div class="table-filter-bar">
+            <input  id="filterSearch"  type="text" placeholder="🔍 Search name or reg number…" style="min-width:220px">
+            <select id="filterProgram">
+              <option value="">All Programmes</option>
+              <option value="BSc Nursing">BSc Nursing</option>
+              <option value="BSc Nutrition">BSc Nutrition</option>
+            </select>
+            <select id="filterLevel">
+              <option value="">All Levels</option>
+              <option value="100">Level 100</option>
+              <option value="200">Level 200</option>
+            </select>
+            <select id="filterSex">
+              <option value="">All Sexes</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
           </div>
           <div class="table-wrap">
-            <table>
+            <table class="beautiful-table">
               <thead>
                 <tr>
-                  <th>Name</th><th>Reg. Number</th><th>Programme</th>
-                  <th>Level</th><th>Sex</th><th>Room (text)</th><th>Room (assigned)</th><th>Enrolled</th><th>Actions</th>
+                  <th>Student</th>
+                  <th>Programme</th>
+                  <th>Level</th>
+                  <th>Sex</th>
+                  <th>Room</th>
+                  <th>Portal Access</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="studentTableBody">
-                <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading students…</td></tr>
               </tbody>
             </table>
+          </div>
+          <div class="table-footer">
+            <span id="studentTableFooter">Loading…</span>
+            <span style="color:var(--navy);font-weight:600">UCC Nyakrom Campus</span>
           </div>
         </div>
       </section>
@@ -183,18 +202,30 @@
       <!-- ── ALLOCATIONS ────────────────────────────────────────────────────── -->
       <section id="section-allocations" class="dash-section hidden">
         <div class="table-card">
-          <div class="table-card-header">
-            <span class="table-card-title">Room Allocations</span>
+          <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="table-card-title">🔑 Room Allocations</span>
+            <span style="font-size:12px;color:rgba(255,255,255,.6)" id="allocCount">Loading…</span>
           </div>
           <div class="table-wrap">
-            <table>
+            <table class="beautiful-table">
               <thead>
-                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Level</th><th>Room</th><th>Actions</th></tr>
+                <tr>
+                  <th>Student</th>
+                  <th>Programme</th>
+                  <th>Level</th>
+                  <th>Sex</th>
+                  <th>Assigned Room</th>
+                  <th>Actions</th>
+                </tr>
               </thead>
               <tbody id="allocTableBody">
-                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading allocations…</td></tr>
               </tbody>
             </table>
+          </div>
+          <div class="table-footer">
+            <span id="allocTableFooter">Loading…</span>
+            <span style="color:var(--navy);font-weight:600">UCC Nyakrom Campus</span>
           </div>
         </div>
       </section>
