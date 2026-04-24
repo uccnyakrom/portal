@@ -23,6 +23,7 @@ const STUDENT = getSession();
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("studentWelcome").textContent = `Welcome, ${STUDENT.full_name.split(" ")[0]}!`;
   document.getElementById("logoutBtn").addEventListener("click", logout);
+  initReportModal();
 
   document.querySelectorAll(".nav-link").forEach(link => {
     link.addEventListener("click", e => {
@@ -96,61 +97,193 @@ async function loadRoom() {
   const panel = document.getElementById("roomPanel");
   if (!panel) return;
 
-  if (!STUDENT.room) {
+  panel.innerHTML = `<p style="color:var(--gray-400);padding:1rem">Loading room details…</p>`;
+
+  try {
+    // Fetch fresh student data with room join
+    const { data: s, error } = await supabase
+      .from("students")
+      .select("id, full_name, room, room_id, rooms:room_id(id, block, room_number, capacity, occupancy_count, type)")
+      .eq("id", STUDENT.id)
+      .single();
+
+    if (error) throw error;
+
+    // No room assigned at all
+    if (!s.room_id && !s.room) {
+      panel.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🏠</div>
+          <h3>No Room Assigned</h3>
+          <p>You have not been assigned a room yet. Please visit <strong>Apply for Room</strong> to submit a request.</p>
+        </div>`;
+      return;
+    }
+
+    // Has room_id with full room data
+    if (s.room_id && s.rooms) {
+      const room = s.rooms;
+
+      // Get occupants
+      const { data: occupants } = await supabase
+        .from("students")
+        .select("id, full_name, reg_number, program, level, sex")
+        .eq("room_id", s.room_id);
+
+      const roommates = (occupants || []).filter(o => o.id !== s.id);
+      const pct = room.capacity > 0
+        ? Math.round((room.occupancy_count / room.capacity) * 100)
+        : 0;
+
+      panel.innerHTML = `
+        <div class="room-detail-card">
+          <div class="room-badge">Block ${room.block}</div>
+          <h2 class="room-number-big">Room ${room.room_number}</h2>
+          <div class="room-detail-stats">
+            <div class="detail-stat">
+              <span class="stat-num">${room.occupancy_count}</span>
+              <span class="stat-lbl">Occupants</span>
+            </div>
+            <div class="detail-stat">
+              <span class="stat-num">${room.capacity}</span>
+              <span class="stat-lbl">Capacity</span>
+            </div>
+            <div class="detail-stat">
+              <span class="stat-num">${pct}%</span>
+              <span class="stat-lbl">Full</span>
+            </div>
+          </div>
+          <div class="occupancy-bar-full">
+            <div class="occupancy-bar-fill" style="width:${pct}%"></div>
+          </div>
+          <h3 class="roommates-title">Your Roommates</h3>
+          ${roommates.length === 0
+            ? `<p class="no-roommates">You are the only occupant in this room.</p>`
+            : `<div class="roommate-list">
+                ${roommates.map(r => `
+                  <div class="roommate-card">
+                    <div class="roommate-avatar ${(r.sex||"").toUpperCase()==="F"?"female":""}">
+                      ${(r.full_name||"").split(" ").map(w=>w[0]).join("").substring(0,2)}
+                    </div>
+                    <div>
+                      <div class="roommate-name">${r.full_name}</div>
+                      <div class="roommate-info">${r.program} · Level ${r.level}</div>
+                    </div>
+                  </div>`).join("")}
+              </div>`}
+        </div>`;
+      return;
+    }
+
+    // Has text room but no room_id — show basic info
+    panel.innerHTML = `
+      <div class="room-detail-card">
+        <div class="room-badge">Assigned Room</div>
+        <h2 class="room-number-big">Room ${s.room}</h2>
+        <p style="color:var(--gray-400);font-size:14px;margin-top:.5rem">
+          Your room number is <strong>${s.room}</strong>. 
+          Full room details will appear once your assignment is fully set up.
+          Please contact the General Office if you need assistance.
+        </p>
+      </div>`;
+
+  } catch (err) {
+    console.error("loadRoom error:", err);
     panel.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">🏠</div>
-        <h3>No Room Assigned</h3>
-        <p>You have not been assigned a room yet. Please visit the <strong>Apply</strong> section to submit a request.</p>
+        <div class="empty-icon">⚠️</div>
+        <h3>Could not load room details</h3>
+        <p>Please try refreshing the page or contact the General Office.</p>
       </div>`;
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// MAINTENANCE REPORTING
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadMyReports() {
+  const { data, error } = await supabase
+    .from("maintenance_requests")
+    .select("*")
+    .eq("reported_by", STUDENT.full_name || STUDENT.name)
+    .order("created_at", { ascending: false });
+
+  const container = document.getElementById("myReportsList");
+  if (!container) return;
+
+  const priorityColors = { urgent: "#ef4444", high: "#f59e0b", normal: "#3b82f6", low: "#22c55e" };
+  const statusColors   = { open: "#ef4444", in_progress: "#f59e0b", resolved: "#22c55e", closed: "#9ca3af" };
+
+  if (!data || data.length === 0) {
+    container.innerHTML = `<p style="color:var(--gray-400);font-size:13px">You have not reported any issues yet.</p>`;
     return;
   }
 
-  const { room, occupants } = await fetchRoomWithOccupants(STUDENT.room);
-  if (!room) { panel.innerHTML = "<p>Room details unavailable.</p>"; return; }
-
-  const pct = room.capacity > 0
-    ? Math.round((room.occupancy_count / room.capacity) * 100)
-    : 0;
-
-  const roommates = occupants.filter(o => o.id !== STUDENT.id);
-
-  panel.innerHTML = `
-    <div class="room-detail-card">
-      <div class="room-badge">Block ${room.block}</div>
-      <h2 class="room-number-big">Room ${room.room_number}</h2>
-      <div class="room-detail-stats">
-        <div class="detail-stat">
-          <span class="stat-num">${room.occupancy_count}</span>
-          <span class="stat-lbl">Occupants</span>
-        </div>
-        <div class="detail-stat">
-          <span class="stat-num">${room.capacity}</span>
-          <span class="stat-lbl">Capacity</span>
-        </div>
-        <div class="detail-stat">
-          <span class="stat-num">${pct}%</span>
-          <span class="stat-lbl">Full</span>
-        </div>
+  container.innerHTML = data.map(r => `
+    <div class="my-report-card">
+      <div class="my-report-header">
+        <span class="my-report-category">${r.category}</span>
+        <span class="my-report-priority" style="color:${priorityColors[r.priority]}">${r.priority.toUpperCase()}</span>
+        <span class="my-report-status" style="background:${statusColors[r.status]}20;color:${statusColors[r.status]}">${r.status.replace("_"," ")}</span>
       </div>
-      <div class="occupancy-bar-full">
-        <div class="occupancy-bar-fill" style="width:${pct}%"></div>
+      <p class="my-report-desc">${r.description}</p>
+      <div class="my-report-meta">
+        Reported ${new Date(r.created_at).toLocaleDateString()}
+        ${r.assigned_to ? `· Assigned to: ${r.assigned_to}` : ""}
       </div>
+    </div>
+  `).join("");
+}
 
-      <h3 class="roommates-title">Your Roommates</h3>
-      ${roommates.length === 0
-        ? `<p class="no-roommates">You are the only occupant in this room.</p>`
-        : `<div class="roommate-list">
-            ${roommates.map(r => `
-              <div class="roommate-card">
-                <div class="roommate-avatar">${r.full_name.split(" ").map(w=>w[0]).join("").substring(0,2)}</div>
-                <div>
-                  <div class="roommate-name">${r.full_name}</div>
-                  <div class="roommate-info">${r.program} · Level ${r.level}</div>
-                </div>
-              </div>`).join("")}
-          </div>`}
-    </div>`;
+function initReportModal() {
+  const modal = document.getElementById("reportModal");
+  if (!modal) return;
+
+  document.getElementById("reportModalClose")?.addEventListener("click", () => {
+    modal.classList.remove("open");
+  });
+  modal.addEventListener("click", e => {
+    if (e.target === modal) modal.classList.remove("open");
+  });
+
+  document.getElementById("reportForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Submitting…";
+
+    const category    = document.getElementById("reportCategory").value;
+    const description = document.getElementById("reportDescription").value;
+    const priority    = document.getElementById("reportPriority").value;
+
+    const block     = STUDENT.rooms?.block || (STUDENT.room || "Unknown");
+    const roomNum   = STUDENT.rooms?.room_number || (STUDENT.room || "Unknown");
+
+    const payload = {
+      block,
+      room_number:   roomNum,
+      location:      `Block ${block} – ${roomNum}`,
+      category,
+      description,
+      priority,
+      status:        "open",
+      reported_by:   STUDENT.full_name || STUDENT.name,
+      reporter_role: "student",
+    };
+
+    const { error } = await supabase.from("maintenance_requests").insert([payload]);
+
+    if (error) {
+      showToast("Failed to submit: " + error.message, "error");
+      btn.disabled = false; btn.textContent = "Submit Report";
+      return;
+    }
+
+    showToast("Issue reported successfully! The admin team will review it.", "success");
+    modal.classList.remove("open");
+    e.target.reset();
+    btn.disabled = false; btn.textContent = "Submit Report";
+    loadMyReports();
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -309,61 +442,91 @@ document.addEventListener("DOMContentLoaded", () => {
 // SECTION: FACILITIES
 // ─────────────────────────────────────────────────────────────────────────────
 
-function loadFacilities() {
+async function loadFacilities() {
   const container = document.getElementById("facilitiesContent");
   if (!container) return;
 
+  container.innerHTML = `<p style="color:var(--gray-400);padding:1rem">Loading facilities…</p>`;
+
+  const { data: facilities, error } = await supabase
+    .from("facilities")
+    .select("*")
+    .order("block")
+    .order("category");
+
+  if (error || !facilities?.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🏛️</div>
+        <h3>No facilities listed yet</h3>
+        <p>Check back later or contact the General Office.</p>
+      </div>`;
+    return;
+  }
+
+  const icons = {
+    "Laboratory":    "🔬",
+    "Seminar Room":  "🎓",
+    "Library":       "📚",
+    "Auditorium":    "🎭",
+    "Computer Lab":  "💻",
+    "Office":        "🏢",
+    "Store Room":    "📦",
+    "Common Area":   "🏛️",
+    "Other":         "📌",
+  };
+
+  const statusColors = {
+    available:   { color: "#22c55e", label: "Available"   },
+    occupied:    { color: "#ef4444", label: "Occupied"    },
+    maintenance: { color: "#f59e0b", label: "Maintenance" },
+    closed:      { color: "#9ca3af", label: "Closed"      },
+  };
+
+  // Group by category
+  const grouped = {};
+  facilities.forEach(f => {
+    if (!grouped[f.category]) grouped[f.category] = [];
+    grouped[f.category].push(f);
+  });
+
   container.innerHTML = `
-    <div class="facilities-grid">
-      <div class="facility-card">
-        <div class="facility-icon">🍽️</div>
-        <h3>Dining Hall</h3>
-        <p>Breakfast: 6:30 – 8:00 AM<br>Lunch: 12:00 – 1:30 PM<br>Dinner: 6:00 – 7:30 PM</p>
+    <div style="margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+      <p style="color:var(--gray-600);font-size:13px">
+        Showing <strong>${facilities.length}</strong> facilities across all blocks.
+        Use the portal to report any issues.
+      </p>
+    </div>
+    ${Object.entries(grouped).map(([category, items]) => `
+      <div style="margin-bottom:1.5rem">
+        <h3 style="font-family:var(--font-display);color:var(--navy);font-size:1rem;margin-bottom:.8rem;padding-bottom:.3rem;border-bottom:2px solid var(--gold);display:inline-block">
+          ${icons[category] || "📌"} ${category}
+        </h3>
+        <div class="facilities-grid">
+          ${items.map(f => {
+            const sc = statusColors[f.status] || statusColors.available;
+            return `
+            <div class="facility-card" style="position:relative">
+              <div style="position:absolute;top:.7rem;right:.7rem;width:8px;height:8px;border-radius:50%;background:${sc.color}" title="${sc.label}"></div>
+              <div class="facility-icon">${icons[f.category] || "📌"}</div>
+              <h3>${f.room_number}</h3>
+              <p style="color:var(--gray-400);font-size:11px;margin-bottom:.3rem">Block ${f.block}</p>
+              <p style="font-size:12px;color:${sc.color};font-weight:700">${sc.label}</p>
+              <button class="btn-sm btn-secondary" style="margin-top:.5rem;width:100%"
+                onclick="openMaintenanceModal('${f.id}','${f.room_number}','${f.block}','facility')">
+                🔧 Report Issue
+              </button>
+            </div>`;
+          }).join("")}
+        </div>
       </div>
-      <div class="facility-card">
-        <div class="facility-icon">📚</div>
-        <h3>Library</h3>
-        <p>Mon – Fri: 7:00 AM – 10:00 PM<br>Sat: 8:00 AM – 6:00 PM<br>Sun: Closed</p>
-      </div>
-      <div class="facility-card">
-        <div class="facility-icon">💊</div>
-        <h3>Clinic</h3>
-        <p>Mon – Fri: 8:00 AM – 5:00 PM<br>Emergency: 24/7<br>Tel: +233-xxx-xxxx</p>
-      </div>
-      <div class="facility-card">
-        <div class="facility-icon">⚽</div>
-        <h3>Sports Complex</h3>
-        <p>Daily: 5:00 AM – 9:00 PM<br>Includes football, basketball, tennis, and gym.</p>
-      </div>
-      <div class="facility-card">
-        <div class="facility-icon">🌐</div>
-        <h3>Computer Lab</h3>
-        <p>Mon – Sat: 8:00 AM – 8:00 PM<br>Free Wi-Fi in all blocks<br>Printing available</p>
-      </div>
-      <div class="facility-card">
-        <div class="facility-icon">🚌</div>
-        <h3>Transport</h3>
-        <p>Shuttle to main campus: 7:00, 9:00, 12:00, 3:00, 5:00 PM<br>See notice board for updates.</p>
-      </div>
-    </div>`;
+    `).join("")}
+  `;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// OVERRIDE: Replace static facilities with real data + maintenance reporting
-// ─────────────────────────────────────────────────────────────────────────────
-import {
-  loadFacilitiesList, initMaintenanceModal
-} from "./facilities.js";
 
-// Re-wire facilities section to use real data
-document.addEventListener("DOMContentLoaded", () => {
-  initMaintenanceModal();
-});
 
-// Override the static loadFacilities function defined earlier
-window._loadRealFacilities = () => {
-  loadFacilitiesList("facilitiesContent");
-};
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION: REPORT & TRACK MAINTENANCE ISSUES
@@ -561,4 +724,159 @@ async function loadNoticeCount() {
     badge.textContent = count;
     badge.style.display = "inline-block";
   }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION: REPORT ISSUE (Student Maintenance)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadMaintenanceStudent() {
+  const container = document.getElementById("maintenanceStudentSection");
+  if (!container) return;
+
+  // Fetch student's own reports
+  const { data: reports } = await supabase
+    .from("maintenance_requests")
+    .select("*")
+    .eq("reported_by", STUDENT.full_name || STUDENT.name)
+    .order("created_at", { ascending: false });
+
+  const priorityColors = {
+    urgent: { bg: "#fee2e2", color: "#991b1b", label: "🔴 Urgent" },
+    high:   { bg: "#fef3c7", color: "#92400e", label: "🟡 High"   },
+    normal: { bg: "#dbeafe", color: "#1e40af", label: "🔵 Normal" },
+    low:    { bg: "#d1fae5", color: "#065f46", label: "🟢 Low"    },
+  };
+  const statusColors = {
+    open:        { bg: "#fee2e2", color: "#991b1b", label: "Open"        },
+    in_progress: { bg: "#fef3c7", color: "#92400e", label: "In Progress" },
+    resolved:    { bg: "#d1fae5", color: "#065f46", label: "Resolved"    },
+    closed:      { bg: "#f3f4f6", color: "#6b7280", label: "Closed"      },
+  };
+
+  container.innerHTML = `
+    <!-- Report Form -->
+    <div class="maint-form-card">
+      <h3>🔧 Report a Room or Facility Issue</h3>
+      <p>Use this form to report any maintenance issues in your room or around the campus.</p>
+
+      <form id="studentMaintenanceForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Block</label>
+            <select id="smBlock" required>
+              <option value="">Select Block</option>
+              <option value="NE">Block NE</option>
+              <option value="N">Block N</option>
+              <option value="NW">Block NW</option>
+              <option value="ADM">Block ADM</option>
+              <option value="S">Block S</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Room / Area</label>
+            <input type="text" id="smRoom" placeholder="e.g. A3, Library, Corridor" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Issue Category</label>
+            <select id="smCategory" required>
+              <option value="">Select Category</option>
+              <option value="electrical">⚡ Electrical</option>
+              <option value="plumbing">🚿 Plumbing</option>
+              <option value="furniture">🪑 Furniture</option>
+              <option value="cleaning">🧹 Cleaning</option>
+              <option value="structural">🏗️ Structural</option>
+              <option value="other">📌 Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="smPriority" required>
+              <option value="normal">🔵 Normal</option>
+              <option value="high">🟡 High</option>
+              <option value="urgent">🔴 Urgent</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="smDescription" rows="4" 
+            placeholder="Describe the issue in detail — what is wrong, where exactly, how long it has been happening…" 
+            required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Submit Report</button>
+      </form>
+    </div>
+
+    <!-- My Reports -->
+    <div class="maint-reports-card">
+      <h3>📋 My Submitted Reports</h3>
+      ${!reports || reports.length === 0
+        ? `<div class="empty-state">
+             <div class="empty-icon">✅</div>
+             <h3>No reports yet</h3>
+             <p>You have not submitted any maintenance reports.</p>
+           </div>`
+        : reports.map(r => `
+          <div class="maint-report-item">
+            <div class="maint-report-header">
+              <span class="maint-report-location">📍 Block ${r.block} – ${r.room_number}</span>
+              <div style="display:flex;gap:.4rem">
+                <span class="mini-badge" style="background:${priorityColors[r.priority]?.bg};color:${priorityColors[r.priority]?.color}">
+                  ${priorityColors[r.priority]?.label || r.priority}
+                </span>
+                <span class="mini-badge" style="background:${statusColors[r.status]?.bg};color:${statusColors[r.status]?.color}">
+                  ${statusColors[r.status]?.label || r.status}
+                </span>
+              </div>
+            </div>
+            <div class="maint-report-cat">Category: <strong>${r.category}</strong></div>
+            <div class="maint-report-desc">${r.description}</div>
+            <div class="maint-report-date">Submitted: ${new Date(r.created_at).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })}</div>
+            ${r.status === "resolved" ? `<div class="maint-resolved-note">✅ This issue has been resolved by the maintenance team.</div>` : ""}
+          </div>`).join("")}
+    </div>`;
+
+  // Wire form submit
+  document.getElementById("studentMaintenanceForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true;
+    btn.textContent = "Submitting…";
+
+    const block       = document.getElementById("smBlock").value;
+    const room        = document.getElementById("smRoom").value;
+    const category    = document.getElementById("smCategory").value;
+    const priority    = document.getElementById("smPriority").value;
+    const description = document.getElementById("smDescription").value;
+
+    const { error } = await supabase.from("maintenance_requests").insert([{
+      block,
+      room_number:   room,
+      location:      `Block ${block} – ${room}`,
+      category,
+      priority,
+      description,
+      status:        "open",
+      reported_by:   STUDENT.full_name || STUDENT.name || STUDENT.reg_number,
+      reporter_role: "student",
+    }]);
+
+    if (error) {
+      showToast("Failed to submit: " + error.message, "error");
+      btn.disabled = false;
+      btn.textContent = "Submit Report";
+      return;
+    }
+
+    showToast("Report submitted successfully! The maintenance team will attend to it.", "success");
+    e.target.reset();
+    btn.disabled = false;
+    btn.textContent = "Submit Report";
+    loadMaintenanceStudent(); // Refresh to show new report
+  });
 }
