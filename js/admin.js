@@ -19,7 +19,7 @@ import {
 window.bulkEnrolAll = bulkEnrolAll;
 
 
-import { requireAuth, getSession, logout, hashPassword } from "./auth.js";
+import { requireAuth, getSession, logout, hashPassword, initChangePasswordModal } from "./auth.js";
 import {
   fetchRooms, fetchAvailableRooms, fetchRoomWithOccupants,
   assignRoom, removeRoomAssignment, renderRoomGrid
@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAddStudentModal();
   initEditStudentModal();
   initAssignRoomModal();
+  initChangePasswordModal();
 
   // Sidebar navigation
   document.querySelectorAll(".nav-link").forEach(link => {
