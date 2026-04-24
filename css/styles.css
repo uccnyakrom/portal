@@ -1128,3 +1128,34 @@ tbody td { padding: .6rem 1rem; color: var(--gray-800); vertical-align: middle; 
 .badge-in_progress{ background: #fef3c7; color: #92400e; }
 .badge-resolved   { background: #d1fae5; color: #065f46; }
 .badge-closed     { background: var(--gray-100); color: var(--gray-400); }
+
+/* ── Room Summary Strip ──────────────────────────────────────────────────── */
+.room-summary-strip {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  background: var(--white);
+  padding: .8rem 1.2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.room-sum-item { display: flex; align-items: center; gap: .3rem; }
+
+/* ── Room Type Change Dropdown ───────────────────────────────────────────── */
+.room-type-change {
+  margin-top: .4rem;
+}
+.room-type-select {
+  width: 100%;
+  font-size: 9px;
+  padding: .15rem .2rem;
+  border-radius: 4px;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  color: var(--gray-600);
+  cursor: pointer;
+}
+.room-type-select:focus { border-color: var(--navy); }
