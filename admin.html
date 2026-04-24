@@ -13,8 +13,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
-<meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-<meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -60,6 +60,12 @@
       </a>
       <a href="#" class="nav-link" data-section="applications">
         <span class="nav-icon">📋</span> Applications
+      </a>
+      <a href="#" class="nav-link" data-section="publicapps">
+        <span class="nav-icon">📩</span> Public Applications
+      </a>
+      <a href="#" class="nav-link" data-section="managerooms">
+        <span class="nav-icon">🚪</span> Manage Rooms
       </a>
 
       <div class="nav-group-label">Analytics</div>
@@ -338,6 +344,98 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <!-- ── PUBLIC APPLICATIONS ──────────────────────────────────────────────── -->
+      <section id="section-publicapps" class="dash-section hidden">
+        <div class="table-card">
+          <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="table-card-title">📩 Public Applications</span>
+            <span style="font-size:12px;color:rgba(255,255,255,.6)">Applications from unregistered students</span>
+          </div>
+          <div class="table-wrap">
+            <table class="beautiful-table">
+              <thead>
+                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Level</th><th>Sex</th><th>Phone</th><th>Preferred Room</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="publicAppsBody">
+                <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer"><span id="publicAppsFooter">Loading…</span></div>
+        </div>
+      </section>
+
+      <!-- ── MANAGE ROOMS ──────────────────────────────────────────────────────── -->
+      <section id="section-managerooms" class="dash-section hidden">
+        <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.5rem">
+
+          <!-- Add Room Form -->
+          <div class="form-card">
+            <h3>➕ Add New Room</h3>
+            <form id="addRoomForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Block</label>
+                  <select id="newRoomBlock" required>
+                    <option value="">Select</option>
+                    <option value="NE">NE</option>
+                    <option value="N">N</option>
+                    <option value="NW">NW</option>
+                    <option value="ADM">ADM</option>
+                    <option value="S">S</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Room Number</label>
+                  <input type="text" id="newRoomNumber" placeholder="e.g. A25" required>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Capacity</label>
+                  <input type="number" id="newRoomCapacity" min="1" max="20" placeholder="e.g. 4" required>
+                </div>
+                <div class="form-group">
+                  <label>Type</label>
+                  <select id="newRoomType" required>
+                    <option value="vacant">Student (Vacant)</option>
+                    <option value="staff">Staff</option>
+                    <option value="NSP">NSP</option>
+                    <option value="suite">Suite</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-full">Add Room</button>
+            </form>
+          </div>
+
+          <!-- Rooms Table -->
+          <div class="table-card">
+            <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
+              <span class="table-card-title">All Rooms</span>
+              <div style="display:flex;gap:.5rem">
+                <select id="filterRoomBlock" style="font-size:12px;padding:.3rem .5rem;width:auto;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:4px">
+                  <option value="">All Blocks</option>
+                  <option>NE</option><option>N</option><option>NW</option><option>ADM</option><option>S</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap" style="max-height:450px;overflow-y:auto">
+              <table class="beautiful-table">
+                <thead>
+                  <tr><th>Block</th><th>Room</th><th>Capacity</th><th>Occupancy</th><th>Type</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="manageRoomsBody">
+                  <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer"><span id="manageRoomsFooter">Loading…</span></div>
+          </div>
+
         </div>
       </section>
 
@@ -925,7 +1023,74 @@
   </div>
 </div>
 
+
+<!-- ── Edit Room Modal ────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="editRoomModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Room</span>
+      <button class="modal-close" onclick="document.getElementById('editRoomModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="editRoomForm">
+        <input type="hidden" id="editRoomId">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Block</label>
+            <input type="text" id="editRoomBlock" readonly class="input-readonly">
+          </div>
+          <div class="form-group">
+            <label>Room Number</label>
+            <input type="text" id="editRoomNumber" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Capacity</label>
+            <input type="number" id="editRoomCapacity" min="1" max="20" required>
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="editRoomType" required>
+              <option value="vacant">Student (Vacant)</option>
+              <option value="partial">Student (Partial)</option>
+              <option value="full">Student (Full)</option>
+              <option value="staff">Staff</option>
+              <option value="NSP">NSP</option>
+              <option value="suite">Suite</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="js/admin.js"></script>
 
+
+<script type="module">
+  import { supabase } from "./js/supabaseClient.js";
+  import { showToast, logAudit } from "./js/supabaseClient.js";
+
+  document.getElementById("editRoomForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const id       = document.getElementById("editRoomId").value;
+    const roomNum  = document.getElementById("editRoomNumber").value.trim();
+    const capacity = parseInt(document.getElementById("editRoomCapacity").value);
+    const type     = document.getElementById("editRoomType").value;
+
+    const { error } = await supabase.from("rooms")
+      .update({ room_number: roomNum, capacity, type })
+      .eq("id", id);
+
+    if (error) { showToast("Error: " + error.message, "error"); return; }
+    showToast("Room updated!", "success");
+    document.getElementById("editRoomModal").classList.remove("open");
+    // Trigger rooms reload
+    document.querySelector('[data-section="managerooms"]')?.click();
+  });
+</script>
 </body>
 </html>
