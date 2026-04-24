@@ -13,8 +13,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Portal — UCC Accommodation</title>
 
-<meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-<meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -60,6 +60,9 @@
       <a href="#" class="nav-link" data-section="facilities">
         <span class="nav-icon">🏛️</span> Facilities
       </a>
+      <a href="#" class="nav-link" data-section="maintenance">
+        <span class="nav-icon">🔧</span> Report Issue
+      </a>
 
       <div class="nav-group-label">Support</div>
       <a href="#" class="nav-link" data-section="maintenance">
@@ -68,6 +71,10 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button class="btn-sm btn-secondary" onclick="openChangePasswordModal()"
+        style="width:100%;margin-bottom:.5rem;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15)">
+        🔐 Change Password
+      </button>
       <button class="logout-btn" id="logoutBtn">⇦ Sign Out</button>
     </div>
 
@@ -177,6 +184,13 @@
         </div>
       </section>
 
+      <!-- ── REPORT ISSUE ──────────────────────────────────────────────────────── -->
+      <section id="section-maintenance" class="dash-section hidden">
+        <div id="maintenanceStudentSection">
+          <p style="color:var(--gray-400)">Loading…</p>
+        </div>
+      </section>
+
     </div><!-- /dash-content -->
   </main><!-- /dash-main -->
 
@@ -193,6 +207,86 @@
 </script>
 
 <!-- ── Main student script ──────────────────────────────────────────────────── -->
+
+<!-- ── Report Issue Modal ─────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title">🔧 Report Room Issue</span>
+      <button class="modal-close" id="reportModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--gray-600);font-size:13px;margin-bottom:1.2rem">
+        Describe the issue in your room and we will get it sorted as soon as possible.
+      </p>
+      <form id="reportForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category</label>
+            <select id="reportCategory" required>
+              <option value="electrical">⚡ Electrical</option>
+              <option value="plumbing">🚿 Plumbing</option>
+              <option value="furniture">🪑 Furniture</option>
+              <option value="cleaning">🧹 Cleaning</option>
+              <option value="structural">🏗️ Structural</option>
+              <option value="other">📌 Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="reportPriority" required>
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">🚨 Urgent</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="reportDescription" rows="4"
+            placeholder="Describe the issue clearly — e.g. The ceiling fan in room B3 is making a loud noise and one blade is broken…"
+            required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Submit Report</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Change Password Modal ──────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="changePasswordModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">🔐 Change Password</span>
+      <button class="modal-close" id="changePwdModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="password-box" style="margin-bottom:1rem">
+        <h4>Your current auto-generated password</h4>
+        <code id="currentAutoPassword">—</code>
+        <small>Once you change your password, use the new one to log in.</small>
+      </div>
+      <form id="changePasswordForm">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="currentPwd" placeholder="Enter current password" required>
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="newPwd" placeholder="Minimum 6 characters" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" id="confirmPwd" placeholder="Confirm new password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Update Password</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="js/student.js"></script>
 
 </body>
