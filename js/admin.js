@@ -174,18 +174,18 @@ function drawProgramChart(students) {
   const canvas = document.getElementById("programChart");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
-  const nursing   = students.filter(s=>s.program==="Nursing").length;
-  const nutrition = students.filter(s=>s.program==="Nutrition").length;
-  drawPieChart(ctx, canvas, ["Nursing","Nutrition"], [nursing, nutrition], ["#1e3a5f","#c9a84c"]);
+  const nursing   = students.filter(s => (s.program||"").toLowerCase().includes("nurs")).length;
+  const nutrition = students.filter(s => (s.program||"").toLowerCase().includes("nutr")).length;
+  drawPieChart(ctx, canvas, [`Nursing (${nursing})`,`Nutrition (${nutrition})`], [nursing, nutrition], ["#1e3a5f","#c9a84c"]);
 }
 
 function drawSexChart(students) {
   const canvas = document.getElementById("sexChart");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
-  const male   = students.filter(s=>s.sex==="Male").length;
-  const female = students.filter(s=>s.sex==="Female").length;
-  drawPieChart(ctx, canvas, ["Male","Female"], [male, female], ["#3b82f6","#ec4899"]);
+  const male   = students.filter(s => ["M","Male","male"].includes(s.sex)).length;
+  const female = students.filter(s => ["F","Female","female"].includes(s.sex)).length;
+  drawPieChart(ctx, canvas, [`Male (${male})`,`Female (${female})`], [male, female], ["#3b82f6","#ec4899"]);
 }
 
 // ── Lightweight canvas bar chart (no library dependency) ─────────────────────
