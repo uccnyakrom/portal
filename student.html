@@ -10,12 +10,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Portal — UCC Accommodation</title>
 
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -56,9 +55,15 @@
       <div class="nav-group-label">Information</div>
       <a href="#" class="nav-link" data-section="notices">
         <span class="nav-icon">📢</span> Notice Board
+        <span id="noticeBadge" style="display:none;background:var(--red);color:#fff;font-size:10px;padding:.1rem .4rem;border-radius:999px;margin-left:auto"></span>
       </a>
       <a href="#" class="nav-link" data-section="facilities">
         <span class="nav-icon">🏛️</span> Facilities
+      </a>
+
+      <div class="nav-group-label">Support</div>
+      <a href="#" class="nav-link" data-section="maintenance">
+        <span class="nav-icon">🔧</span> Report Issue
       </a>
     </nav>
 
@@ -161,6 +166,13 @@
       <section id="section-facilities" class="dash-section hidden">
         <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:1.2rem">Campus Facilities</h3>
         <div id="facilitiesContent">
+          <p style="color:var(--gray-400)">Loading…</p>
+        </div>
+      </section>
+
+      <!-- ── MAINTENANCE ─────────────────────────────────────────────────────── -->
+      <section id="section-maintenance" class="dash-section hidden">
+        <div id="maintenanceStudentSection">
           <p style="color:var(--gray-400)">Loading…</p>
         </div>
       </section>
