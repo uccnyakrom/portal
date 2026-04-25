@@ -9,8 +9,20 @@ import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoom
 import { requireAuth, getSession, logout, hashPassword, initChangePasswordModal } from "./auth.js";
 import { fetchRooms, fetchAvailableRooms, fetchRoomWithOccupants, assignRoom, removeRoomAssignment, renderRoomGrid, changeRoomType } from "./rooms.js";
 import { loadFacilitiesList, loadBookings, loadMaintenance, initFacStatusModal, initBookingModal, initMaintenanceModal } from "./facilities.js";
-import { generateOccupancyReport, loadWaitingList, addToWaitingList, removeFromWaitingList, loadAcademicYears, setActiveYear, createNewYear, recordRoomHistory, loadRoomHistory } from "./reports.js";
-import { notifyApplicationStatus, sendLoginCredentials, notifyWaitingListUpdate } from "./notifications.js";
+
+
+// Stubs for features pending full deployment
+async function generateOccupancyReport() { showToast("Upload reports.js to enable PDF reports.", "info"); }
+async function loadWaitingList() { return []; }
+async function addToWaitingList() { showToast("Upload reports.js to enable waiting list.", "info"); }
+async function removeFromWaitingList() {}
+async function loadAcademicYears() { return []; }
+async function setActiveYear() {}
+async function createNewYear() {}
+async function recordRoomHistory() {}
+async function loadRoomHistory() { return []; }
+async function notifyApplicationStatus() {}
+async function sendLoginCredentials() {}
 
 requireAuth("admin");
 const ADMIN = getSession();
