@@ -930,3 +930,145 @@ async function loadMaintenanceStudent() {
     loadMaintenanceStudent(); // Refresh to show new report
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STUDENT DASHBOARD HOME (#14)
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadStudentDashboard() {
+  const panel = document.getElementById("studentDashboard");
+  if (!panel) return;
+
+  const [roomRes, appsRes, noticesRes, mainRes] = await Promise.all([
+    supabase.from("students").select("room, room_id, rooms:room_id(block, room_number)").eq("id", STUDENT.id).single(),
+    supabase.from("applications").select("status, submitted_at").eq("reg_number", STUDENT.reg_number).order("submitted_at", {ascending:false}).limit(1),
+    supabase.from("notices").select("id, title, priority, created_at").order("pinned", {ascending:false}).order("created_at", {ascending:false}).limit(3),
+    supabase.from("maintenance_requests").select("id, category, status, created_at").eq("reported_by", STUDENT.reg_number).order("created_at", {ascending:false}).limit(3)
+  ]);
+
+  const s       = roomRes.data;
+  const app     = appsRes.data?.[0];
+  const notices = noticesRes.data || [];
+  const issues  = mainRes.data || [];
+
+  const roomLabel = s?.rooms ? `Block ${s.rooms.block} – Room ${s.rooms.room_number}` : (s?.room || "Not assigned");
+  const appStatus = app ? `<span style="color:${app.status==='approved'?'#22c55e':app.status==='rejected'?'#ef4444':'#f59e0b'};font-weight:700">${app.status.toUpperCase()}</span>` : "No application";
+
+  panel.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
+      <div class="stat-card" style="border-left:4px solid var(--navy)">
+        <div class="stat-card-icon">🏠</div>
+        <div class="stat-card-value" style="font-size:1rem">${roomLabel}</div>
+        <div class="stat-card-label">Your Room</div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid var(--gold)">
+        <div class="stat-card-icon">📋</div>
+        <div class="stat-card-value" style="font-size:1rem">${appStatus}</div>
+        <div class="stat-card-label">Application Status</div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #22c55e">
+        <div class="stat-card-icon">📢</div>
+        <div class="stat-card-value">${notices.length}</div>
+        <div class="stat-card-label">New Notices</div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #ef4444">
+        <div class="stat-card-icon">🔧</div>
+        <div class="stat-card-value">${issues.filter(i=>i.status==='open').length}</div>
+        <div class="stat-card-label">Open Issues</div>
+      </div>
+    </div>
+
+    ${notices.length ? `
+    <div style="margin-bottom:1.5rem">
+      <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.7rem">📢 Latest Notices</h3>
+      ${notices.map(n => `
+        <div style="padding:.7rem 1rem;background:var(--white);border-radius:6px;border-left:3px solid ${n.priority==='urgent'?'#ef4444':n.priority==='info'?'#3b82f6':'#c9a84c'};margin-bottom:.5rem;box-shadow:var(--shadow-sm)">
+          <strong style="font-size:13px">${n.title}</strong>
+          <span style="font-size:11px;color:var(--gray-400);float:right">${new Date(n.created_at).toLocaleDateString()}</span>
+        </div>
+      `).join("")}
+    </div>` : ""}
+
+    ${issues.length ? `
+    <div>
+      <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.7rem">🔧 Your Maintenance Reports</h3>
+      ${issues.map(i => `
+        <div style="padding:.7rem 1rem;background:var(--white);border-radius:6px;margin-bottom:.5rem;box-shadow:var(--shadow-sm);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;text-transform:capitalize">${i.category}</span>
+          <span style="font-size:11px;padding:.2rem .6rem;border-radius:999px;background:${i.status==='resolved'?'#d1fae5':i.status==='in_progress'?'#fef3c7':'#fee2e2'};color:${i.status==='resolved'?'#065f46':i.status==='in_progress'?'#92400e':'#991b1b'}">${i.status.replace("_"," ")}</span>
+        </div>
+      `).join("")}
+    </div>` : ""}
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAINTENANCE STATUS TRACKING (#9)
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadMyIssues() {
+  const panel = document.getElementById("myIssuesPanel");
+  if (!panel) return;
+
+  const { data: issues } = await supabase
+    .from("maintenance_requests")
+    .select("id, category, description, status, priority, created_at, location")
+    .eq("reported_by", STUDENT.reg_number)
+    .order("created_at", { ascending: false });
+
+  if (!issues?.length) {
+    panel.innerHTML = `<div class="table-empty"><div class="table-empty-icon">🔧</div><h4>No issues reported yet</h4><p>Use the Report Issue button to report problems in your room.</p></div>`;
+    return;
+  }
+
+  const statusColors = {
+    open:        { bg: "#fee2e2", color: "#991b1b", label: "Open" },
+    in_progress: { bg: "#fef3c7", color: "#92400e", label: "In Progress" },
+    resolved:    { bg: "#d1fae5", color: "#065f46", label: "Resolved" },
+    closed:      { bg: "#f3f4f6", color: "#6b7280", label: "Closed" }
+  };
+
+  panel.innerHTML = issues.map(i => {
+    const sc = statusColors[i.status] || statusColors.open;
+    return `
+    <div style="background:var(--white);border-radius:var(--radius);padding:1rem;margin-bottom:.8rem;box-shadow:var(--shadow-sm);border-left:4px solid ${sc.color}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <strong style="text-transform:capitalize;color:var(--navy)">${i.category} Issue</strong>
+          <p style="color:var(--gray-600);font-size:13px;margin:.3rem 0">${i.description}</p>
+          <small style="color:var(--gray-400)">${i.location} · ${new Date(i.created_at).toLocaleDateString()}</small>
+        </div>
+        <span style="background:${sc.bg};color:${sc.color};padding:.2rem .7rem;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;margin-left:1rem">${sc.label}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WAITING LIST — student join (#12)
+// ─────────────────────────────────────────────────────────────────────────────
+async function joinWaitingList() {
+  const { data: existing } = await supabase
+    .from("waiting_list")
+    .select("id, status")
+    .eq("reg_number", STUDENT.reg_number)
+    .eq("status", "waiting")
+    .limit(1);
+
+  if (existing?.length) {
+    showToast("You are already on the waiting list!", "info");
+    return;
+  }
+
+  const { error } = await supabase.from("waiting_list").insert([{
+    student_id: STUDENT.id,
+    reg_number: STUDENT.reg_number,
+    full_name:  STUDENT.full_name || STUDENT.name,
+    program:    STUDENT.program,
+    level:      STUDENT.level,
+    sex:        STUDENT.sex,
+    notes:      "Student requested to join waiting list via portal",
+    status:     "waiting"
+  }]);
+
+  if (error) { showToast("Error: " + error.message, "error"); return; }
+  showToast("You have been added to the waiting list! We will notify you when a room becomes available.", "success");
+}
