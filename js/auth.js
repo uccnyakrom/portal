@@ -1,85 +1,136 @@
 /**
- * auth.js — Plain text password version (no hashing)
+ * auth.js — UCC Nyakrom Campus Accommodation Portal
  * PLACE THIS FILE AT: /js/auth.js
+ * Features: SHA-256 password hashing, session management, login/logout
  */
 
-import { supabase, showToast, generateStudentPassword, logAudit } from "./supabaseClient.js";
+import { supabase, showToast, logAudit, generateStudentPassword } from "./supabaseClient.js";
 
-const SESSION_KEY = "uccPortalSession";
-const ROLE_KEY    = "uccPortalRole";
+// ─────────────────────────────────────────────────────────────────────────────
+// PASSWORD HASHING — SHA-256 via Web Crypto API
+// ─────────────────────────────────────────────────────────────────────────────
+export async function hashPassword(plain) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain.trim());
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
-export function saveSession(data, role) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
-  sessionStorage.setItem(ROLE_KEY, role);
+async function verifyPassword(plain, stored) {
+  // Support both plain text (legacy) and hashed passwords
+  if (!stored) return false;
+  if (stored === "auto") return true; // auto password verified separately
+  // If stored looks like a SHA-256 hash (64 hex chars)
+  if (/^[0-9a-f]{64}$/i.test(stored)) {
+    const hashed = await hashPassword(plain);
+    return hashed === stored;
+  }
+  // Legacy plain text comparison
+  return plain.trim() === stored;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SESSION
+// ─────────────────────────────────────────────────────────────────────────────
+export function saveSession(user, type) {
+  sessionStorage.setItem("portalUser", JSON.stringify({ ...user, type }));
 }
 
 export function getSession() {
-  const raw = sessionStorage.getItem(SESSION_KEY);
-  return raw ? JSON.parse(raw) : null;
+  try {
+    return JSON.parse(sessionStorage.getItem("portalUser")) || null;
+  } catch { return null; }
 }
 
 export function getRole() {
-  return sessionStorage.getItem(ROLE_KEY) || null;
+  return getSession()?.role || null;
 }
 
-export function logout() {
-  sessionStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(ROLE_KEY);
-  window.location.href = "index.html";
+export function clearSession() {
+  sessionStorage.removeItem("portalUser");
 }
 
-export function requireAuth(expectedRole) {
+export function requireAuth(type = "admin") {
   const session = getSession();
-  const role    = getRole();
-  if (!session || (expectedRole && role !== expectedRole)) {
+  if (!session) {
     window.location.href = "index.html";
+    return;
+  }
+  if (type === "admin" && session.role === "student") {
+    window.location.href = "student.html";
+    return;
+  }
+  if (type === "student" && session.role !== "student") {
+    window.location.href = "admin.html";
+    return;
   }
 }
 
+export function logout() {
+  clearSession();
+  window.location.href = "index.html";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STUDENT LOGIN
+// ─────────────────────────────────────────────────────────────────────────────
 export async function loginStudent(regNumber, password) {
   try {
-    const { data: students, error: sErr } = await supabase
-      .from("students")
-      .select("*")
-      .eq("reg_number", regNumber.trim().toUpperCase())
-      .limit(1);
+    const reg = regNumber.trim().toUpperCase();
 
-    if (sErr) throw sErr;
-    if (!students || students.length === 0) {
-      return { success: false, error: "Registration number not found." };
+    // Get student record
+    const { data: student, error: sErr } = await supabase
+      .from("students")
+      .select("id, full_name, reg_number, program, level, sex, room, room_id")
+      .eq("reg_number", reg)
+      .single();
+
+    if (sErr || !student) {
+      return { success: false, error: "Student not found. Please contact the General Office." };
     }
 
-    const student = students[0];
-
+    // Get user record
     const { data: userRows, error: uErr } = await supabase
       .from("users")
-      .select("id, role, password")
-      .eq("username", regNumber.trim().toUpperCase())
+      .select("id, role, password, password_hash")
+      .eq("username", reg)
       .limit(1);
 
-    if (uErr) throw uErr;
-    if (!userRows || userRows.length === 0) {
-      return {
-        success: false,
-        error: "Your account has not been enrolled yet. Please contact the General Office."
-      };
+    if (uErr || !userRows?.length) {
+      return { success: false, error: "Your account has not been enrolled yet. Please contact the General Office." };
     }
 
-    // Make sure it is a student account not an admin
-    if (!["student", "auto", null].includes(userRows[0].role) && userRows[0].role !== "student") {
-      if (userRows[0].role !== "student") {
-        return { success: false, error: "Please use the Admin tab to log in." };
+    const user = userRows[0];
+    if (user.role !== "student") {
+      return { success: false, error: "Please use the Admin tab to log in." };
+    }
+
+    // Generate expected auto password
+    const autoPwd = generateStudentPassword(student.reg_number, student.full_name || "");
+
+    // Verify password
+    let valid = false;
+    if (user.password_hash) {
+      // Has hashed password — verify against hash
+      valid = await verifyPassword(password, user.password_hash);
+      // Also allow auto password if no custom password set
+      if (!valid && user.password === "auto") {
+        valid = password.trim() === autoPwd;
       }
+    } else if (user.password === "auto") {
+      valid = password.trim() === autoPwd;
+    } else {
+      valid = await verifyPassword(password, user.password);
     }
 
-    const expectedPassword = generateStudentPassword(student.reg_number, student.full_name);
-    if (password.trim() !== expectedPassword) {
-      return { success: false, error: "Incorrect password. Check your student ID card or contact the office." };
+    if (!valid) {
+      return { success: false, error: `Incorrect password. Your default password is your reg number initials. Contact the General Office if you need help.` };
     }
 
-    saveSession(student, "student");
-    await logAudit(`Student login: ${student.reg_number}`, student.full_name);
-    return { success: true, student };
+    saveSession({ ...student, ...user, username: reg }, "student");
+    await logAudit(`Student login: ${reg}`, reg);
+    return { success: true };
 
   } catch (err) {
     console.error("loginStudent error:", err);
@@ -87,27 +138,36 @@ export async function loginStudent(regNumber, password) {
   }
 }
 
-// ADMIN LOGIN — plain text, no hashing
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN LOGIN
+// ─────────────────────────────────────────────────────────────────────────────
 export async function loginAdmin(username, password) {
   try {
-    // Accept all non-student roles: admin, superadmin, accommodation, facilities, monitor, readonly, staff
-    const { data: admins, error } = await supabase
+    const { data: users, error } = await supabase
       .from("users")
       .select("*")
       .eq("username", username.trim())
-      .eq("password", password.trim())
       .not("role", "eq", "student")
       .limit(1);
 
     if (error) throw error;
-    if (!admins || admins.length === 0) {
-      return { success: false, error: "Invalid username or password." };
+    if (!users?.length) return { success: false, error: "Invalid username or password." };
+
+    const user = users[0];
+
+    // Verify password (hashed or plain)
+    let valid = false;
+    if (user.password_hash) {
+      valid = await verifyPassword(password, user.password_hash);
+    } else {
+      valid = await verifyPassword(password, user.password);
     }
 
-    const admin = admins[0];
-    saveSession(admin, "admin");
-    await logAudit(`Admin login: ${admin.username} (${admin.role})`, admin.username);
-    return { success: true, admin };
+    if (!valid) return { success: false, error: "Invalid username or password." };
+
+    saveSession(user, "admin");
+    await logAudit(`Admin login: ${user.username} (${user.role})`, user.username);
+    return { success: true, admin: user };
 
   } catch (err) {
     console.error("loginAdmin error:", err);
@@ -115,183 +175,146 @@ export async function loginAdmin(username, password) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// LOGIN MODAL
+// ─────────────────────────────────────────────────────────────────────────────
 export function initLoginModal() {
-  const modal       = document.getElementById("loginModal");
-  const openBtn     = document.getElementById("signInBtn");
-  const closeBtn    = document.getElementById("modalClose");
-  const tabs        = document.querySelectorAll(".tab-btn");
-  const studentForm = document.getElementById("studentLoginForm");
-  const adminForm   = document.getElementById("adminLoginForm");
-
+  const modal = document.getElementById("loginModal");
   if (!modal) return;
 
-  openBtn?.addEventListener("click", () => modal.classList.add("open"));
-  closeBtn?.addEventListener("click", () => modal.classList.remove("open"));
-  modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
+  document.getElementById("loginModalClose")?.addEventListener("click", () => {
+    modal.classList.remove("open");
+  });
 
-  tabs.forEach(tab => {
+  modal.addEventListener("click", e => {
+    if (e.target === modal) modal.classList.remove("open");
+  });
+
+  // Tab switching
+  document.querySelectorAll(".login-tab").forEach(tab => {
     tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".login-tab").forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
-      const target = tab.dataset.tab;
-      document.querySelectorAll(".tab-panel").forEach(p => {
-        p.classList.toggle("active", p.dataset.panel === target);
+      const type = tab.dataset.tab;
+      document.querySelectorAll(".login-panel").forEach(p => {
+        p.classList.toggle("hidden", p.id !== `${type}LoginPanel`);
       });
     });
   });
 
-  studentForm?.addEventListener("submit", async e => {
+  // Student login
+  document.getElementById("studentLoginForm")?.addEventListener("submit", async e => {
     e.preventDefault();
-    const btn       = studentForm.querySelector("button[type=submit]");
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Signing in…";
     const regNumber = document.getElementById("studentReg").value;
     const password  = document.getElementById("studentPass").value;
-    btn.disabled = true; btn.textContent = "Signing in…";
     const result = await loginStudent(regNumber, password);
     if (result.success) {
-      showToast(`Welcome, ${result.student.full_name}!`, "success");
-      setTimeout(() => { window.location.href = "student.html"; }, 800);
+      window.location.href = "student.html";
     } else {
       showToast(result.error, "error");
       btn.disabled = false; btn.textContent = "Sign In";
     }
   });
 
-  adminForm?.addEventListener("submit", async e => {
+  // Admin login
+  document.getElementById("adminLoginForm")?.addEventListener("submit", async e => {
     e.preventDefault();
-    const btn      = adminForm.querySelector("button[type=submit]");
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Signing in…";
     const username = document.getElementById("adminUser").value;
     const password = document.getElementById("adminPass").value;
-    btn.disabled = true; btn.textContent = "Signing in…";
     const result = await loginAdmin(username, password);
     if (result.success) {
-      showToast(`Welcome, ${result.admin.username}!`, "success");
-      setTimeout(() => { window.location.href = "admin.html"; }, 800);
+      window.location.href = "admin.html";
     } else {
       showToast(result.error, "error");
       btn.disabled = false; btn.textContent = "Sign In";
     }
   });
-}
-
-// Kept for compatibility with admin.js imports — just returns plain text now
-export async function hashPassword(plain) {
-  return plain;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGE PASSWORD
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * initChangePasswordModal()
- * Works for both admin and student dashboards.
- * Students: verifies current password (auto-generated or custom),
- *           then stores new password in users table.
- * Admins:   same flow but compares against stored plain text password.
- */
 export function initChangePasswordModal() {
   const role    = getRole();
   const session = getSession();
 
-  // Show auto-password hint for students
   if (role === "student") {
     const hint = document.getElementById("currentAutoPassword");
     if (hint && session) {
-      hint.textContent = generateStudentPassword(session.reg_number, session.full_name || session.name || "");
+      hint.textContent = generateStudentPassword(session.reg_number, session.full_name || "");
     }
   }
 
-  // Open modal
   window.openChangePasswordModal = () => {
     document.getElementById("changePasswordModal")?.classList.add("open");
   };
 
-  // Close modal
   document.getElementById("changePwdModalClose")?.addEventListener("click", () => {
     document.getElementById("changePasswordModal")?.classList.remove("open");
     document.getElementById("changePasswordForm")?.reset();
   });
 
-  // Form submit
   document.getElementById("changePasswordForm")?.addEventListener("submit", async e => {
     e.preventDefault();
-    const btn         = e.target.querySelector("button[type=submit]");
-    const currentPwd  = document.getElementById("currentPwd").value.trim();
-    const newPwd      = document.getElementById("newPwd").value.trim();
-    const confirmPwd  = document.getElementById("confirmPwd").value.trim();
+    const btn        = e.target.querySelector("button[type=submit]");
+    const currentPwd = document.getElementById("currentPwd").value.trim();
+    const newPwd     = document.getElementById("newPwd").value.trim();
+    const confirmPwd = document.getElementById("confirmPwd").value.trim();
 
-    // Validate
-    if (newPwd !== confirmPwd) {
-      showToast("New passwords do not match.", "error");
-      return;
-    }
-    if (newPwd.length < 6) {
-      showToast("New password must be at least 6 characters.", "error");
-      return;
-    }
+    if (newPwd !== confirmPwd) { showToast("New passwords do not match.", "error"); return; }
+    if (newPwd.length < 6)    { showToast("Password must be at least 6 characters.", "error"); return; }
 
-    btn.disabled = true;
-    btn.textContent = "Updating…";
+    btn.disabled = true; btn.textContent = "Updating…";
 
     try {
-      // Determine username
-      const username = role === "student"
-        ? session.reg_number
-        : session.username;
+      const username = role === "student" ? session.reg_number : session.username;
+
+      const { data: userRows } = await supabase
+        .from("users").select("id, password, password_hash").eq("username", username).limit(1);
+
+      if (!userRows?.length) { showToast("Could not verify account.", "error"); return; }
+
+      const user = userRows[0];
+      const autoPwd = role === "student"
+        ? generateStudentPassword(session.reg_number, session.full_name || "")
+        : null;
 
       // Verify current password
-      const { data: userRows, error: fetchErr } = await supabase
+      let valid = false;
+      if (user.password_hash) {
+        valid = await verifyPassword(currentPwd, user.password_hash);
+      }
+      if (!valid && user.password) {
+        valid = await verifyPassword(currentPwd, user.password);
+      }
+      if (!valid && autoPwd) {
+        valid = currentPwd === autoPwd || user.password === "auto";
+      }
+
+      if (!valid) { showToast("Current password is incorrect.", "error"); return; }
+
+      // Hash new password and save
+      const newHash = await hashPassword(newPwd);
+      const { error } = await supabase
         .from("users")
-        .select("id, password")
-        .eq("username", username)
-        .limit(1);
-
-      if (fetchErr || !userRows?.length) {
-        showToast("Could not verify your account.", "error");
-        return;
-      }
-
-      const storedPwd = userRows[0].password;
-
-      // For students: current password could be auto-generated OR a previously set custom password
-      let currentValid = false;
-      if (role === "student") {
-        const autoPwd = generateStudentPassword(session.reg_number, session.full_name || session.name || "");
-        currentValid  = currentPwd === storedPwd || currentPwd === autoPwd || storedPwd === "auto";
-      } else {
-        // Admin: plain text comparison
-        currentValid = currentPwd === storedPwd;
-      }
-
-      if (!currentValid) {
-        showToast("Current password is incorrect.", "error");
-        btn.disabled = false;
-        btn.textContent = "Update Password";
-        return;
-      }
-
-      // Update password in users table (plain text)
-      const { error: updateErr } = await supabase
-        .from("users")
-        .update({ password: newPwd })
+        .update({ password_hash: newHash, password: newPwd })
         .eq("username", username);
 
-      if (updateErr) {
-        showToast("Error updating password: " + updateErr.message, "error");
-        return;
-      }
+      if (error) { showToast("Error: " + error.message, "error"); return; }
 
       await logAudit(`Password changed for: ${username}`, username);
-      showToast("Password updated successfully! Use your new password next time you log in.", "success");
+      showToast("Password updated successfully!", "success");
       document.getElementById("changePasswordModal")?.classList.remove("open");
       document.getElementById("changePasswordForm")?.reset();
 
     } catch (err) {
-      console.error("changePassword error:", err);
       showToast("Something went wrong. Please try again.", "error");
     } finally {
-      btn.disabled = false;
-      btn.textContent = "Update Password";
+      btn.disabled = false; btn.textContent = "Update Password";
     }
   });
 }
