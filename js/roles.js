@@ -7,7 +7,7 @@
 export const ROLE_PERMISSIONS = {
   "superadmin": {
     label: "Super Admin",
-    sections: ["overview","reports","export","audit"],
+    sections: ["overview","rooms","reports","export","facilities","maintenance","notices"],
     canExport: true,
     canManageUsers: false,
     canEditStudents: false,
