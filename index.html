@@ -20,8 +20,8 @@
   <!-- ╔══════════════════════════════════════════════════════════════════════╗
        ║  SUPABASE CREDENTIALS (replace content values below)               ║
        ╚══════════════════════════════════════════════════════════════════════╝ -->
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
 
@@ -194,7 +194,7 @@
   <div class="modal-box">
     <div class="modal-header">
       <span class="modal-title">🔑 Sign In to Portal</span>
-      <button class="modal-close" id="modalClose">×</button>
+      <button class="modal-close" id="loginModalClose">×</button>
     </div>
     <div class="modal-body">
 
@@ -254,8 +254,11 @@
 
   initLoginModal();
 
-  document.getElementById("signInBtnHero")?.addEventListener("click", () => {
-    document.getElementById("loginModal").classList.add("open");
+  // Wire ALL sign in buttons
+  ["signInBtn", "signInBtnHero"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      document.getElementById("loginModal").classList.add("open");
+    });
   });
 
   // Apply for Room button — smooth scroll to form
