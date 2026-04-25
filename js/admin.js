@@ -5,10 +5,12 @@
 
 import { supabase, showToast, logAudit } from "./supabaseClient.js";
 import { getPermissions, filterSidebarByRole, getRoleBadgeHTML } from "./roles.js";
-import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoomModal, bulkEnrolAll } from "./admin_students.js";
+import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoomModal, bulkEnrolAll, initBulkUpload } from "./admin_students.js";
 import { requireAuth, getSession, logout, hashPassword, initChangePasswordModal } from "./auth.js";
 import { fetchRooms, fetchAvailableRooms, fetchRoomWithOccupants, assignRoom, removeRoomAssignment, renderRoomGrid, changeRoomType } from "./rooms.js";
 import { loadFacilitiesList, loadBookings, loadMaintenance, initFacStatusModal, initBookingModal, initMaintenanceModal } from "./facilities.js";
+import { generateOccupancyReport, loadWaitingList, addToWaitingList, removeFromWaitingList, loadAcademicYears, setActiveYear, createNewYear, recordRoomHistory, loadRoomHistory } from "./reports.js";
+import { notifyApplicationStatus, sendLoginCredentials, notifyWaitingListUpdate } from "./notifications.js";
 
 requireAuth("admin");
 const ADMIN = getSession();
@@ -44,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initEditStudentModal();
   initAssignRoomModal();
   initChangePasswordModal();
+  initBulkUpload();
   initFacStatusModal();
   initBookingModal();
   initMaintenanceModal();
@@ -132,6 +135,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("filterRoomBlock")?.addEventListener("change", loadManageRooms);
 
+  // Edit room modal close
+  document.getElementById("editRoomModalClose")?.addEventListener("click", () => {
+    document.getElementById("editRoomModal").classList.remove("open");
+  });
+
   // Edit room form
   document.getElementById("editRoomForm")?.addEventListener("submit", async e => {
     e.preventDefault();
@@ -195,6 +203,9 @@ function navigateTo(section) {
     facilities:   () => loadFacilitiesList("facilitiesContainer"),
     bookings:     () => loadBookings("bookingsContainer"),
     maintenance:  () => loadMaintenance("maintenanceContainer"),
+    waiting:      loadWaitingListSection,
+    academicyear: loadAcademicYearSection,
+    history:      () => {},
   };
   if (loaders[section]) loaders[section]();
 }
@@ -681,3 +692,149 @@ window.openAssignRoomModal = async (studentId, studentName) => {
 function escHtml(str) {
   return String(str||"").replace(/'/g,"\\'").replace(/"/g,"&quot;");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WAITING LIST (#12)
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadWaitingListSection() {
+  const tbody = document.getElementById("waitingListBody");
+  const footer = document.getElementById("waitingListFooter");
+  if (!tbody) return;
+
+  const list = await loadWaitingList();
+  if (footer) footer.textContent = `${list.length} student${list.length !== 1 ? "s" : ""} waiting`;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="table-empty"><div class="table-empty-icon">⏳</div><h4>Waiting list is empty</h4></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(s => `<tr>
+    <td><strong>${s.full_name}</strong></td>
+    <td>${s.reg_number}</td>
+    <td>${s.program || "—"}</td>
+    <td>Level ${s.level || "—"}</td>
+    <td>${s.sex === "M" ? "♂ Male" : "♀ Female"}</td>
+    <td>${new Date(s.created_at).toLocaleDateString()}</td>
+    <td>
+      <button class="btn-sm btn-success" onclick="assignFromWaiting('${s.id}','${s.student_id}','${escHtml(s.full_name)}')">🏠 Assign Room</button>
+      <button class="btn-sm btn-danger"  onclick="removeWaiting('${s.id}','${escHtml(s.full_name)}')">✕ Remove</button>
+    </td>
+  </tr>`).join("");
+}
+
+window.assignFromWaiting = async (waitingId, studentId, name) => {
+  await openAssignRoomModal(studentId, name);
+  // Remove from waiting list after assignment
+  window._pendingWaitingRemoval = waitingId;
+};
+
+window.removeWaiting = async (id, name) => {
+  if (!confirm(`Remove ${name} from waiting list?`)) return;
+  await removeFromWaitingList(id, "cancelled");
+  showToast(`${name} removed from waiting list.`, "success");
+  loadWaitingListSection();
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACADEMIC YEAR (#10)
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadAcademicYearSection() {
+  const container = document.getElementById("academicYearContainer");
+  if (!container) return;
+
+  const years = await loadAcademicYears();
+
+  container.innerHTML = `
+    <div class="form-card" style="margin-bottom:1.5rem">
+      <h3>Create New Academic Year</h3>
+      <form id="newYearForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Year</label>
+            <input type="text" id="newYearValue" placeholder="e.g. 2025/2026" required>
+          </div>
+          <div class="form-group">
+            <label>Semester</label>
+            <select id="newSemesterValue" required>
+              <option value="Semester 1">Semester 1</option>
+              <option value="Semester 2">Semester 2</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Year</button>
+      </form>
+    </div>
+    <div class="table-card">
+      <div class="table-card-header"><span class="table-card-title">📅 Academic Years</span></div>
+      <div class="table-wrap">
+        <table class="beautiful-table">
+          <thead><tr><th>Year</th><th>Semester</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${years.map(y => `<tr>
+              <td>${y.year}</td>
+              <td>${y.semester}</td>
+              <td><span style="background:${y.is_active?'#d1fae5':'#f3f4f6'};color:${y.is_active?'#065f46':'#6b7280'};padding:.2rem .6rem;border-radius:999px;font-size:11px;font-weight:700">${y.is_active?"● Active":"Inactive"}</span></td>
+              <td>${!y.is_active ? `<button class="btn-sm btn-primary" onclick="activateYear('${y.id}')">Set Active</button>` : "Current"}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("newYearForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const year = document.getElementById("newYearValue").value.trim();
+    const sem  = document.getElementById("newSemesterValue").value;
+    await createNewYear(year, sem);
+    loadAcademicYearSection();
+  });
+}
+
+window.activateYear = async (yearId) => {
+  await setActiveYear(yearId);
+  loadAcademicYearSection();
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PDF REPORT (#5)
+// ─────────────────────────────────────────────────────────────────────────────
+window.generatePDFReport = async () => {
+  showToast("Generating report…", "info");
+  await generateOccupancyReport();
+  await logAudit("Generated PDF occupancy report", ADMIN.username);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOM HISTORY (#7)
+// ─────────────────────────────────────────────────────────────────────────────
+window.viewRoomHistory = async (studentId, name) => {
+  const history = await loadRoomHistory(studentId);
+  const modal = document.getElementById("roomHistoryModal");
+  const body  = document.getElementById("roomHistoryBody");
+  if (!modal || !body) return;
+
+  document.getElementById("roomHistoryTitle").textContent = `Room History — ${name}`;
+
+  body.innerHTML = history.length === 0
+    ? "<p style='color:var(--gray-400)'>No room history recorded.</p>"
+    : history.map(h => `
+      <div style="padding:.7rem;background:var(--gray-50);border-radius:6px;margin-bottom:.5rem">
+        <strong>Block ${h.block} – Room ${h.room_number}</strong>
+        <br><small style="color:var(--gray-400)">
+          In: ${new Date(h.moved_in).toLocaleDateString()}
+          ${h.moved_out ? ` · Out: ${new Date(h.moved_out).toLocaleDateString()}` : " · Current"}
+          ${h.academic_year ? ` · ${h.academic_year}` : ""}
+        </small>
+      </div>`).join("");
+
+  modal.classList.add("open");
+};
+
+// Application notification
+window.notifyStudent = async (regNumber, status) => {
+  const result = await notifyApplicationStatus(regNumber, status);
+  if (result?.success) showToast("Student notified via SMS!", "success");
+  else showToast("SMS not configured. Check notifications.js for Arkesel setup.", "warning");
+};
