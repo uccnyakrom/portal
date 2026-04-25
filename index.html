@@ -14,15 +14,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="data:,">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
   <title>UCC Nyakrom — Campus Accommodation Portal</title>
 
   <!-- ╔══════════════════════════════════════════════════════════════════════╗
        ║  SUPABASE CREDENTIALS (replace content values below)               ║
        ╚══════════════════════════════════════════════════════════════════════╝ -->
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
 
@@ -100,36 +99,27 @@
     <p class="section-subtitle" style="text-align:center;margin-bottom:2rem">
       Not yet in the system? Submit your accommodation request below and the General Office will process it.
     </p>
-
-    <!-- Alert box for existing students -->
     <div id="existingStudentAlert" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:var(--radius);padding:1.2rem 1.5rem;margin-bottom:1.5rem;text-align:center">
       <div style="font-size:1.8rem;margin-bottom:.5rem">⚠️</div>
       <h3 style="color:#92400e;margin-bottom:.4rem">You are already in our system!</h3>
-      <p style="color:#78350f;font-size:14px;margin-bottom:.8rem">
-        A student record with this registration number already exists. Please log in to your student portal to manage your accommodation.
-      </p>
-      <button onclick="document.getElementById('loginModal').classList.add('open')" 
-        class="btn btn-gold" style="font-size:13px;padding:.5rem 1.5rem">
-        Sign In to Student Portal →
-      </button>
+      <p style="color:#78350f;font-size:14px;margin-bottom:.8rem">A student with this registration number already exists. Please log in to your student portal instead.</p>
+      <a href="student.html" class="btn" style="background:var(--gold);color:#fff;font-size:13px;padding:.5rem 1.5rem;text-decoration:none;border-radius:6px">Sign In to Student Portal →</a>
     </div>
-
-    <div id="applyFormWrap" style="background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:2rem;border-top:4px solid var(--gold)">
+    <div style="background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:2rem;border-top:4px solid var(--gold)">
       <form id="publicApplyForm">
         <div class="form-row">
           <div class="form-group">
-            <label>Full Name</label>
+            <label>Full Name *</label>
             <input type="text" id="pubName" placeholder="Your full name" required>
           </div>
           <div class="form-group">
-            <label>Registration Number</label>
-            <input type="text" id="pubReg" placeholder="e.g. SN/NSU/25/001" required
-              onblur="checkExistingStudent(this.value)">
+            <label>Registration Number *</label>
+            <input type="text" id="pubReg" placeholder="e.g. SN/NSU/25/001" required>
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Programme</label>
+            <label>Programme *</label>
             <select id="pubProgram" required>
               <option value="">Select Programme</option>
               <option value="BSc Nursing">BSc Nursing</option>
@@ -138,7 +128,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Level</label>
+            <label>Level *</label>
             <select id="pubLevel" required>
               <option value="">Select Level</option>
               <option value="100">Level 100</option>
@@ -152,7 +142,7 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Sex</label>
+            <label>Sex *</label>
             <select id="pubSex" required>
               <option value="">Select</option>
               <option value="M">Male</option>
@@ -169,22 +159,18 @@
           <select id="pubRoom">
             <option value="">No preference</option>
           </select>
-          <p style="font-size:11px;color:var(--gray-400);margin-top:.3rem">
-            Room preferences are subject to availability and admin approval.
-          </p>
+          <small style="color:var(--gray-400)">Subject to availability and admin approval.</small>
         </div>
         <div class="form-group">
           <label>Any special requests or notes (optional)</label>
-          <textarea id="pubNotes" rows="2" placeholder="e.g. medical needs, disability requirements…"></textarea>
+          <textarea id="pubNotes" rows="3" placeholder="e.g. medical needs, disability requirements…"></textarea>
         </div>
-        <button type="submit" class="btn btn-primary btn-full" id="pubSubmitBtn" style="font-size:15px;padding:.8rem">
-          Submit Application
-        </button>
+        <button type="submit" class="btn btn-primary btn-full" id="pubSubmitBtn" style="font-size:15px;padding:.8rem">Submit Application</button>
       </form>
       <div id="publicApplyResult" style="display:none;text-align:center;padding:1.5rem">
         <div style="font-size:3rem">✅</div>
         <h3 style="color:var(--navy);margin:.5rem 0">Application Submitted!</h3>
-        <p style="color:var(--gray-600)">Your application has been received. The General Office will contact you shortly with further instructions.</p>
+        <p style="color:var(--gray-600)">Your application has been received. The General Office will contact you shortly.</p>
         <p style="color:var(--gray-400);font-size:13px;margin-top:.5rem">Reference: <strong id="appRefNum"></strong></p>
       </div>
     </div>
@@ -259,255 +245,114 @@
 <!-- ── Scripts ─────────────────────────────────────────────────────────────── -->
 
 <!-- ── Public Room Application Modal ─────────────────────────────────────────── -->
-<div class="modal-overlay" id="publicApplyModal">
-  <div class="modal-box" style="max-width:520px">
-    <div class="modal-header">
-      <span class="modal-title">📋 Apply for Campus Accommodation</span>
-      <button class="modal-close" id="publicApplyClose">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--gray-400);margin-bottom:1.2rem">
-        Fill in your details below. Your application will be reviewed by the accommodation office.
-        You will be contacted once a decision is made.
-      </p>
-      <form id="publicApplyForm">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Full Name *</label>
-            <input type="text" id="pubName" placeholder="e.g. Ama Mensah" required>
-          </div>
-          <div class="form-group">
-            <label>Registration Number *</label>
-            <input type="text" id="pubReg" placeholder="e.g. SN/NSU/25/001" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Programme *</label>
-            <select id="pubProgram" required>
-              <option value="">Select…</option>
-              <option value="BSc Nursing">BSc Nursing</option>
-              <option value="BSc Nutrition">BSc Nutrition</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Level *</label>
-            <select id="pubLevel" required>
-              <option value="">Select…</option>
-              <option value="100">Level 100</option>
-              <option value="200">Level 200</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Sex *</label>
-            <select id="pubSex" required>
-              <option value="">Select…</option>
-              <option value="M">Male</option>
-              <option value="F">Female</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Phone Number</label>
-            <input type="tel" id="pubPhone" placeholder="e.g. 0241234567">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Any special requests or notes (optional)</label>
-          <textarea id="pubNotes" rows="2" placeholder="e.g. medical needs, preferred block…"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-full">Submit Application</button>
-      </form>
-    </div>
-  </div>
-</div>
+
 
 <script type="module">
-  import { initLoginModal }   from "./js/auth.js";
-  import { fetchRooms }       from "./js/rooms.js";
-  import { renderRoomGrid }   from "./js/rooms.js";
-  import { supabase }         from "./js/supabaseClient.js";
+  import { supabase }       from "./js/supabaseClient.js";
+  import { initLoginModal } from "./js/auth.js";
+  import { fetchRooms, renderRoomGrid } from "./js/rooms.js";
 
-  // Wire Apply button in hero
-  document.getElementById("applyPublicBtn")?.addEventListener("click", () => {
-    document.getElementById("apply").scrollIntoView({ behavior: "smooth" });
-  });
+  initLoginModal();
 
-  // Public Application Form
-  document.getElementById("publicApplyForm")?.addEventListener("submit", async e => {
-    e.preventDefault();
-    const btn = e.target.querySelector("button[type=submit]");
-    btn.disabled = true; btn.textContent = "Submitting…";
-
-    const reg = document.getElementById("pubReg").value.trim().toUpperCase();
-
-    // Check if student already exists
-    const { data: existing } = await supabase
-      .from("students").select("id").eq("reg_number", reg).limit(1);
-
-    let studentId = existing?.[0]?.id;
-
-    // If student doesn't exist, create them
-    if (!studentId) {
-      const { data: newStudent, error: insertErr } = await supabase
-        .from("students")
-        .insert([{
-          full_name: document.getElementById("pubName").value.trim(),
-          reg_number: reg,
-          program:   document.getElementById("pubProgram").value,
-          level:     parseInt(document.getElementById("pubLevel").value),
-          sex:       document.getElementById("pubSex").value,
-        }])
-        .select("id")
-        .single();
-
-      if (insertErr) {
-        showToast("Error submitting application. Please try again.", "error");
-        btn.disabled = false; btn.textContent = "Submit Application";
-        return;
-      }
-      studentId = newStudent.id;
-    }
-
-    // Submit application
-    const { error: appErr } = await supabase.from("applications").insert([{
-      student_id: studentId,
-      status: "pending",
-      notes: document.getElementById("pubNotes").value || null,
-      created_at: new Date().toISOString()
-    }]);
-
-    if (appErr) {
-      showToast("Error submitting application. Please try again.", "error");
-      btn.disabled = false; btn.textContent = "Submit Application";
-      return;
-    }
-
-    // Show success
-    document.getElementById("publicApplyForm").style.display = "none";
-    document.getElementById("publicApplyResult").style.display = "block";
-  });
-
-  // Wire second sign-in button
-  document.getElementById("signInBtnHero").addEventListener("click", () => {
+  document.getElementById("signInBtnHero")?.addEventListener("click", () => {
     document.getElementById("loginModal").classList.add("open");
   });
 
-
-  // Initialise the login modal
-  initLoginModal();
-
-  // ── Load live stats ──────────────────────────────────────────────────────
+  // Live stats
   async function loadPublicStats() {
     const { data: rooms } = await supabase.from("rooms").select("capacity, occupancy_count, type");
     if (!rooms) return;
-
-    const totalBeds    = rooms.reduce((a, r) => a + r.capacity, 0);
-    const occupiedBeds = rooms.reduce((a, r) => a + r.occupancy_count, 0);
-    const availBeds    = totalBeds - occupiedBeds;
-    const vacantRooms  = rooms.filter(r => r.type === "vacant").length;
-    const occRate      = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
-
-    document.getElementById("stripBeds").textContent    = availBeds;
-    document.getElementById("stripVacant").textContent  = vacantRooms;
-    document.getElementById("stripOccRate").textContent = occRate + "%";
+    const total    = rooms.reduce((a,r)=>a+r.capacity,0);
+    const occupied = rooms.reduce((a,r)=>a+r.occupancy_count,0);
+    const el = (id,val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+    el("stripBeds",    total - occupied);
+    el("stripVacant",  rooms.filter(r=>r.type==="vacant").length);
+    el("stripOccRate", total>0 ? Math.round((occupied/total)*100)+"%" : "0%");
   }
 
-  // ── Load public room grid ────────────────────────────────────────────────
+  // Room grid
   async function loadPublicGrid() {
     const rooms = await fetchRooms();
-    renderRoomGrid("publicRoomGrid", rooms); // no click handler for public view
+    renderRoomGrid("publicRoomGrid", rooms);
+  }
+
+  // Available rooms dropdown
+  async function loadRoomDropdown() {
+    const { data } = await supabase
+      .from("rooms")
+      .select("block, room_number, capacity, occupancy_count, type")
+      .not("type","in",'("full","staff","NSP")')
+      .order("block").order("room_number");
+    const sel = document.getElementById("pubRoom");
+    if (!sel || !data) return;
+    sel.innerHTML = '<option value="">No preference</option>' +
+      data.map(r=>`<option value="${r.block}-${r.room_number}">Block ${r.block} – Room ${r.room_number} (${r.occupancy_count}/${r.capacity})</option>`).join("");
   }
 
   loadPublicStats();
   loadPublicGrid();
+  loadRoomDropdown();
 
-  // Public Apply Modal
-  document.getElementById("applyPublicBtn").addEventListener("click", () => {
-    document.getElementById("publicApplyModal").classList.add("open");
-  });
-  document.getElementById("publicApplyClose").addEventListener("click", () => {
-    document.getElementById("publicApplyModal").classList.remove("open");
-  });
-
-  document.getElementById("publicApplyForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    const btn = e.target.querySelector("button[type=submit]");
-    btn.disabled = true;
-    btn.textContent = "Submitting…";
-
-    const regNumber = document.getElementById("pubReg").value.trim().toUpperCase();
-    const fullName  = document.getElementById("pubName").value.trim();
-    const program   = document.getElementById("pubProgram").value;
-    const level     = parseInt(document.getElementById("pubLevel").value);
-    const sex       = document.getElementById("pubSex").value;
-    const notes     = document.getElementById("pubNotes").value.trim();
-
-    try {
-      // Check if student already exists
-      const { data: existing } = await supabase
-        .from("students")
-        .select("id")
-        .eq("reg_number", regNumber)
-        .limit(1);
-
-      let studentId;
-
-      if (existing?.length > 0) {
-        studentId = existing[0].id;
-      } else {
-        // Create student record
-        const { data: newStudent, error: sErr } = await supabase
-          .from("students")
-          .insert([{ full_name: fullName, reg_number: regNumber, program, level, sex }])
-          .select("id")
-          .single();
-        if (sErr) throw sErr;
-        studentId = newStudent.id;
-      }
-
-      // Check for existing pending application
-      const { data: existingApp } = await supabase
-        .from("applications")
-        .select("id, status")
-        .eq("student_id", studentId)
-        .eq("status", "pending")
-        .limit(1);
-
-      if (existingApp?.length > 0) {
-        alert("You already have a pending application. Please wait for a response from the accommodation office.");
-        btn.disabled = false;
-        btn.textContent = "Submit Application";
-        return;
-      }
-
-      // Submit application
-      const { error: appErr } = await supabase
-        .from("applications")
-        .insert([{ student_id: studentId, status: "pending", notes, created_at: new Date().toISOString() }]);
-      if (appErr) throw appErr;
-
-      document.getElementById("publicApplyModal").classList.remove("open");
-      e.target.reset();
-      alert("✅ Application submitted successfully!\n\nYour registration number is: " + regNumber + "\n\nYou will be contacted once your application is reviewed.");
-
-    } catch (err) {
-      console.error(err);
-      alert("Error submitting application. Please try again or visit the General Office.");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Submit Application";
+  // Check existing student on reg number blur
+  document.getElementById("pubReg")?.addEventListener("blur", async function() {
+    const reg = this.value.trim().toUpperCase();
+    if (!reg) return;
+    const { data } = await supabase.from("students").select("id").eq("reg_number", reg).limit(1);
+    const alert   = document.getElementById("existingStudentAlert");
+    const btn     = document.getElementById("pubSubmitBtn");
+    if (data?.length > 0) {
+      if (alert) alert.style.display = "block";
+      if (btn)   { btn.disabled=true; btn.textContent="Please sign in instead"; btn.style.opacity=".5"; }
+    } else {
+      if (alert) alert.style.display = "none";
+      if (btn)   { btn.disabled=false; btn.textContent="Submit Application"; btn.style.opacity="1"; }
     }
   });
 
-  // ── Real-time updates on landing page ───────────────────────────────────
-  supabase.channel("landing-rooms")
-    .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, () => {
-      loadPublicStats();
-      loadPublicGrid();
-    })
-    .subscribe();
+  // Submit application
+  document.getElementById("publicApplyForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = document.getElementById("pubSubmitBtn");
+    btn.disabled = true; btn.textContent = "Submitting…";
+
+    const reg = document.getElementById("pubReg").value.trim().toUpperCase();
+    const { data: dup } = await supabase.from("students").select("id").eq("reg_number", reg).limit(1);
+    if (dup?.length > 0) {
+      document.getElementById("existingStudentAlert").style.display = "block";
+      btn.disabled=false; btn.textContent="Submit Application";
+      return;
+    }
+
+    const { error } = await supabase.from("public_applications").insert([{
+      full_name:      document.getElementById("pubName").value.trim(),
+      reg_number:     reg,
+      program:        document.getElementById("pubProgram").value,
+      level:          parseInt(document.getElementById("pubLevel").value),
+      sex:            document.getElementById("pubSex").value,
+      phone:          document.getElementById("pubPhone").value.trim(),
+      preferred_room: document.getElementById("pubRoom").value,
+      notes:          document.getElementById("pubNotes").value.trim(),
+      status:         "pending",
+      source:         "public_form",
+      created_at:     new Date().toISOString()
+    }]);
+
+    if (error) {
+      window.alert("Submission failed: " + error.message);
+      btn.disabled=false; btn.textContent="Submit Application";
+      return;
+    }
+
+    document.getElementById("publicApplyForm").style.display = "none";
+    document.getElementById("publicApplyResult").style.display = "block";
+    document.getElementById("appRefNum").textContent = "APP-" + Date.now().toString().slice(-6);
+  });
+
+  // Real-time
+  supabase.channel("landing").on("postgres_changes",
+    { event:"*", schema:"public", table:"rooms" },
+    () => { loadPublicStats(); loadPublicGrid(); loadRoomDropdown(); }
+  ).subscribe();
 </script>
 
 </body>
