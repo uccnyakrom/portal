@@ -395,28 +395,44 @@ window.removeRoom = async (studentId) => {
 // APPLICATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 async function loadApplications() {
-  const { data } = await supabase
+  // Applications table uses reg_number directly
+  const { data: apps } = await supabase
     .from("applications")
-    .select("*, students(full_name, reg_number, program)")
-    .order("created_at", { ascending: false });
+    .select("id, reg_number, preferred_block, notes, status, submitted_at, reviewed_by, reviewed_at")
+    .order("submitted_at", { ascending: false });
+
+  // Look up student details by reg_number
+  const regNumbers = (apps||[]).map(a => a.reg_number).filter(Boolean);
+  let studentMap = {};
+  if (regNumbers.length > 0) {
+    const { data: students } = await supabase
+      .from("students")
+      .select("reg_number, full_name, program")
+      .in("reg_number", regNumbers);
+    (students||[]).forEach(s => studentMap[s.reg_number] = s);
+  }
 
   const tbody = document.getElementById("appTableBody");
   if (!tbody) return;
-  tbody.innerHTML = (data||[]).map(a => `<tr>
-    <td>${a.students?.full_name||"—"}</td>
-    <td>${a.students?.reg_number||"—"}</td>
-    <td>${a.students?.program||"—"}</td>
-    <td>${new Date(a.created_at).toLocaleDateString()}</td>
-    <td><span class="badge badge-${a.status}">${a.status}</span></td>
-    <td>${a.status==="pending"?`
-      <button class="btn-sm btn-success" onclick="updateApp('${a.id}','approved')">Approve</button>
-      <button class="btn-sm btn-danger"  onclick="updateApp('${a.id}','rejected')">Reject</button>
-    `:"—"}</td>
-  </tr>`).join("") || `<tr><td colspan="6" style="text-align:center">No applications</td></tr>`;
+  tbody.innerHTML = (apps||[]).map(a => {
+    const student = studentMap[a.reg_number] || {};
+    const date = a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : "—";
+    return `<tr>
+      <td>${student.full_name || a.reg_number || "—"}</td>
+      <td>${a.reg_number || "—"}</td>
+      <td>${student.program || "—"}</td>
+      <td>${date}</td>
+      <td><span class="badge badge-${a.status}">${a.status}</span></td>
+      <td>${a.status==="pending"?`
+        <button class="btn-sm btn-success" onclick="updateApp('${a.id}','approved')">Approve</button>
+        <button class="btn-sm btn-danger"  onclick="updateApp('${a.id}','rejected')">Reject</button>
+      `:"—"}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">No applications</td></tr>`;
 }
 
 window.updateApp = async (appId, status) => {
-  const { error } = await supabase.from("applications").update({ status }).eq("id", appId);
+  const { error } = await supabase.from("applications").update({ status, reviewed_by: ADMIN.username, reviewed_at: new Date().toISOString() }).eq("id", appId);
   if (error) { showToast("Update failed.", "error"); return; }
   await logAudit(`Application ${appId} ${status}`, ADMIN.username);
   showToast(`Application ${status}.`, "success");
