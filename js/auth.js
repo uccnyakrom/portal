@@ -18,16 +18,15 @@ export async function hashPassword(plain) {
 }
 
 async function verifyPassword(plain, stored) {
-  // Support both plain text (legacy) and hashed passwords
   if (!stored) return false;
-  if (stored === "auto") return true; // auto password verified separately
-  // If stored looks like a SHA-256 hash (64 hex chars)
-  if (/^[0-9a-f]{64}$/i.test(stored)) {
+  if (stored === "auto") return true;
+  // If stored looks like SHA-256 hash (64 hex chars) — use hash comparison
+  if (/^[a-f0-9]{64}$/i.test(stored)) {
     const hashed = await hashPassword(plain);
     return hashed === stored;
   }
-  // Legacy plain text comparison
-  return plain.trim() === stored;
+  // Plain text comparison (legacy passwords)
+  return plain.trim() === stored.trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
