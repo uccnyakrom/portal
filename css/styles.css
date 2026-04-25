@@ -1731,3 +1731,340 @@ tbody td { padding: .6rem 1rem; color: var(--gray-800); vertical-align: middle; 
   font-size: 11px;
   color: var(--gray-400);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  MOBILE RESPONSIVE — Enhanced                                               */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Mobile menu toggle button ───────────────────────────────────────────── */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: .8rem;
+  left: .8rem;
+  z-index: 200;
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 49;
+}
+
+@media (max-width: 768px) {
+  /* Show mobile menu button */
+  .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+
+  /* Sidebar hidden by default on mobile */
+  .sidebar {
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform .3s ease;
+    z-index: 100;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.open { display: block; }
+
+  /* Main content full width */
+  .dash-main { margin-left: 0; }
+  .dash-topbar { padding-left: 3.5rem; }
+
+  /* Stack charts */
+  .chart-row { grid-template-columns: 1fr; }
+  .form-row  { grid-template-columns: 1fr; }
+
+  /* Stat cards 2 columns */
+  .stat-cards { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  .stat-card  { padding: .8rem 1rem; }
+  .stat-card-value { font-size: 1.5rem; }
+
+  /* Tables scroll horizontally */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 500px; }
+  .beautiful-table { font-size: 12px; }
+  .beautiful-table thead th { padding: .6rem .7rem; }
+  .beautiful-table tbody td { padding: .5rem .7rem; }
+
+  /* Room grid smaller cards */
+  .room-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: .4rem; }
+  .room-card-header { font-size: 10px; padding: .3rem; }
+  .room-stat { font-size: 11px; }
+
+  /* Facilities grid */
+  .facilities-grid { grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+  .fac-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Dashboard content padding */
+  .dash-content { padding: 1rem; }
+
+  /* Student name cell compact */
+  .student-name-cell { gap: .4rem; }
+  .student-avatar { width: 28px; height: 28px; font-size: 10px; }
+  .student-name-text { font-size: 12px; }
+  .student-reg-text { font-size: 10px; }
+
+  /* Table actions stack */
+  .table-actions { flex-direction: column; gap: .2rem; }
+  .table-actions .btn-sm { font-size: 11px; padding: .25rem .5rem; }
+
+  /* Modal full width on mobile */
+  .modal-box { margin: .5rem; max-width: calc(100vw - 1rem) !important; }
+  .modal-body { padding: 1rem; }
+
+  /* Room detail card */
+  .room-detail-stats { gap: 1rem; }
+  .stat-num { font-size: 1.4rem; }
+
+  /* Form cards full width */
+  .form-card { max-width: 100%; }
+  .profile-card { max-width: 100%; }
+  .apply-form-card { max-width: 100%; }
+  .apply-status-card { max-width: 100%; }
+
+  /* Export grid */
+  .export-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Notice board */
+  .notice-card { padding: .8rem; }
+
+  /* Room summary strip */
+  .room-summary-strip { gap: .6rem; font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+  /* Single column for very small screens */
+  .stat-cards { grid-template-columns: repeat(2, 1fr); }
+  .facilities-grid { grid-template-columns: 1fr 1fr; }
+  .fac-grid { grid-template-columns: 1fr 1fr; }
+  .export-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Landing page */
+  .hero { padding: 5rem 1rem 3rem; }
+  .hero-title { font-size: 1.6rem; }
+  .hero-actions { flex-direction: column; align-items: center; }
+  .hero-actions .btn { width: 100%; justify-content: center; }
+  .stats-strip { gap: 1rem; padding: 1.2rem; }
+  .stat-item .stat-number { font-size: 1.8rem; }
+
+  /* Apply form on landing */
+  .form-row { grid-template-columns: 1fr; }
+
+  /* Roommate cards */
+  .roommate-card { padding: .6rem; }
+  .roommate-avatar { width: 34px; height: 34px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  iOS / iPhone SPECIFIC FIXES                                                */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Prevent iOS zoom on input focus */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Fix iOS safe area (notch) */
+.dash-layout {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.sidebar {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Fix iOS momentum scrolling */
+.table-wrap {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+}
+
+.dash-main {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+
+  /* Ensure sidebar is fully hidden off-screen */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 75vw;
+    max-width: 280px;
+    transform: translateX(-100%);
+    transition: transform .3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0,0,0,.3);
+  }
+
+  /* Overlay covers full screen */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 999;
+    display: none;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  /* Main content takes full width */
+  .dash-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-height: 100vh;
+  }
+
+  /* Dashboard content padding with room for menu button */
+  .dash-content {
+    padding: 1rem;
+    padding-top: 3.5rem;
+  }
+
+  /* Mobile menu button — always visible */
+  .mobile-menu-btn {
+    display: flex !important;
+    position: fixed;
+    top: .7rem;
+    left: .7rem;
+    z-index: 1001;
+    width: 42px;
+    height: 42px;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Topbar shifts right on mobile */
+  .dash-topbar {
+    padding-left: 3.5rem !important;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--white);
+  }
+
+  /* Stat cards — 2 columns on mobile */
+  .stat-cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: .5rem !important;
+  }
+
+  .stat-card {
+    padding: .7rem !important;
+  }
+
+  .stat-card-value {
+    font-size: 1.4rem !important;
+  }
+
+  .stat-card-label {
+    font-size: 10px !important;
+  }
+
+  /* Charts stack vertically */
+  .chart-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    max-width: 100vw;
+  }
+
+  table {
+    min-width: 500px;
+  }
+
+  /* Form rows stack */
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Manage rooms grid stacks */
+  #section-managerooms > div {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Student name cell compact */
+  .student-name-cell { gap: .3rem; }
+  .student-avatar { width: 28px !important; height: 28px !important; font-size: 10px !important; }
+  .student-name-text { font-size: 12px !important; }
+  .student-reg-text { font-size: 10px !important; }
+
+  /* Action buttons compact */
+  .table-actions { gap: .2rem; }
+  .btn-sm { font-size: 10px !important; padding: .2rem .4rem !important; }
+
+  /* Modals full screen on mobile */
+  .modal-overlay {
+    padding: .5rem;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+
+  .modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Room grid smaller */
+  .room-grid {
+    grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)) !important;
+    gap: .3rem !important;
+  }
+
+  .room-card-header {
+    font-size: 9px !important;
+    padding: .25rem !important;
+  }
+
+  /* Notices */
+  .notice-card { padding: .7rem; }
+
+  /* Room summary strip wraps */
+  .room-summary-strip {
+    gap: .5rem;
+    font-size: 11px;
+  }
+
+  /* Profile card full width */
+  .profile-card,
+  .room-detail-card,
+  .apply-form-card { max-width: 100% !important; }
+}
+
+@media (max-width: 390px) {
+  /* iPhone SE and small phones */
+  .stat-cards { grid-template-columns: repeat(2, 1fr) !important; }
+  .stat-card-value { font-size: 1.2rem !important; }
+  .room-grid { grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)) !important; }
+}
