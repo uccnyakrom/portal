@@ -136,20 +136,47 @@ function bindStudentFilters() {
     const prog   = document.getElementById("filterProgram")?.value || "";
     const level  = document.getElementById("filterLevel")?.value   || "";
     const sex    = document.getElementById("filterSex")?.value     || "";
-    const search = (document.getElementById("filterSearch")?.value || "").toLowerCase();
+    const room   = document.getElementById("filterRoomStatus")?.value || "";
+    const search = (document.getElementById("filterSearch")?.value || "").toLowerCase().trim();
 
-    const filtered = (window._allStudents || []).filter(s =>
-      (!prog   || s.program       === prog)  &&
-      (!level  || String(s.level) === level) &&
-      (!sex    || s.sex           === sex)   &&
-      (!search || (s.full_name || s.name || "").toLowerCase().includes(search) ||
-                  s.reg_number.toLowerCase().includes(search))
-    );
+    const filtered = (window._allStudents || []).filter(s => {
+      const name = (s.full_name || s.name || "").toLowerCase();
+      const reg  = (s.reg_number || "").toLowerCase();
+      const prog_val = (s.program || "").toLowerCase();
+      const room_label = s.rooms ? `${s.rooms.block}-${s.rooms.room_number}`.toLowerCase() : "";
+
+      const matchSearch = !search || 
+        name.includes(search) || 
+        reg.includes(search) ||
+        prog_val.includes(search) ||
+        room_label.includes(search);
+
+      const matchProg  = !prog  || s.program === prog;
+      const matchLevel = !level || String(s.level) === level;
+      const matchSex   = !sex   || s.sex === sex;
+      const matchRoom  = !room  || 
+        (room === "assigned"   &&  s.room_id) ||
+        (room === "unassigned" && !s.room_id);
+
+      return matchSearch && matchProg && matchLevel && matchSex && matchRoom;
+    });
+
+    // Update count
+    const footer = document.getElementById("studentTableFooter");
+    if (footer) footer.textContent = `${filtered.length} of ${(window._allStudents||[]).length} students`;
+
     renderStudentTable(filtered);
   };
 
-  ["filterProgram","filterLevel","filterSex","filterSearch"]
+  ["filterProgram","filterLevel","filterSex","filterSearch","filterRoomStatus"]
     .forEach(id => document.getElementById(id)?.addEventListener("input", applyFilter));
+
+  // Clear filters button
+  document.getElementById("clearFiltersBtn")?.addEventListener("click", () => {
+    ["filterProgram","filterLevel","filterSex","filterSearch","filterRoomStatus"]
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
+    applyFilter();
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -398,3 +425,80 @@ window.removeRoom = async (studentId) => {
 function escHtml(str) {
   return String(str || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BULK UPLOAD STUDENTS (#2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function initBulkUpload() {
+  const input = document.getElementById("bulkUploadInput");
+  const btn   = document.getElementById("bulkUploadBtn");
+  if (!btn || !input) return;
+
+  btn.addEventListener("click", () => input.click());
+
+  input.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const text = await file.text();
+    const lines = text.split("\n").filter(l => l.trim());
+    const headers = lines[0].toLowerCase().split(",").map(h => h.trim().replace(/"/g,""));
+
+    const getCol = (row, name) => {
+      const idx = headers.findIndex(h => h.includes(name));
+      return idx >= 0 ? (row[idx]||"").trim().replace(/"/g,"") : "";
+    };
+
+    let added = 0, skipped = 0, errors = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(",");
+      const reg_number = getCol(row, "reg").toUpperCase();
+      const full_name  = getCol(row, "name");
+      const program    = getCol(row, "program") || getCol(row, "programme");
+      const level      = parseInt(getCol(row, "level")) || 100;
+      const sex        = getCol(row, "sex").toUpperCase().startsWith("M") ? "M" : "F";
+      const phone      = getCol(row, "phone");
+
+      if (!reg_number || !full_name) { skipped++; continue; }
+
+      const { data: existing } = await supabase
+        .from("students").select("id").eq("reg_number", reg_number).limit(1);
+
+      if (existing?.length) { skipped++; continue; }
+
+      const { error } = await supabase.from("students").insert([{
+        full_name, reg_number, program, level, sex, phone
+      }]);
+
+      if (error) { errors.push(`${reg_number}: ${error.message}`); }
+      else added++;
+    }
+
+    showToast(`Bulk upload: ${added} added, ${skipped} skipped.`, added > 0 ? "success" : "warning");
+    if (errors.length) console.error("Bulk upload errors:", errors);
+    await logAudit(`Bulk uploaded ${added} students`, "admin");
+    input.value = "";
+    loadStudents();
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUICK ROOM ASSIGN from student row (#3)
+// ─────────────────────────────────────────────────────────────────────────────
+window.quickAssignRoom = async (studentId, name) => {
+  await openAssignRoomModal(studentId, name);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOMMATE PREFERENCE (#13)
+// ─────────────────────────────────────────────────────────────────────────────
+window.saveRoommatePreference = async (studentId, pref) => {
+  const { error } = await supabase
+    .from("students")
+    .update({ roommate_preference: pref })
+    .eq("id", studentId);
+  if (error) showToast("Error saving preference.", "error");
+  else showToast("Roommate preference saved!", "success");
+};
