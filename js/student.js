@@ -295,12 +295,21 @@ async function loadApply() {
   const container = document.getElementById("applySection");
   if (!container) return;
 
-  // Check existing application
+  // Fetch fresh student data to get latest room_id
+  const { data: freshStudent } = await supabase
+    .from("students")
+    .select("id, full_name, reg_number, program, level, sex, room, room_id")
+    .eq("id", STUDENT.id)
+    .single();
+
+  const student = freshStudent || STUDENT;
+
+  // Check existing application using reg_number
   const { data: existing } = await supabase
     .from("applications")
-    .select("status, created_at")
-    .eq("student_id", STUDENT.id)
-    .order("created_at", { ascending: false })
+    .select("status, submitted_at, preferred_block, notes")
+    .eq("reg_number", student.reg_number)
+    .order("submitted_at", { ascending: false })
     .limit(1);
 
   const app = existing?.[0];
@@ -309,55 +318,91 @@ async function loadApply() {
     const statusColors = { pending: "#f59e0b", approved: "#22c55e", rejected: "#ef4444" };
     container.innerHTML = `
       <div class="apply-status-card">
-        <div class="apply-icon">${app.status === "approved" ? "✓" : app.status === "rejected" ? "✕" : "⏳"}</div>
+        <div class="apply-icon">${app.status === "approved" ? "✅" : app.status === "rejected" ? "❌" : "⏳"}</div>
         <h3>Application Status</h3>
-        <div class="apply-badge" style="background:${statusColors[app.status]}">
+        <div class="apply-badge" style="background:${statusColors[app.status]};color:#fff;padding:.4rem 1.2rem;border-radius:999px;display:inline-block;font-weight:700;margin:.5rem 0">
           ${app.status.toUpperCase()}
         </div>
-        <p>Submitted on ${new Date(app.submitted_at || app.created_at).toLocaleDateString()}</p>
-        ${app.status === "pending" ? "<p class='apply-note'>Your application is under review. You will be notified once a decision is made.</p>" : ""}
-        ${app.status === "rejected" ? "<p class='apply-note'>Your application was not approved this cycle. Please contact the accommodation office for more information.</p>" : ""}
+        <p style="color:var(--gray-600);margin:.5rem 0">
+          Submitted on ${app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : "—"}
+        </p>
+        ${app.preferred_block ? `<p style="color:var(--gray-600);font-size:13px">Notes: ${app.preferred_block}</p>` : ""}
+        ${app.status === "pending" ? "<p class='apply-note' style='color:#92400e;background:#fef3c7;padding:.7rem 1rem;border-radius:6px;margin-top:.8rem'>⏳ Your application is under review. The General Office will contact you with further instructions.</p>" : ""}
+        ${app.status === "approved" ? "<p class='apply-note' style='color:#065f46;background:#d1fae5;padding:.7rem 1rem;border-radius:6px;margin-top:.8rem'>✅ Your application has been approved! Visit the General Office to complete your room assignment.</p>" : ""}
+        ${app.status === "rejected" ? "<p class='apply-note' style='color:#991b1b;background:#fee2e2;padding:.7rem 1rem;border-radius:6px;margin-top:.8rem'>❌ Your application was not approved this cycle. Please contact the General Office for more information.</p>" : ""}
       </div>`;
     return;
   }
 
-  // No existing application — show form
-  if (STUDENT.room) {
+  // Already has a room assigned
+  if (student.room_id || student.room) {
     container.innerHTML = `
       <div class="apply-status-card">
         <div class="apply-icon">🏠</div>
         <h3>You already have a room assigned.</h3>
-        <p>Visit the <strong>My Room</strong> tab to see your room details.</p>
+        <p>Visit the <strong>My Room</strong> tab to see your room details and roommates.</p>
       </div>`;
     return;
   }
 
+  // Load available rooms for preferred room dropdown
+  const { data: availRooms } = await supabase
+    .from("rooms")
+    .select("id, block, room_number, capacity, occupancy_count")
+    .not("type", "in", '("full","staff","NSP")')
+    .order("block").order("room_number");
+
+  const roomOptions = (availRooms || []).map(r =>
+    `<option value="${r.block}-${r.room_number}">Block ${r.block} – Room ${r.room_number} (${r.occupancy_count}/${r.capacity})</option>`
+  ).join("");
+
   container.innerHTML = `
     <div class="apply-form-card">
       <h3>Apply for Campus Accommodation</h3>
-      <p>Submit your application below. Applications are reviewed by the accommodation office.</p>
+      <p style="color:var(--gray-600);margin-bottom:1rem">Fill in the form below. Your application will be reviewed by the General Office.</p>
       <form id="applyForm">
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" value="${STUDENT.full_name}" readonly class="input-readonly">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" value="${student.full_name || ""}" readonly class="input-readonly">
+          </div>
+          <div class="form-group">
+            <label>Registration Number</label>
+            <input type="text" value="${student.reg_number || ""}" readonly class="input-readonly">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Programme</label>
+            <select id="applyProgram">
+              <option value="${student.program || ""}" selected>${student.program || "Select Programme"}</option>
+              ${!student.program ? `
+              <option value="BSc Nursing">BSc Nursing</option>
+              <option value="BSc Nutrition">BSc Nutrition</option>
+              <option value="MBChB-COBES">MBChB-COBES</option>
+              ` : ""}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Level</label>
+            <input type="text" value="Level ${student.level || ""}" readonly class="input-readonly">
+          </div>
         </div>
         <div class="form-group">
-          <label>Registration Number</label>
-          <input type="text" value="${STUDENT.reg_number}" readonly class="input-readonly">
-        </div>
-        <div class="form-group">
-          <label>Programme</label>
-          <input type="text" value="${STUDENT.program}" readonly class="input-readonly">
-        </div>
-        <div class="form-group">
-          <label>Level</label>
-          <input type="text" value="Level ${STUDENT.level}" readonly class="input-readonly">
+          <label>Preferred Room (optional)</label>
+          <select id="applyPreferredRoom">
+            <option value="">No preference</option>
+            ${roomOptions}
+          </select>
+          <small style="color:var(--gray-400)">Subject to availability and admin approval.</small>
         </div>
         <div class="form-group">
           <label>Any special requests or notes (optional)</label>
-          <textarea id="applyNotes" rows="3" placeholder="E.g. medical needs, preferred block..."></textarea>
+          <textarea id="applyNotes" rows="3" placeholder="E.g. medical needs, disability requirements…"></textarea>
         </div>
-        <button type="submit" class="btn btn-primary btn-full">Submit Application</button>
+        <button type="submit" class="btn btn-primary btn-full" style="font-size:15px;padding:.8rem">
+          Submit Application
+        </button>
       </form>
     </div>`;
 
@@ -367,13 +412,15 @@ async function loadApply() {
     btn.disabled = true;
     btn.textContent = "Submitting…";
 
-    const { error } = await supabase.from("applications").insert([{
-      reg_number:      STUDENT.reg_number,
+    const payload = {
+      reg_number:      student.reg_number,
       status:          "pending",
-      preferred_block: document.getElementById("applyNotes")?.value || "",
-      notes:           "",
+      preferred_block: document.getElementById("applyPreferredRoom")?.value || "",
+      notes:           document.getElementById("applyNotes")?.value || "",
       submitted_at:    new Date().toISOString()
-    }]);
+    };
+
+    const { error } = await supabase.from("applications").insert([payload]);
 
     if (error) {
       showToast("Submission failed: " + error.message, "error");
@@ -381,7 +428,7 @@ async function loadApply() {
       btn.textContent = "Submit Application";
     } else {
       showToast("Application submitted successfully!", "success");
-      loadApply(); // Refresh to show status
+      loadApply();
     }
   });
 }
