@@ -20,8 +20,8 @@
   <!-- ╔══════════════════════════════════════════════════════════════════════╗
        ║  SUPABASE CREDENTIALS (replace content values below)               ║
        ╚══════════════════════════════════════════════════════════════════════╝ -->
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
 
@@ -256,6 +256,24 @@
 
   document.getElementById("signInBtnHero")?.addEventListener("click", () => {
     document.getElementById("loginModal").classList.add("open");
+  });
+
+  // Apply for Room button — smooth scroll to form
+  document.getElementById("applyPublicBtn")?.addEventListener("click", () => {
+    const applySection = document.getElementById("apply");
+    if (applySection) {
+      applySection.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Highlight the form briefly
+      setTimeout(() => {
+        const form = applySection.querySelector("form");
+        if (form) {
+          form.style.boxShadow = "0 0 0 3px var(--gold)";
+          form.style.borderRadius = "var(--radius-lg)";
+          form.style.transition = "box-shadow 0.3s";
+          setTimeout(() => { form.style.boxShadow = ""; }, 2000);
+        }
+      }, 600);
+    }
   });
 
   // Live stats
