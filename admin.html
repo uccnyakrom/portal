@@ -10,17 +10,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
+
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="dash-layout">
+  <!-- Mobile menu toggle -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()">☰</button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileMenu()"></div>
 
   <!-- ════════════════════════════════════════════════════════════════════════
        SIDEBAR
@@ -198,6 +201,75 @@
           </div>
         </div>
       </section>
+      <!-- ── ROOM MAP ───────────────────────────────────────────────────────── -->
+      <section id="section-rooms" class="dash-section hidden">
+        <div id="roomMapGrid"></div>
+        <div class="room-info-panel" id="roomInfoPanel">
+          <p style="color:var(--gray-400);margin-top:2rem">Click a room to view details</p>
+        </div>
+      </section>
+
+      <!-- ── ALLOCATIONS ────────────────────────────────────────────────────── -->
+      <section id="section-allocations" class="dash-section hidden">
+        <div class="table-card">
+          <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="table-card-title">🔑 Room Allocations</span>
+          </div>
+          <div class="table-wrap">
+            <table class="beautiful-table">
+              <thead>
+                <tr><th>Student</th><th>Programme</th><th>Level</th><th>Sex</th><th>Assigned Room</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="allocTableBody">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer"><span id="allocTableFooter">Loading…</span></div>
+        </div>
+      </section>
+
+      <!-- ── APPLICATIONS ───────────────────────────────────────────────────── -->
+      <section id="section-applications" class="dash-section hidden">
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-card-title">📋 Accommodation Applications</span>
+          </div>
+          <div class="table-wrap">
+            <table class="beautiful-table">
+              <thead>
+                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="appTableBody">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── PUBLIC APPLICATIONS ───────────────────────────────────────────── -->
+      <section id="section-publicapps" class="dash-section hidden">
+        <div class="table-card">
+          <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="table-card-title">📩 Public Applications</span>
+            <span style="font-size:12px;color:rgba(255,255,255,.6)">From unregistered students</span>
+          </div>
+          <div class="table-wrap">
+            <table class="beautiful-table">
+              <thead>
+                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Level</th><th>Sex</th><th>Phone</th><th>Preferred Room</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="publicAppsBody">
+                <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer"><span id="publicAppsFooter">Loading…</span></div>
+        </div>
+      </section>
+
+
 
       <!-- ── MANAGE ROOMS ──────────────────────────────────────────────────────── -->
       <section id="section-managerooms" class="dash-section hidden">
@@ -931,6 +1003,23 @@
     // Trigger rooms reload
     document.querySelector('[data-section="managerooms"]')?.click();
   });
+</script>
+
+<script>
+function toggleMobileMenu() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("open");
+}
+function closeMobileMenu() {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("open");
+}
+// Close sidebar when nav link clicked on mobile
+document.querySelectorAll(".nav-link").forEach(link => {
+  link.addEventListener("click", () => {
+    if (window.innerWidth <= 768) closeMobileMenu();
+  });
+});
 </script>
 </body>
 </html>
