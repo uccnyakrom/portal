@@ -314,7 +314,7 @@ async function loadApply() {
         <div class="apply-badge" style="background:${statusColors[app.status]}">
           ${app.status.toUpperCase()}
         </div>
-        <p>Submitted on ${new Date(app.created_at).toLocaleDateString()}</p>
+        <p>Submitted on ${new Date(app.submitted_at || app.created_at).toLocaleDateString()}</p>
         ${app.status === "pending" ? "<p class='apply-note'>Your application is under review. You will be notified once a decision is made.</p>" : ""}
         ${app.status === "rejected" ? "<p class='apply-note'>Your application was not approved this cycle. Please contact the accommodation office for more information.</p>" : ""}
       </div>`;
@@ -368,9 +368,11 @@ async function loadApply() {
     btn.textContent = "Submitting…";
 
     const { error } = await supabase.from("applications").insert([{
-      student_id: STUDENT.id,
-      status:     "pending",
-      created_at: new Date().toISOString()
+      reg_number:      STUDENT.reg_number,
+      status:          "pending",
+      preferred_block: document.getElementById("applyNotes")?.value || "",
+      notes:           "",
+      submitted_at:    new Date().toISOString()
     }]);
 
     if (error) {
