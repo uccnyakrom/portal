@@ -189,14 +189,25 @@ export function initLoginModal() {
     if (e.target === modal) modal.classList.remove("open");
   });
 
-  // Tab switching
-  document.querySelectorAll(".login-tab").forEach(tab => {
+  // Tab switching — supports both .login-tab and .tab-btn class names
+  const tabs = modal.querySelectorAll(".login-tab, .tab-btn");
+  const panels = modal.querySelectorAll(".login-panel, .tab-panel");
+
+  tabs.forEach(tab => {
     tab.addEventListener("click", () => {
-      document.querySelectorAll(".login-tab").forEach(t => t.classList.remove("active"));
+      // Deactivate all tabs
+      tabs.forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
-      const type = tab.dataset.tab;
-      document.querySelectorAll(".login-panel").forEach(p => {
-        p.classList.toggle("hidden", p.id !== `${type}LoginPanel`);
+
+      const target = tab.dataset.tab;
+
+      // Show matching panel, hide others
+      panels.forEach(p => {
+        const panelName = p.dataset.panel || p.id?.replace("LoginPanel","");
+        const isMatch = panelName === target;
+        p.classList.toggle("active", isMatch);
+        p.classList.toggle("hidden", !isMatch);
+        p.style.display = isMatch ? "" : "none";
       });
     });
   });
