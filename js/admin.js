@@ -364,7 +364,7 @@ async function loadRoomMap() {
 async function loadAllocations() {
   const { data: students } = await supabase
     .from("students")
-    .select("id, full_name, reg_number, program, level, room, rooms(block, room_number)")
+    .select("id, full_name, reg_number, program, level, sex, room, room_id, rooms:room_id(block, room_number)")
     .not("room", "is", null)
     .order("name");
 
@@ -392,7 +392,7 @@ async function loadAllocations() {
 async function loadApplications() {
   const { data, error } = await supabase
     .from("applications")
-    .select("*, students(name, reg_number, program)")
+    .select("*, students(full_name, reg_number, program)")
     .order("created_at", { ascending: false });
 
   const tbody = document.getElementById("appTableBody");
@@ -400,7 +400,7 @@ async function loadApplications() {
 
   tbody.innerHTML = (data || []).map(a => `
     <tr>
-      <td>${a.students?.full_name || "—"}</td>
+      <td>${a.students?.full_name || a.students?.name || "—"}</td>
       <td>${a.students?.reg_number || "—"}</td>
       <td>${a.students?.program || "—"}</td>
       <td>${new Date(a.created_at).toLocaleDateString()}</td>
@@ -428,7 +428,7 @@ window.updateApp = async (appId, status) => {
 
 async function loadReports() {
   const [studRes, roomRes] = await Promise.all([
-    supabase.from("students").select("program, level, sex, room"),
+    supabase.from("students").select("id, program, level, sex, room_id"),
     supabase.from("rooms").select("*")
   ]);
 
@@ -510,7 +510,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const regNumber = document.getElementById("enrolReg").value.trim().toUpperCase();
 
     // Check student exists
-    const { data: students } = await supabase.from("students").select("id, name").eq("reg_number", regNumber).limit(1);
+    const { data: students } = await supabase.from("students").select("id, full_name").eq("reg_number", regNumber).limit(1);
     if (!students?.length) { showToast("Student not found.", "error"); return; }
 
     // Check not already enrolled
