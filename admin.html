@@ -13,8 +13,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -327,6 +327,18 @@
                   </select>
                 </div>
               </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Floor (optional)</label>
+                  <select id="newRoomFloor">
+                    <option value="">Not specified</option>
+                    <option value="Ground">Ground Floor</option>
+                    <option value="1">1st Floor</option>
+                    <option value="2">2nd Floor</option>
+                    <option value="3">3rd Floor</option>
+                  </select>
+                </div>
+              </div>
               <button type="submit" class="btn btn-primary btn-full">Add Room</button>
             </form>
           </div>
@@ -343,7 +355,7 @@
             <div class="table-wrap" style="max-height:450px;overflow-y:auto">
               <table class="beautiful-table">
                 <thead>
-                  <tr><th>Block</th><th>Room</th><th>Capacity</th><th>Occupancy</th><th>Type</th><th>Actions</th></tr>
+                  <tr><th>Block</th><th>Floor</th><th>Room</th><th>Capacity</th><th>Occupancy</th><th>Type</th><th>Actions</th></tr>
                 </thead>
                 <tbody id="manageRoomsBody">
                   <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
@@ -945,6 +957,16 @@
               <option value="suite">Suite</option>
             </select>
           </div>
+        </div>
+        <div class="form-group">
+          <label>Floor (optional)</label>
+          <select id="editRoomFloor">
+            <option value="">Not specified</option>
+            <option value="Ground">Ground Floor</option>
+            <option value="1">1st Floor</option>
+            <option value="2">2nd Floor</option>
+            <option value="3">3rd Floor</option>
+          </select>
         </div>
         <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
       </form>
