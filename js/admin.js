@@ -466,31 +466,66 @@ window.updateApp = async (appId, status) => {
 // PUBLIC APPLICATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 async function loadPublicApps() {
-  const { data } = await supabase.from("public_applications").select("*").order("created_at", { ascending: false });
-  const tbody = document.getElementById("publicAppsBody");
+  const { data } = await supabase
+    .from("public_applications")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const tbody  = document.getElementById("publicAppsBody");
   const footer = document.getElementById("publicAppsFooter");
   if (!tbody) return;
+
   const list = data || [];
   if (footer) footer.textContent = `${list.length} application${list.length!==1?"s":""}`;
-  if (list.length===0) {
-    tbody.innerHTML = `<tr><td colspan="10"><div class="table-empty"><div class="table-empty-icon">📩</div><h4>No public applications yet</h4></div></td></tr>`;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="11"><div class="table-empty">
+      <div class="table-empty-icon">📩</div>
+      <h4>No public applications yet</h4>
+    </div></td></tr>`;
     return;
   }
-  tbody.innerHTML = list.map(a => `<tr>
-    <td><strong>${a.full_name}</strong></td>
-    <td>${a.reg_number}</td><td>${a.program}</td><td>Level ${a.level}</td>
-    <td>${a.sex==="M"?"♂ Male":"♀ Female"}</td><td>${a.phone||"—"}</td>
-    <td>${a.preferred_room||"No preference"}</td>
-    <td><span class="badge badge-${a.status}">${a.status}</span></td>
-    <td>${new Date(a.created_at).toLocaleDateString()}</td>
-    <td><div class="table-actions">${a.status==="pending"?`
-      <button class="btn-sm btn-success" onclick="enrollPublicApplicant('${a.id}','${escHtml(a.full_name)}','${a.reg_number}','${a.program}',${a.level},'${a.sex}')">✓ Enrol</button>
-      <button class="btn-sm btn-danger"  onclick="rejectPublicApp('${a.id}')">✕ Reject</button>
-    `:"—"}</div></td>
-  </tr>`).join("");
+
+  tbody.innerHTML = list.map(a => {
+    const prefRoom = a.preferred_room || "No preference";
+    const isEnrolled = a.status === "enrolled";
+
+    return `<tr>
+      <td><strong>${a.full_name}</strong></td>
+      <td style="font-size:11px">${a.reg_number}</td>
+      <td>${a.program || "—"}</td>
+      <td>Level ${a.level}</td>
+      <td>${a.sex==="M"?"♂ Male":"♀ Female"}</td>
+      <td>${a.phone||"—"}</td>
+      <td>
+        ${a.preferred_room
+          ? `<span class="room-cell assigned" style="font-size:11px">🏠 ${a.preferred_room}</span>`
+          : `<span style="color:var(--gray-400);font-size:11px">No preference</span>`}
+      </td>
+      <td><span class="badge badge-${a.status}">${a.status}</span></td>
+      <td style="font-size:11px">${a.created_at ? new Date(a.created_at).toLocaleDateString() : "—"}</td>
+      <td>
+        <div class="table-actions">
+          ${a.status === "pending" ? `
+            <button class="btn-sm btn-success"
+              onclick="enrollPublicApplicant('${a.id}','${escHtml(a.full_name)}','${a.reg_number}','${escHtml(a.program||"")}',${a.level||100},'${a.sex||"M"}','${escHtml(a.preferred_room||"")}')">
+              ✓ Enrol
+            </button>
+            <button class="btn-sm btn-danger" onclick="rejectPublicApp('${a.id}')">✕ Reject</button>
+          ` : ""}
+          ${isEnrolled && a.preferred_room ? `
+            <button class="btn-sm btn-primary"
+              onclick="assignPreferredRoom('${a.reg_number}','${escHtml(a.preferred_room)}','${escHtml(a.full_name)}')">
+              🏠 Assign Room
+            </button>
+          ` : ""}
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
 }
 
-window.enrollPublicApplicant = async (appId, name, regNumber, program, level, sex) => {
+window.enrollPublicApplicant = async (appId, name, regNumber, program, level, sex, preferredRoom="") => {
   if (!confirm(`Enrol ${name} (${regNumber}) as a student?`)) return;
 
   // Check not already enrolled
@@ -724,13 +759,31 @@ window.openEditRoomModal = (id, block, roomNum, capacity, type) => {
   document.getElementById("editRoomModal").classList.add("open");
 };
 
-window.openAssignRoomModal = async (studentId, studentName) => {
+window.openAssignRoomModal = async (studentId, studentName, preferredRoom = "") => {
   const rooms = await fetchAvailableRooms();
   const select = document.getElementById("assignRoomSelect");
+
   select.innerHTML = `<option value="">— Select Room —</option>` +
-    rooms.map(r=>`<option value="${r.id}">Block ${r.block} – ${r.room_number} (${r.occupancy_count}/${r.capacity})</option>`).join("");
-  document.getElementById("assignStudentId").value          = studentId;
-  document.getElementById("assignStudentName").textContent  = studentName;
+    rooms.map(r => {
+      // Check if this matches the preferred room (e.g. "N-A23" matches block N room A23)
+      const label = `Block ${r.block} – ${r.room_number} (${r.occupancy_count}/${r.capacity})`;
+      const matchesPref = preferredRoom &&
+        (preferredRoom.includes(r.room_number) || preferredRoom === `${r.block}-${r.room_number}`);
+      return `<option value="${r.id}" ${matchesPref ? "selected" : ""}>${label}${matchesPref ? " ← Preferred" : ""}</option>`;
+    }).join("");
+
+  document.getElementById("assignStudentId").value         = studentId;
+  document.getElementById("assignStudentName").textContent = studentName;
+
+  // Show preferred room hint
+  const hint = document.getElementById("assignPreferredHint");
+  if (hint) {
+    hint.textContent = preferredRoom && preferredRoom !== "No preference"
+      ? `Student's preferred room: ${preferredRoom}`
+      : "";
+    hint.style.display = preferredRoom && preferredRoom !== "No preference" ? "block" : "none";
+  }
+
   document.getElementById("assignModal").classList.add("open");
 };
 
@@ -885,4 +938,63 @@ window.notifyStudent = async (regNumber, status) => {
   const result = await notifyApplicationStatus(regNumber, status);
   if (result?.success) showToast("Student notified via SMS!", "success");
   else showToast("SMS not configured. Check notifications.js for Arkesel setup.", "warning");
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ASSIGN PREFERRED ROOM to enrolled public applicant
+// ─────────────────────────────────────────────────────────────────────────────
+window.assignPreferredRoom = async (regNumber, preferredRoom, studentName) => {
+  // Find student by reg number
+  const { data: students } = await supabase
+    .from("students")
+    .select("id, full_name")
+    .eq("reg_number", regNumber)
+    .limit(1);
+
+  if (!students?.length) {
+    showToast("Student not found in system. Please enrol first.", "error");
+    return;
+  }
+
+  const studentId = students[0].id;
+
+  // Try to find the preferred room
+  // preferred_room is stored as "Block-RoomNumber" e.g. "N-A23"
+  let roomQuery;
+  if (preferredRoom.includes("-")) {
+    const parts = preferredRoom.split("-");
+    const block  = parts[0];
+    const roomNum = parts.slice(1).join("-");
+    const { data: rooms } = await supabase
+      .from("rooms")
+      .select("id, block, room_number, capacity, occupancy_count, type")
+      .eq("block", block)
+      .eq("room_number", roomNum)
+      .limit(1);
+    roomQuery = rooms;
+  }
+
+  if (roomQuery?.length) {
+    const room = roomQuery[0];
+    if (room.occupancy_count >= room.capacity) {
+      showToast(`Room ${preferredRoom} is full. Please select a different room.`, "warning");
+      // Open assign modal to pick another room
+      await openAssignRoomModal(studentId, studentName);
+      return;
+    }
+    // Confirm and assign
+    if (confirm(`Assign ${studentName} to Block ${room.block} – Room ${room.room_number}?`)) {
+      const result = await assignRoom(studentId, room.id, ADMIN.username);
+      if (result.success) {
+        showToast(`${studentName} assigned to ${room.block}-${room.room_number}!`, "success");
+        loadPublicApps();
+      } else {
+        showToast(result.error, "error");
+      }
+    }
+  } else {
+    // Room not found — open assign modal
+    showToast(`Room "${preferredRoom}" not found. Please select manually.`, "warning");
+    await openAssignRoomModal(studentId, studentName);
+  }
 };
