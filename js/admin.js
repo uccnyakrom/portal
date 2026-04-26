@@ -492,13 +492,49 @@ async function loadPublicApps() {
 
 window.enrollPublicApplicant = async (appId, name, regNumber, program, level, sex) => {
   if (!confirm(`Enrol ${name} (${regNumber}) as a student?`)) return;
-  const { error: sErr } = await supabase.from("students").insert([{ full_name: name, reg_number: regNumber, program, level, sex }]);
-  if (sErr) { showToast("Error: " + sErr.message, "error"); return; }
-  await supabase.from("users").insert([{ username: regNumber, password: "auto", role: "student" }]);
+
+  // Check not already enrolled
+  const { data: existing } = await supabase
+    .from("students").select("id").eq("reg_number", regNumber).limit(1);
+  if (existing?.length) {
+    showToast(`${regNumber} is already in the students table.`, "warning");
+    // Still update application status
+    await supabase.from("public_applications").update({ status: "enrolled" }).eq("id", appId);
+    loadPublicApps();
+    return;
+  }
+
+  // Insert student — level must be a number
+  const lvl = parseInt(level) || 100;
+  const s = sex === "M" || sex === "Male" || sex === "male" ? "M" : "F";
+
+  const { error: sErr } = await supabase.from("students").insert([{
+    full_name:  name,
+    reg_number: regNumber,
+    program:    program || "BSc Nursing",
+    level:      lvl,
+    sex:        s
+  }]);
+
+  if (sErr) {
+    showToast("Error adding student: " + sErr.message, "error");
+    console.error("Enrol error:", sErr);
+    return;
+  }
+
+  // Create portal account
+  const { error: uErr } = await supabase.from("users").insert([{
+    username: regNumber, password: "auto", role: "student"
+  }]);
+  if (uErr) console.warn("User account error:", uErr.message);
+
+  // Update application status
   await supabase.from("public_applications").update({ status: "enrolled" }).eq("id", appId);
   await logAudit(`Enrolled public applicant: ${regNumber}`, ADMIN.username);
-  showToast(`${name} enrolled!`, "success");
+  showToast(`${name} enrolled successfully! Find them in All Students to assign a room.`, "success");
   loadPublicApps();
+  // Also refresh students cache so they appear immediately in All Students
+  window._allStudents = null;
 };
 
 window.rejectPublicApp = async (appId) => {
