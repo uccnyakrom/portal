@@ -101,14 +101,30 @@ async function loadRoom() {
   panel.innerHTML = `<p style="color:var(--gray-400);padding:1rem">Loading room details…</p>`;
 
   try {
-    // Fetch fresh student data with room join
-    const { data: s, error } = await supabase
+    // Always fetch by reg_number — most reliable identifier
+    const regNum = STUDENT.reg_number || STUDENT.username;
+    let s = null;
+
+    // Try reg_number first
+    const { data: byReg } = await supabase
       .from("students")
       .select("id, full_name, room, room_id, rooms:room_id(id, block, room_number, capacity, occupancy_count, type)")
-      .eq("id", STUDENT.id)
+      .eq("reg_number", regNum)
       .single();
 
-    if (error) throw error;
+    s = byReg;
+
+    // Fallback: try by id if reg_number failed
+    if (!s && STUDENT.id) {
+      const { data: byId } = await supabase
+        .from("students")
+        .select("id, full_name, room, room_id, rooms:room_id(id, block, room_number, capacity, occupancy_count, type)")
+        .eq("id", STUDENT.id)
+        .single();
+      s = byId;
+    }
+
+    if (!s) throw new Error("Student record not found");
 
     // No room assigned at all
     if (!s.room_id && !s.room) {
@@ -131,7 +147,7 @@ async function loadRoom() {
         .select("id, full_name, reg_number, program, level, sex")
         .eq("room_id", s.room_id);
 
-      const roommates = (occupants || []).filter(o => o.id !== s.id);
+      const roommates = (occupants || []).filter(o => o.id !== s.id && o.id !== STUDENT.id);
       const pct = room.capacity > 0
         ? Math.round((room.occupancy_count / room.capacity) * 100)
         : 0;
