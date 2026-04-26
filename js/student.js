@@ -126,8 +126,9 @@ async function loadRoom() {
 
     if (!s) throw new Error("Student record not found");
 
-    // No room assigned at all
-    if (!s.room_id && !s.room) {
+    // Treat NR (Non-Residential) as no room assigned
+    const isNR = !s.room_id && (!s.room || s.room === "NR" || s.room === "nr");
+    if (isNR) {
       panel.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">🏠</div>
@@ -350,8 +351,9 @@ async function loadApply() {
     return;
   }
 
-  // Already has a room assigned
-  if (student.room_id || student.room) {
+  // Treat NR as no room — NR students can apply
+  const hasRoom = student.room_id || (student.room && student.room !== "NR" && student.room !== "nr");
+  if (hasRoom) {
     container.innerHTML = `
       <div class="apply-status-card">
         <div class="apply-icon">🏠</div>
