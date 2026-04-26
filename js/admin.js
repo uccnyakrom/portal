@@ -21,8 +21,60 @@ async function setActiveYear() {}
 async function createNewYear() {}
 async function recordRoomHistory() {}
 async function loadRoomHistory() { return []; }
-async function notifyApplicationStatus() {}
-async function sendLoginCredentials() {}
+async function sendSMS(phone, message) {
+  if (!phone) return;
+  // Format Ghana number
+  let num = phone.replace(/\D/g,"");
+  if (num.startsWith("0")) num = "233" + num.slice(1);
+  if (!num.startsWith("233")) num = "233" + num;
+
+  // Store in notifications log regardless
+  await supabase.from("notifications").insert([{
+    recipient: phone, type: "sms", message,
+    status: "pending", created_at: new Date().toISOString()
+  }]);
+
+  // Arkesel API — configure your key in Supabase
+  try {
+    const { data: config } = await supabase
+      .from("users").select("password").eq("username","_arkesel_key").limit(1);
+    const apiKey = config?.[0]?.password;
+    if (!apiKey) {
+      console.log("SMS pending (Arkesel not configured):", message);
+      showToast("SMS logged. Configure Arkesel API to send real SMS.", "info");
+      return;
+    }
+    await fetch("https://sms.arkesel.com/api/v2/sms/send", {
+      method: "POST",
+      headers: { "api-key": apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ sender: "UCCNyakrom", message, recipients: [num] })
+    });
+    await supabase.from("notifications").update({ status:"sent", sent_at: new Date().toISOString() })
+      .eq("recipient", phone).eq("status","pending");
+    showToast("SMS sent!", "success");
+  } catch(err) {
+    console.error("SMS error:", err);
+  }
+}
+
+async function notifyApplicationStatus(regNumber, status) {
+  const { data: s } = await supabase.from("students")
+    .select("full_name, phone").eq("reg_number", regNumber).single();
+  if (!s?.phone) return;
+  const msg = status === "approved"
+    ? `Dear ${s.full_name}, your accommodation application at UCC Nyakrom has been APPROVED. Visit the General Office to complete check-in. - UCC Nyakrom`
+    : `Dear ${s.full_name}, your accommodation application was not successful. Visit the General Office for more info. - UCC Nyakrom`;
+  await sendSMS(s.phone, msg);
+}
+
+async function sendLoginCredentials(regNumber, fullName, phone, password) {
+  const msg = `Dear ${fullName}, your UCC Nyakrom portal account is ready.
+URL: uccnyakrom.github.io/portal
+Username: ${regNumber}
+Password: ${password}
+Change password after first login. - UCC Nyakrom`;
+  await sendSMS(phone, msg);
+}
 
 requireAuth("admin");
 const ADMIN = getSession();
@@ -137,7 +189,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const roomNum  = document.getElementById("newRoomNumber").value.trim();
     const capacity = parseInt(document.getElementById("newRoomCapacity").value);
     const type     = document.getElementById("newRoomType").value;
-    const { error } = await supabase.from("rooms").insert([{ block, room_number: roomNum, capacity, occupancy_count: 0, type }]);
+    const floor    = document.getElementById("newRoomFloor")?.value || null;
+    const { error } = await supabase.from("rooms").insert([{ block, room_number: roomNum, capacity, occupancy_count: 0, type, floor }]);
     if (error) { showToast("Error: " + error.message, "error"); return; }
     await logAudit(`Added room: Block ${block} ${roomNum}`, ADMIN.username);
     showToast(`Room ${block}-${roomNum} added!`, "success");
@@ -159,7 +212,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const roomNum  = document.getElementById("editRoomNumber").value.trim();
     const capacity = parseInt(document.getElementById("editRoomCapacity").value);
     const type     = document.getElementById("editRoomType").value;
-    const { error } = await supabase.from("rooms").update({ room_number: roomNum, capacity, type }).eq("id", id);
+    const floor    = document.getElementById("editRoomFloor")?.value || null;
+    const { error } = await supabase.from("rooms").update({ room_number: roomNum, capacity, type, floor }).eq("id", id);
     if (error) { showToast("Error: " + error.message, "error"); return; }
     showToast("Room updated!", "success");
     document.getElementById("editRoomModal").classList.remove("open");
@@ -714,12 +768,16 @@ async function loadAuditLog() {
 // ─────────────────────────────────────────────────────────────────────────────
 // MANAGE ROOMS
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FLOOR/BLOCK MANAGEMENT (#11)
+// ─────────────────────────────────────────────────────────────────────────────
 async function loadManageRooms() {
   const block = document.getElementById("filterRoomBlock")?.value || "";
-  let query = supabase.from("rooms").select("*").order("block").order("room_number");
+  let query = supabase.from("rooms").select("*").order("block").order("floor").order("room_number");
   if (block) query = query.eq("block", block);
   const { data } = await query;
-  const tbody = document.getElementById("manageRoomsBody");
+  const tbody  = document.getElementById("manageRoomsBody");
   const footer = document.getElementById("manageRoomsFooter");
   if (!tbody) return;
   const list = data || [];
@@ -727,6 +785,7 @@ async function loadManageRooms() {
   const typeColors = { vacant:"#22c55e", partial:"#f59e0b", full:"#ef4444", staff:"#3b82f6", NSP:"#a855f7", suite:"#6366f1" };
   tbody.innerHTML = list.map(r => `<tr>
     <td><strong>Block ${r.block}</strong></td>
+    <td>${r.floor ? `Floor ${r.floor}` : "—"}</td>
     <td>${r.room_number}</td><td>${r.capacity}</td>
     <td><div style="display:flex;align-items:center;gap:.4rem">
       <div style="flex:1;height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden">
@@ -735,11 +794,22 @@ async function loadManageRooms() {
     </div></td>
     <td><span class="badge" style="background:${typeColors[r.type]||"#9ca3af"}20;color:${typeColors[r.type]||"#9ca3af"}">${r.type}</span></td>
     <td><div class="table-actions">
-      <button class="btn-sm btn-warning" onclick="openEditRoomModal('${r.id}','${r.block}','${r.room_number}',${r.capacity},'${r.type}')">✏️</button>
+      <button class="btn-sm btn-warning" onclick="openEditRoomModal('${r.id}','${r.block}','${r.room_number}',${r.capacity},'${r.type}','${r.floor||""}')">✏️</button>
       <button class="btn-sm btn-danger"  onclick="deleteRoom('${r.id}','${r.block}','${r.room_number}')">🗑</button>
     </div></td>
-  </tr>`).join("") || `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">No rooms found</td></tr>`;
+  </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;padding:2rem">No rooms found</td></tr>`;
 }
+
+window.openEditRoomModal = (id, block, roomNum, capacity, type, floor="") => {
+  document.getElementById("editRoomId").value       = id;
+  document.getElementById("editRoomBlock").value    = block;
+  document.getElementById("editRoomNumber").value   = roomNum;
+  document.getElementById("editRoomCapacity").value = capacity;
+  document.getElementById("editRoomType").value     = type;
+  const floorEl = document.getElementById("editRoomFloor");
+  if (floorEl) floorEl.value = floor;
+  document.getElementById("editRoomModal").classList.add("open");
+};
 
 window.deleteRoom = async (roomId, block, roomNum) => {
   if (!confirm(`Delete Room ${block}-${roomNum}?`)) return;
