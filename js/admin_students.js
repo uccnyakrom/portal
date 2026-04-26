@@ -58,8 +58,9 @@ function renderStudentTable(students) {
     const name     = s.full_name || s.name || "—";
     const initials = name.split(" ").map(w => w[0]).join("").substring(0,2).toUpperCase();
     const isFemale = (s.sex || "").toUpperCase() === "F";
-    const prog     = (s.program || "").toLowerCase();
+    const prog      = (s.program || "").toLowerCase();
     const isNursing = prog.includes("nurs");
+    const isCobes   = prog.includes("mbchb") || prog.includes("cobes");
     const roomAssigned = s.rooms ? `${s.rooms.block}-${s.rooms.room_number}` : null;
 
     return `
