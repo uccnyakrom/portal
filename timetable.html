@@ -83,6 +83,14 @@
     .card-code { font-family:'DM Mono',monospace; font-size:9px; font-weight:500; letter-spacing:.1em; margin-bottom:2px; }
     .card-name { font-size:11px; font-weight:600; line-height:1.3; margin-bottom:3px; }
     .card-lect { font-size:9.5px; line-height:1.3; }
+    .card-venue { font-size:9px; color:#0d9488; margin-top:3px; }
+    .card-time  { font-size:9px; color:#7c3aed; margin-top:2px; }
+
+    /* Editable venue in section header */
+    .section-venue { cursor:default; }
+    body.admin-mode .section-venue { cursor:pointer; border-color:var(--gold); }
+    body.admin-mode .section-venue:hover { background:var(--gold-bg); color:var(--navy); }
+    body.admin-mode .section-venue::after { content:" ✏️"; font-size:10px; }
 
     /* THEMES */
     .theme-teal .section-dot { background:var(--teal-border); }
@@ -227,7 +235,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">BSc Nursing — Level 100</div>
-        <div class="section-venue">📍 Auditorium</div>
+        <div class="section-venue" data-venue-key="nur100-venue" title="Click to edit venue">📍 Auditorium</div>
       </div>
       <div class="tt-scroll"><table>
         <thead><tr>
@@ -278,7 +286,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">BSc Nursing — Level 200</div>
-        <div class="section-venue">📍 Auditorium</div>
+        <div class="section-venue" data-venue-key="nur200-venue" title="Click to edit venue">📍 Auditorium</div>
       </div>
       <div class="tt-scroll"><table>
         <thead><tr>
@@ -335,7 +343,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">BSc Nutrition — Level 100</div>
-        <div class="section-venue">📍 Seminar Room B5</div>
+        <div class="section-venue" data-venue-key="nut100-venue" title="Click to edit venue">📍 Seminar Room B5</div>
       </div>
       <div class="tt-scroll"><table>
         <thead><tr>
@@ -397,7 +405,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">BSc Nutrition — Level 200</div>
-        <div class="section-venue">📍 Multipurpose Lab 2</div>
+        <div class="section-venue" data-venue-key="nut200-venue" title="Click to edit venue">📍 Multipurpose Lab 2</div>
       </div>
       <div class="tt-scroll"><table>
         <thead><tr>
@@ -455,7 +463,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">Block Lectures — BSc Nursing Level 100</div>
-        <div class="section-venue">📍 Auditorium</div>
+        <div class="section-venue" data-venue-key="block-nur100-venue" title="Click to edit venue">📍 Auditorium</div>
       </div>
       <table class="block-table">
         <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
@@ -481,7 +489,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">Block Lectures — BSc Nursing Level 200</div>
-        <div class="section-venue">📍 Auditorium</div>
+        <div class="section-venue" data-venue-key="block-nur200-venue" title="Click to edit venue">📍 Auditorium</div>
       </div>
       <table class="block-table">
         <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
@@ -507,7 +515,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">Block Lectures — BSc Nutrition Level 100</div>
-        <div class="section-venue">📍 Seminar Room B5</div>
+        <div class="section-venue" data-venue-key="block-nut100-venue" title="Click to edit venue">📍 Seminar Room B5</div>
       </div>
       <table class="block-table">
         <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
@@ -533,7 +541,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">Block Lectures — BSc Nutrition Level 200</div>
-        <div class="section-venue">📍 Multipurpose Lab 2</div>
+        <div class="section-venue" data-venue-key="block-nut200-venue" title="Click to edit venue">📍 Multipurpose Lab 2</div>
       </div>
       <table class="block-table">
         <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
@@ -564,7 +572,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">Block Weekly Timetable — BSc Nursing Level 100</div>
-        <div class="section-venue">📍 Auditorium</div>
+        <div class="section-venue" data-venue-key="bwk-nur100-venue" title="Click to edit venue">📍 Auditorium</div>
         <div class="period-badge" id="period-nur100">
           <span class="period-label">Period:</span>
           <span class="period-value" id="period-val-nur100" data-key="period-nur100">Week 1 (27 Apr – 1 May 2026)</span>
@@ -620,7 +628,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">Block Weekly Timetable — BSc Nursing Level 200</div>
-        <div class="section-venue">📍 Auditorium</div>
+        <div class="section-venue" data-venue-key="bwk-nur200-venue" title="Click to edit venue">📍 Auditorium</div>
         <div class="period-badge" id="period-nur200">
           <span class="period-label">Period:</span>
           <span class="period-value" id="period-val-nur200" data-key="period-nur200">Week 1 (27 Apr – 1 May 2026)</span>
@@ -682,7 +690,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">Block Weekly Timetable — BSc Nutrition Level 100</div>
-        <div class="section-venue">📍 Seminar Room B5</div>
+        <div class="section-venue" data-venue-key="bwk-nut100-venue" title="Click to edit venue">📍 Seminar Room B5</div>
         <div class="period-badge" id="period-nut100">
           <span class="period-label">Period:</span>
           <span class="period-value" id="period-val-nut100" data-key="period-nut100">Week 1 (27 Apr – 1 May 2026)</span>
@@ -749,7 +757,7 @@
       <div class="section-header">
         <div class="section-dot"></div>
         <div class="section-label">Block Weekly Timetable — BSc Nutrition Level 200</div>
-        <div class="section-venue">📍 Multipurpose Lab 2</div>
+        <div class="section-venue" data-venue-key="bwk-nut200-venue" title="Click to edit venue">📍 Multipurpose Lab 2</div>
         <div class="period-badge" id="period-nut200">
           <span class="period-label">Period:</span>
           <span class="period-value" id="period-val-nut200" data-key="period-nut200">Week 1 (27 Apr – 1 May 2026)</span>
@@ -903,15 +911,18 @@
     const { data } = await sb.from("timetable_edits").select("*").limit(500).catch(() => ({ data: [] }));
     if (!data?.length) return;
     data.forEach(row => {
-      const el = document.querySelector(`[data-key="${row.cell_key}"]`);
-      if (!el) return;
       if (row.cell_key.startsWith("period-")) {
-        const valEl = document.getElementById("period-val-" + row.cell_key.replace("period-",""));
+        const prog  = row.cell_key.replace("period-","");
+        const valEl = document.getElementById("period-val-" + prog);
         if (valEl) valEl.textContent = row.value;
-      } else if (row.value) {
-        el.innerHTML = row.value;
+      } else if (row.cell_key.endsWith("-venue")) {
+        const badge = document.querySelector(`[data-venue-key="${row.cell_key}"]`);
+        if (badge && row.value) badge.textContent = "📍 " + row.value;
       } else {
-        el.innerHTML = "";
+        const el = document.querySelector(`[data-key="${row.cell_key}"]`);
+        if (!el) return;
+        if (row.value) el.innerHTML = row.value;
+        else el.innerHTML = "";
       }
     });
   }
@@ -952,30 +963,64 @@
 
   // ── Admin cell editing ───────────────────────────────────────────────────
   function initCellEditing() {
+    // Editable timetable cells
     document.querySelectorAll("[data-editable]").forEach(cell => {
       cell.addEventListener("click", () => {
         if (!document.body.classList.contains("admin-mode")) return;
         _editingCell = cell;
         const card = cell.querySelector(".card");
-        document.getElementById("cellCode").value = card?.querySelector(".card-code")?.textContent?.trim() || "";
-        document.getElementById("cellName").value = card?.querySelector(".card-name")?.textContent?.trim() || "";
-        document.getElementById("cellLect").value = card?.querySelector(".card-lect")?.textContent?.trim() || "";
+        document.getElementById("cellCode").value  = card?.querySelector(".card-code")?.textContent?.trim() || "";
+        document.getElementById("cellName").value  = card?.querySelector(".card-name")?.textContent?.trim() || "";
+        document.getElementById("cellLect").value  = card?.querySelector(".card-lect")?.textContent?.trim() || "";
+        const venueRaw = card?.querySelector(".card-venue")?.textContent?.trim() || "";
+        document.getElementById("cellVenue").value = venueRaw.replace(/^📍\s*/, "");
+        const timeRaw = card?.querySelector(".card-time")?.textContent?.trim() || "";
+        const timeParts = timeRaw.replace(/^🕐\s*/, "").split("–");
+        document.getElementById("cellTimeStart").value = timeParts[0]?.trim() || "";
+        document.getElementById("cellTimeEnd").value   = timeParts[1]?.trim() || "";
         document.getElementById("cellEditModal").classList.add("open");
+      });
+    });
+
+    // Editable venue badges in section headers
+    document.querySelectorAll(".section-venue[data-venue-key]").forEach(badge => {
+      badge.addEventListener("click", () => {
+        if (!document.body.classList.contains("admin-mode")) return;
+        const current = badge.textContent.replace(/✏️/, "").trim().replace(/^📍\s*/, "");
+        const newVenue = prompt("Edit venue:", current);
+        if (newVenue === null) return;
+        badge.textContent = "📍 " + newVenue;
+        saveToSB(badge.dataset.venueKey, newVenue);
       });
     });
   }
 
   function saveCellEdit() {
     if (!_editingCell) return;
-    const code = document.getElementById("cellCode").value.trim();
-    const name = document.getElementById("cellName").value.trim();
-    const lect = document.getElementById("cellLect").value.trim();
+    const code  = document.getElementById("cellCode").value.trim();
+    const name  = document.getElementById("cellName").value.trim();
+    const lect  = document.getElementById("cellLect").value.trim();
+    const venue = document.getElementById("cellVenue").value.trim();
+    const tStart= document.getElementById("cellTimeStart").value;
+    const tEnd  = document.getElementById("cellTimeEnd").value;
+
     if (!code && !name) { clearCell(); return; }
-    const html = `<div class="card"><div class="card-code">${code}</div><div class="card-name">${name}</div><div class="card-lect">${lect}</div></div>`;
+
+    const timeStr  = tStart && tEnd ? `${tStart}–${tEnd}` : (tStart || "");
+    const venueStr = venue ? `<div class="card-venue">📍 ${venue}</div>` : "";
+    const timeHTML = timeStr ? `<div class="card-time">🕐 ${timeStr}</div>` : "";
+
+    const html = `<div class="card">
+      <div class="card-code">${code}</div>
+      <div class="card-name">${name}</div>
+      <div class="card-lect">${lect}</div>
+      ${venueStr}${timeHTML}
+    </div>`;
+
     _editingCell.innerHTML = html;
     const key = _editingCell.dataset.key;
     if (key) saveToSB(key, html);
-    closeCellEdit();
+    closeCellEdit(); // closes modal — timetable is already visible behind it
   }
 
   function clearCell() {
@@ -1044,22 +1089,45 @@
 <!-- ── CELL EDIT MODAL ──────────────────────────────────────────────── -->
 <div class="cell-edit-modal" id="cellEditModal">
   <div class="cell-edit-box">
-    <div class="cell-edit-title">✏️ Edit Timetable Cell</div>
+    <div class="cell-edit-title">✏️ Edit Timetable Entry</div>
     <div class="form-group">
       <label>Course Code</label>
       <input type="text" id="cellCode" placeholder="e.g. NUR108">
     </div>
     <div class="form-group">
-      <label>Course Name</label>
+      <label>Course Title</label>
       <input type="text" id="cellName" placeholder="e.g. Human Anatomy II">
     </div>
     <div class="form-group">
       <label>Lecturer</label>
       <input type="text" id="cellLect" placeholder="e.g. Dr Benjamin Aboagye">
     </div>
+    <div class="form-group">
+      <label>Venue / Room</label>
+      <input type="text" id="cellVenue" placeholder="e.g. Auditorium, Lab 2, Room B5">
+    </div>
+    <div class="form-group">
+      <label>Time Slot</label>
+      <select id="cellTimeStart">
+        <option value="">Start Time</option>
+        <option>07:00</option><option>08:00</option><option>09:00</option>
+        <option>10:00</option><option>11:00</option><option>12:00</option>
+        <option>13:00</option><option>14:00</option><option>15:00</option>
+        <option>16:00</option><option>17:00</option><option>18:00</option>
+        <option>19:00</option>
+      </select>
+      <select id="cellTimeEnd" style="margin-top:.4rem">
+        <option value="">End Time</option>
+        <option>08:00</option><option>09:00</option><option>10:00</option>
+        <option>11:00</option><option>12:00</option><option>13:00</option>
+        <option>14:00</option><option>15:00</option><option>16:00</option>
+        <option>17:00</option><option>18:00</option><option>19:00</option>
+        <option>20:00</option>
+      </select>
+    </div>
     <div class="cell-btn-row">
-      <button class="btn-save" onclick="saveCellEdit()">💾 Save</button>
-      <button class="btn-clear" onclick="clearCell()">🗑 Clear Cell</button>
+      <button class="btn-save" onclick="saveCellEdit()">💾 Save &amp; View</button>
+      <button class="btn-clear" onclick="clearCell()">🗑 Clear</button>
       <button class="btn-cancel" onclick="closeCellEdit()">Cancel</button>
     </div>
   </div>
