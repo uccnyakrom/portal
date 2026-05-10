@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Second Semester Timetable — UCC Nyakrom Campus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!--
+    SUPABASE CREDENTIALS
+    Replace the content values below with your real Supabase credentials.
+  -->
+  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
+  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+
+  <style>
+    :root {
+      --bg: #f4f6fa; --white: #ffffff; --navy: #0f2044; --gold: #b8860b;
+      --gold-bg: #fff8e1; --border: #dde3ee; --text-main: #111827;
+      --text-sub: #374151; --text-muted: #6b7280;
+      --teal-bg:#ccfbf1; --teal-border:#0d9488; --teal-code:#0f766e; --teal-name:#134e4a; --teal-lect:#1d6f6a;
+      --rose-bg:#ffe4ec; --rose-border:#be185d; --rose-code:#9d174d; --rose-name:#831843; --rose-lect:#a0255a;
+      --plum-bg:#ede9fe; --plum-border:#7c3aed; --plum-code:#5b21b6; --plum-name:#3b0764; --plum-lect:#6d28d9;
+      --moss-bg:#dcfce7; --moss-border:#16a34a; --moss-code:#15803d; --moss-name:#14532d; --moss-lect:#166534;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-main); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding-bottom: 60px; }
+
+    /* HERO */
+    .hero { background: var(--navy); padding: 36px 40px 28px; }
+    .hero-inner { max-width: 1300px; margin: 0 auto; display: flex; align-items: center; gap: 20px; }
+    .crest { width: 60px; height: 60px; border: 2px solid #f0c040; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; background: rgba(240,192,64,.1); }
+    .hero-eyebrow { font-family: 'DM Mono',monospace; font-size: 10px; letter-spacing:.2em; text-transform:uppercase; color:#f0c040; margin-bottom:5px; }
+    .hero-title { font-family:'Playfair Display',serif; font-size:clamp(20px,3vw,32px); font-weight:900; color:#fff; line-height:1.1; }
+    .hero-title span { color:#f0c040; }
+    .hero-sub { margin-top:5px; font-size:12px; color:#94a3b8; }
+    .hero-actions { margin-left:auto; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+    .hero-badge { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; padding:5px 14px; border:1px solid rgba(240,192,64,.4); border-radius:100px; color:#f0c040; }
+    .back-btn { font-size:12px; color:rgba(255,255,255,.7); text-decoration:none; border:1px solid rgba(255,255,255,.2); padding:5px 14px; border-radius:100px; }
+    .back-btn:hover { color:#fff; border-color:rgba(255,255,255,.5); }
+
+    /* ADMIN EDIT BANNER */
+    .admin-banner { background:#1e3a5f; border-bottom:2px solid var(--gold); padding:.6rem 1.5rem; display:none; }
+    .admin-banner.visible { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+    .admin-banner span { color:#c9a84c; font-size:13px; font-weight:600; }
+    .btn-edit { background:var(--gold); color:#fff; border:none; padding:.4rem .9rem; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; }
+    .btn-edit:hover { background:#9a6e09; }
+
+    /* TABS */
+    .tabs-wrap { max-width:1300px; margin:24px auto 0; padding:0 40px; }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; }
+    .tab { padding:9px 18px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:1.5px solid var(--border); background:var(--white); color:var(--text-sub); transition:all .18s; }
+    .tab:hover { border-color:var(--navy); color:var(--navy); }
+    .tab.active { background:var(--navy); color:#fff; border-color:var(--navy); font-weight:600; }
+
+    /* SUB TABS */
+    .sub-tabs { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+    .sub-tab { padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer; border:1px solid var(--border); background:var(--white); color:var(--text-muted); }
+    .sub-tab.active { background:var(--gold); color:#fff; border-color:var(--gold); font-weight:600; }
+
+    /* PANELS */
+    .section-panel { display:none; }
+    .section-panel.active { display:block; }
+
+    /* TIMETABLE */
+    .timetable-wrap { max-width:1300px; margin:24px auto 0; padding:0 40px; }
+    .section-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .section-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+    .section-label { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--navy); }
+    .section-venue { margin-left:auto; font-size:11px; font-family:'DM Mono',monospace; letter-spacing:.08em; color:var(--text-muted); background:var(--white); border:1px solid var(--border); padding:4px 12px; border-radius:6px; }
+    .tt-scroll { overflow-x:auto; border-radius:10px; border:1px solid var(--border); }
+    table { width:100%; border-collapse:collapse; min-width:900px; background:var(--white); }
+    thead { background:var(--navy); }
+    thead th { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#94a3b8; padding:10px 5px; text-align:center; white-space:nowrap; border-right:1px solid rgba(255,255,255,.07); }
+    thead th:last-child { border-right:none; }
+    thead th.day-head { color:#f0c040; width:54px; text-align:left; padding-left:14px; }
+    tbody tr:not(:last-child) td { border-bottom:1px solid #eef0f6; }
+    td { padding:5px 4px; vertical-align:middle; border-right:1px solid #eef0f6; min-width:85px; }
+    td:last-child { border-right:none; }
+    .day-cell { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; letter-spacing:.12em; color:var(--navy); background:#f8fafc; padding:14px; white-space:nowrap; border-right:2px solid var(--border) !important; }
+    tbody tr:hover { background:#f8fafc; }
+    .card { border-radius:7px; padding:7px 9px; border-left:3px solid transparent; }
+    .card-code { font-family:'DM Mono',monospace; font-size:9px; font-weight:500; letter-spacing:.1em; margin-bottom:2px; }
+    .card-name { font-size:11px; font-weight:600; line-height:1.3; margin-bottom:3px; }
+    .card-lect { font-size:9.5px; line-height:1.3; }
+
+    /* THEMES */
+    .theme-teal .section-dot { background:var(--teal-border); }
+    .theme-teal .card { background:var(--teal-bg); border-left-color:var(--teal-border); }
+    .theme-teal .card-code { color:var(--teal-code); }
+    .theme-teal .card-name { color:var(--teal-name); }
+    .theme-teal .card-lect { color:var(--teal-lect); }
+    .theme-rose .section-dot { background:var(--rose-border); }
+    .theme-rose .card { background:var(--rose-bg); border-left-color:var(--rose-border); }
+    .theme-rose .card-code { color:var(--rose-code); }
+    .theme-rose .card-name { color:var(--rose-name); }
+    .theme-rose .card-lect { color:var(--rose-lect); }
+    .theme-plum .section-dot { background:var(--plum-border); }
+    .theme-plum .card { background:var(--plum-bg); border-left-color:var(--plum-border); }
+    .theme-plum .card-code { color:var(--plum-code); }
+    .theme-plum .card-name { color:var(--plum-name); }
+    .theme-plum .card-lect { color:var(--plum-lect); }
+    .theme-moss .section-dot { background:var(--moss-border); }
+    .theme-moss .card { background:var(--moss-bg); border-left-color:var(--moss-border); }
+    .theme-moss .card-code { color:var(--moss-code); }
+    .theme-moss .card-name { color:var(--moss-name); }
+    .theme-moss .card-lect { color:var(--moss-lect); }
+
+    /* BLOCK LECTURE TABLE */
+    .block-table { width:100%; border-collapse:collapse; border-radius:10px; overflow:hidden; border:1px solid var(--border); }
+    .block-table thead { background:var(--navy); }
+    .block-table thead th { color:#94a3b8; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; padding:10px 16px; text-align:left; }
+    .block-table tbody tr:nth-child(even) { background:#f8fafc; }
+    .block-table tbody td { padding:10px 16px; font-size:13px; border-bottom:1px solid #eef0f6; }
+    .block-table tbody tr:last-child td { border-bottom:none; }
+    .week-cell { font-family:'DM Mono',monospace; font-size:11px; color:var(--navy); font-weight:600; white-space:nowrap; }
+    .date-cell { font-size:12px; color:var(--text-muted); white-space:nowrap; }
+    .course-cell strong { color:var(--navy); font-size:13px; }
+    .course-cell small { color:var(--text-muted); font-size:11px; }
+    .empty-week { color:var(--text-muted); font-style:italic; font-size:12px; }
+    .revision-badge { background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+
+    /* NOTES */
+    .notes { max-width:1300px; margin:28px auto 0; padding:0 40px 40px; }
+    .notes-box { background:var(--gold-bg); border:1px solid #e6c84a; border-radius:10px; padding:16px 22px; display:flex; gap:24px; flex-wrap:wrap; }
+    .note-item { display:flex; align-items:flex-start; gap:9px; font-size:12px; color:#4b3a00; line-height:1.5; }
+    .note-bullet { width:7px; height:7px; border-radius:50%; background:var(--gold); flex-shrink:0; margin-top:5px; }
+
+    /* EDIT MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:#fff; border-radius:12px; padding:1.5rem; width:90%; max-width:600px; max-height:90vh; overflow-y:auto; }
+    .modal-title { font-family:'Playfair Display',serif; color:var(--navy); font-size:1.1rem; font-weight:700; margin-bottom:1rem; }
+    .form-group { margin-bottom:1rem; }
+    .form-group label { display:block; font-size:12px; font-weight:600; color:var(--navy); margin-bottom:.3rem; }
+    .form-group input, .form-group select, .form-group textarea { width:100%; padding:.5rem .7rem; border:1.5px solid var(--border); border-radius:6px; font-size:13px; font-family:'DM Sans',sans-serif; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+    .btn-primary { background:var(--navy); color:#fff; border:none; padding:.6rem 1.2rem; border-radius:6px; font-size:13px; cursor:pointer; font-weight:600; }
+    .btn-danger { background:#ef4444; color:#fff; border:none; padding:.4rem .8rem; border-radius:6px; font-size:12px; cursor:pointer; }
+    .btn-secondary { background:var(--bg); color:var(--navy); border:1px solid var(--border); padding:.6rem 1.2rem; border-radius:6px; font-size:13px; cursor:pointer; }
+
+    @media (max-width:600px) {
+      .hero, .tabs-wrap, .timetable-wrap, .notes { padding-left:16px; padding-right:16px; }
+      .hero-badge { display:none; }
+      .form-row { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="crest">🎓</div>
+    <div class="hero-text">
+      <div class="hero-eyebrow">University of Cape Coast · Nyakrom Campus</div>
+      <h1 class="hero-title">Second Semester <span>Timetable</span></h1>
+      <p class="hero-sub">2025/2026 Academic Year &nbsp;·&nbsp; All Programmes</p>
+    </div>
+    <div class="hero-actions">
+      <a href="student.html" class="back-btn">← Back to Portal</a>
+      <div class="hero-badge">V1.1</div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Edit Banner -->
+<div class="admin-banner" id="adminBanner">
+  <span>🔧 Admin Mode — You can edit timetable entries</span>
+  <button class="btn-edit" onclick="openAddEntryModal()">+ Add Entry</button>
+  <a href="admin.html" style="color:#c9a84c;font-size:12px;text-decoration:none">← Admin Dashboard</a>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="switchMain('weekly',this)">📅 Weekly Timetable</button>
+    <button class="tab" onclick="switchMain('block',this)">📋 Block Lecture Schedule</button>
+  </div>
+  <div class="sub-tabs" id="programTabs">
+    <button class="sub-tab active" onclick="switchProg('nur100',this)">BSc Nursing · L100</button>
+    <button class="sub-tab" onclick="switchProg('nur200',this)">BSc Nursing · L200</button>
+    <button class="sub-tab" onclick="switchProg('nut100',this)">BSc Nutrition · L100</button>
+    <button class="sub-tab" onclick="switchProg('nut200',this)">BSc Nutrition · L200</button>
+  </div>
+</div>
+
+<!-- ── WEEKLY TIMETABLE PANELS ──────────────────────────────────────── -->
+<div id="weekly-panels">
+
+  <!-- NUR 100 -->
+  <div id="nur100" class="section-panel active theme-teal">
+    <div class="timetable-wrap">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <div class="section-label">BSc Nursing — Level 100</div>
+        <div class="section-venue">📍 Auditorium</div>
+      </div>
+      <div class="tt-scroll"><table>
+        <thead><tr>
+          <th class="day-head">Day</th>
+          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
+          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="day-cell">MON</td>
+            <td colspan="2"><div class="card"><div class="card-code">ILT101 ★</div><div class="card-name">Information Literacy Skills</div><div class="card-lect">Dr Kwaku Barfi</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">TUE</td>
+            <td></td><td></td><td></td>
+            <td colspan="2"><div class="card"><div class="card-code">NUR108</div><div class="card-name">Human Anatomy II</div><div class="card-lect">Dr Benjamin Aboagye</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">WED</td>
+            <td></td>
+            <td colspan="2"><div class="card"><div class="card-code">NUR112</div><div class="card-name">Introduction to Nursing</div><div class="card-lect">Ms. Yvonne D Berko</div></div></td>
+            <td></td>
+            <td colspan="2"><div class="card"><div class="card-code">LED120 ★</div><div class="card-name">Intro to Early Childhood Care &amp; Dev.</div><div class="card-lect">Prof. Isaac Buabeng</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">THU</td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td colspan="2"><div class="card"><div class="card-code">CMS108</div><div class="card-name">Communicative Studies II</div><div class="card-lect">Mr. Wisdom Kofi Vifah</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">FRI</td>
+            <td></td><td></td>
+            <td colspan="2"><div class="card"><div class="card-code">NUR110 ★</div><div class="card-name">Human Physiology II</div><div class="card-lect">Dr Benjamin Aboagye</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- NUR 200 -->
+  <div id="nur200" class="section-panel theme-rose">
+    <div class="timetable-wrap">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <div class="section-label">BSc Nursing — Level 200</div>
+        <div class="section-venue">📍 Auditorium</div>
+      </div>
+      <div class="tt-scroll"><table>
+        <thead><tr>
+          <th class="day-head">Day</th>
+          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
+          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="day-cell">MON</td>
+            <td></td><td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUR236</div><div class="card-name">Surgical Nursing I</div><div class="card-lect">Ms. Yvonne D Berko</div></div></td>
+            <td><div class="card"><div class="card-code">NUR226 ★</div><div class="card-name">Teaching &amp; Learning in Health Care</div><div class="card-lect">Dr. Irene Aboh</div></div></td>
+            <td></td><td></td>
+            <td><div class="card"><div class="card-code">NUR234</div><div class="card-name">Medical Nursing I</div><div class="card-lect">Mr. Victor Kpatsi</div></div></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">TUE</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUR228 ★</div><div class="card-name">Intro to Community Health</div><div class="card-lect">Dr. Irene Aboh</div></div></td>
+            <td></td>
+            <td><div class="card"><div class="card-code">NUR230 ★</div><div class="card-name">Nutrition and Dietetics</div><div class="card-lect">Dr. Kasim</div></div></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">WED</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">THU</td>
+            <td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUR220</div><div class="card-name">Nursing Practice I</div><div class="card-lect">Mr. Victor Kpatsi</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUR240 ★</div><div class="card-name">Pharmacology I</div><div class="card-lect">Dean, Sch. of Pharmacy</div></div></td>
+            <td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">FRI</td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUR202 ★</div><div class="card-name">Pathology</div><div class="card-lect">Dr. Justice Afrifa</div></div></td>
+            <td></td>
+            <td><div class="card"><div class="card-code">NUR238 ★</div><div class="card-name">Introductory French for Healthcare</div><div class="card-lect">Dr. Michael Kudi</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- NUT 100 -->
+  <div id="nut100" class="section-panel theme-plum">
+    <div class="timetable-wrap">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <div class="section-label">BSc Nutrition — Level 100</div>
+        <div class="section-venue">📍 Seminar Room B5</div>
+      </div>
+      <div class="tt-scroll"><table>
+        <thead><tr>
+          <th class="day-head">Day</th>
+          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
+          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="day-cell">MON</td>
+            <td></td><td></td>
+            <td><div class="card"><div class="card-code">NUT102 ★</div><div class="card-name">Intro to Food Science</div><div class="card-lect">Dr Gifty Williams</div></div></td>
+            <td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUD104 ★</div><div class="card-name">Intro to Professional Practice</div><div class="card-lect">Dr. Aliyu Tijani Jibril</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">TUE</td>
+            <td><div class="card"><div class="card-code">ILT101 ★</div><div class="card-name">Information Literacy Skills</div><div class="card-lect">Dr Emmanuel Manu Agyapong</div></div></td>
+            <td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUD102</div><div class="card-name">Nutrition &amp; Dietetics Standards</div><div class="card-lect">Dr. Aliyu Tijani Jibril</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">WED</td>
+            <td><div class="card"><div class="card-code">NUD112 ★</div><div class="card-name">Intro to Psychology</div><div class="card-lect">Dr. Rebecca A. A. Assie</div></div></td>
+            <td></td><td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">CHE110 ★</div><div class="card-name">Intro Organic Chemistry (Practicals)</div><div class="card-lect">Dr Justice Addo</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">THU</td>
+            <td></td>
+            <td><div class="card"><div class="card-code">LED120 ★</div><div class="card-name">Intro to Early Childhood Care &amp; Dev.</div><div class="card-lect">Prof. Isaac Buabeng</div></div></td>
+            <td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">CHE108 ★</div><div class="card-name">Intro to Organic Chemistry</div><div class="card-lect">Dr Justice Addo</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">FRI</td>
+            <td></td>
+            <td><div class="card"><div class="card-code">CMS108</div><div class="card-name">Communicative Studies II</div><div class="card-lect">Mr. Wisdom Kofi Vifah</div></div></td>
+            <td></td>
+            <td><div class="card"><div class="card-code">CMS108</div><div class="card-name">Communicative Studies II</div><div class="card-lect">Mr. Wisdom Kofi Vifah</div></div></td>
+            <td></td>
+            <td><div class="card"><div class="card-code">BIO102</div><div class="card-name">Basic Cytology &amp; Genetics</div><div class="card-lect">Prof Kyei (CORD)</div></div></td>
+            <td></td>
+            <td><div class="card"><div class="card-code">BIO102</div><div class="card-name">Basic Cytology &amp; Genetics</div><div class="card-lect">Prof Kyei (CORD)</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- NUT 200 -->
+  <div id="nut200" class="section-panel theme-moss">
+    <div class="timetable-wrap">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <div class="section-label">BSc Nutrition — Level 200</div>
+        <div class="section-venue">📍 Multipurpose Lab 2</div>
+      </div>
+      <div class="tt-scroll"><table>
+        <thead><tr>
+          <th class="day-head">Day</th>
+          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
+          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="day-cell">MON</td>
+            <td></td><td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUD210</div><div class="card-name">Nutritional Needs Throughout the Life Cycle</div><div class="card-lect">Dr. Aliyu Tijani Jibril</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">TUE</td>
+            <td></td><td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUD214 ★</div><div class="card-name">Food Microbiology</div><div class="card-lect">Dr. Gifty Williams</div></div></td>
+            <td></td>
+            <td><div class="card"><div class="card-code">NUT202</div><div class="card-name">Nutritional Surveillance</div><div class="card-lect">TBA</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">WED</td>
+            <td><div class="card"><div class="card-code">NUD212</div><div class="card-name">Nutritional Assessment Methods II</div><div class="card-lect">Dr. Aliyu Tijani Jibril</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+            <td><div class="card"><div class="card-code">NUD220 ★</div><div class="card-name">Food Analysis &amp; Product Development</div><div class="card-lect">Dr. Gifty Williams</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">THU</td>
+            <td></td>
+            <td><div class="card"><div class="card-code">NUD205 ★</div><div class="card-name">Nutritional Biochemistry</div><div class="card-lect">Dr. Precious Barnes &amp; Dr. Ekloh</div></div></td>
+            <td></td><td></td>
+            <td><div class="card"><div class="card-code">PHL205 ★</div><div class="card-name">Critical Thinking &amp; Practical Reasoning</div><div class="card-lect">TBA</div></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="day-cell">FRI</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+</div><!-- end weekly-panels -->
+
+<!-- ── BLOCK LECTURE PANELS ─────────────────────────────────────────── -->
+<div id="block-panels" style="display:none">
+
+  <!-- NUR100 Block -->
+  <div id="block-nur100" class="section-panel active theme-teal">
+    <div class="timetable-wrap">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <div class="section-label">Block Lectures — BSc Nursing Level 100</div>
+        <div class="section-venue">📍 Auditorium</div>
+      </div>
+      <table class="block-table">
+        <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
+        <tbody>
+          <tr><td class="week-cell">Week 1</td><td class="date-cell">27 Apr – 1 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 2</td><td class="date-cell">4 – 8 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 3</td><td class="date-cell">11 – 15 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 4</td><td class="date-cell">18 – 22 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 5</td><td class="date-cell">25 – 29 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 6</td><td class="date-cell">1 – 5 Jun</td><td class="course-cell"><strong>NUR110</strong><br><small>Human Physiology II</small></td><td>Dr Benjamin Aboagye</td></tr>
+          <tr><td class="week-cell">Week 7</td><td class="date-cell">8 – 12 Jun</td><td class="course-cell"><strong>NUR108</strong><br><small>Human Anatomy II</small></td><td>Dr Benjamin Aboagye</td></tr>
+          <tr><td class="week-cell">Week 8</td><td class="date-cell">15 – 19 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 9</td><td class="date-cell">22 – 26 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 10</td><td class="date-cell">29 Jun – 3 Jul</td><td><span class="revision-badge">REVISION</span></td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NUR200 Block -->
+  <div id="block-nur200" class="section-panel theme-rose">
+    <div class="timetable-wrap">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <div class="section-label">Block Lectures — BSc Nursing Level 200</div>
+        <div class="section-venue">📍 Auditorium</div>
+      </div>
+      <table class="block-table">
+        <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
+        <tbody>
+          <tr><td class="week-cell">Week 1</td><td class="date-cell">27 Apr – 1 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 2</td><td class="date-cell">4 – 8 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 3</td><td class="date-cell">11 – 15 May</td><td class="course-cell"><strong>NUR202</strong><br><small>Pathology</small></td><td>Dr. Justice Afrifa</td></tr>
+          <tr><td class="week-cell">Week 4</td><td class="date-cell">18 – 22 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 5</td><td class="date-cell">25 – 29 May</td><td class="course-cell"><strong>NUR230</strong> + <strong>NUR238</strong><br><small>Nutrition &amp; Dietetics / French for Healthcare</small></td><td>Dr. Kasim / Dr. Michael Kudi</td></tr>
+          <tr><td class="week-cell">Week 6</td><td class="date-cell">1 – 5 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 7</td><td class="date-cell">8 – 12 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 8</td><td class="date-cell">15 – 19 Jun</td><td class="course-cell"><strong>NUR240</strong><br><small>Pharmacology I</small></td><td>Dean, Sch. of Pharmacy</td></tr>
+          <tr><td class="week-cell">Week 9</td><td class="date-cell">22 – 26 Jun</td><td class="course-cell"><strong>NUR226</strong><br><small>Teaching &amp; Learning in Health Care</small></td><td>Dr. Irene Aboh</td></tr>
+          <tr><td class="week-cell">Week 10</td><td class="date-cell">29 Jun – 3 Jul</td><td class="course-cell"><strong>NUR228</strong> / <span class="revision-badge">REVISION</span><br><small>Intro to Community Health</small></td><td>Dr. Irene Aboh</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NUT100 Block -->
+  <div id="block-nut100" class="section-panel theme-plum">
+    <div class="timetable-wrap">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <div class="section-label">Block Lectures — BSc Nutrition Level 100</div>
+        <div class="section-venue">📍 Seminar Room B5</div>
+      </div>
+      <table class="block-table">
+        <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
+        <tbody>
+          <tr><td class="week-cell">Week 1</td><td class="date-cell">27 Apr – 1 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 2</td><td class="date-cell">4 – 8 May</td><td class="course-cell"><strong>NUT102</strong><br><small>Introduction to Food Science</small></td><td>Dr. Gifty Williams</td></tr>
+          <tr><td class="week-cell">Week 3</td><td class="date-cell">11 – 15 May</td><td class="course-cell"><strong>NUD104</strong><br><small>Introduction to Professional Practice</small></td><td>Dr. Jessica Ayensu</td></tr>
+          <tr><td class="week-cell">Week 4</td><td class="date-cell">18 – 22 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 5</td><td class="date-cell">25 – 29 May</td><td class="course-cell"><strong>CHE108</strong><br><small>Introduction to Organic Chemistry</small></td><td>Dr Justice Addo</td></tr>
+          <tr><td class="week-cell">Week 6</td><td class="date-cell">1 – 5 Jun</td><td class="course-cell"><strong>NUD112</strong><br><small>Introduction to Psychology</small></td><td>Dr. Rebecca A. A. Assie</td></tr>
+          <tr><td class="week-cell">Week 7</td><td class="date-cell">8 – 12 Jun</td><td class="course-cell"><strong>CHE110</strong><br><small>Intro Organic Chemistry (Practicals)</small></td><td>Dr Justice Addo</td></tr>
+          <tr><td class="week-cell">Week 8</td><td class="date-cell">15 – 19 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 9</td><td class="date-cell">22 – 26 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 10</td><td class="date-cell">29 Jun – 3 Jul</td><td><span class="revision-badge">REVISION</span></td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NUT200 Block -->
+  <div id="block-nut200" class="section-panel theme-moss">
+    <div class="timetable-wrap">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <div class="section-label">Block Lectures — BSc Nutrition Level 200</div>
+        <div class="section-venue">📍 Multipurpose Lab 2</div>
+      </div>
+      <table class="block-table">
+        <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
+        <tbody>
+          <tr><td class="week-cell">Week 1</td><td class="date-cell">27 Apr – 1 May</td><td class="course-cell"><strong>NUD205</strong><br><small>Nutritional Biochemistry</small></td><td>Dr. Precious Barnes &amp; Dr. Ekloh</td></tr>
+          <tr><td class="week-cell">Week 2</td><td class="date-cell">4 – 8 May</td><td class="course-cell"><strong>NUD220</strong><br><small>Food Analysis &amp; Product Development</small></td><td>Dr. Gifty Williams</td></tr>
+          <tr><td class="week-cell">Week 3</td><td class="date-cell">11 – 15 May</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 4</td><td class="date-cell">18 – 22 May</td><td class="course-cell"><strong>NUD216</strong><br><small>General Pathology</small></td><td>Prof Ephraim</td></tr>
+          <tr><td class="week-cell">Week 5</td><td class="date-cell">25 – 29 May</td><td class="course-cell"><strong>NUD214</strong><br><small>Food Microbiology</small></td><td>Dr. Gifty Williams</td></tr>
+          <tr><td class="week-cell">Week 6</td><td class="date-cell">1 – 5 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 7</td><td class="date-cell">8 – 12 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 8</td><td class="date-cell">15 – 19 Jun</td><td class="course-cell"><strong>PHL205</strong><br><small>Critical Thinking &amp; Practical Reasoning</small></td><td>Not Allocated</td></tr>
+          <tr><td class="week-cell">Week 9</td><td class="date-cell">22 – 26 Jun</td><td class="empty-week">—</td><td>—</td></tr>
+          <tr><td class="week-cell">Week 10</td><td class="date-cell">29 Jun – 3 Jul</td><td><span class="revision-badge">REVISION</span></td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end block-panels -->
+
+<!-- NOTES -->
+<div class="notes">
+  <div class="notes-box">
+    <div class="note-item">
+      <div class="note-bullet"></div>
+      <div><strong>★ Block Lectures</strong> — Courses marked ★ are delivered as block lectures. Resident lecturers should use these periods to compensate.</div>
+    </div>
+    <div class="note-item">
+      <div class="note-bullet"></div>
+      <div><strong>ILT101 Online</strong> — Information Literacy Skills will be delivered online for the first 4 weeks.</div>
+    </div>
+    <div class="note-item">
+      <div class="note-bullet"></div>
+      <div><strong>Academic Year</strong> — 2025/2026 Second Semester. Check Notice Board for updates.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADMIN EDIT MODAL ──────────────────────────────────────────────── -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Add / Edit Timetable Notice</div>
+    <p style="font-size:12px;color:#6b7280;margin-bottom:1rem">
+      Post a timetable update as a pinned notice visible to all students.
+    </p>
+    <div class="form-group">
+      <label>Notice Title</label>
+      <input type="text" id="noticeTitle" placeholder="e.g. Timetable Change — NUR108 Week 5" value="📅 Timetable Update">
+    </div>
+    <div class="form-group">
+      <label>Message / Details</label>
+      <textarea id="noticeMessage" rows="5" placeholder="Describe the change..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="noticePriority">
+          <option value="urgent">🔴 Urgent</option>
+          <option value="info" selected>🔵 Info</option>
+          <option value="general">🟡 General</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Target Audience</label>
+        <select id="noticeAudience">
+          <option value="all">All Students</option>
+          <option value="nursing">BSc Nursing</option>
+          <option value="nutrition">BSc Nutrition</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:.7rem;margin-top:.5rem">
+      <button class="btn-primary" onclick="postTimetableNotice()">📢 Post Notice</button>
+      <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script type="module">
+  import { getSession } from "./js/auth.js";
+
+  // Check if admin is logged in
+  const session = getSession();
+  const isAdmin = session && session.role && session.role !== "student";
+  if (isAdmin) {
+    document.getElementById("adminBanner").classList.add("visible");
+  }
+
+  // Back button — go to right portal
+  const backBtn = document.querySelector(".back-btn");
+  if (backBtn) {
+    backBtn.href = isAdmin ? "admin.html" : "student.html";
+    backBtn.textContent = isAdmin ? "← Admin Dashboard" : "← Back to Portal";
+  }
+</script>
+<script>
+  let currentMain = "weekly";
+  let currentProg = "nur100";
+
+  function switchMain(type, btn) {
+    currentMain = type;
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("weekly-panels").style.display = type === "weekly" ? "" : "none";
+    document.getElementById("block-panels").style.display  = type === "block"  ? "" : "none";
+    if (type === "block") switchProg(currentProg, null);
+  }
+
+  function switchProg(prog, btn) {
+    currentProg = prog;
+    if (btn) {
+      document.querySelectorAll(".sub-tab").forEach(t => t.classList.remove("active"));
+      btn.classList.add("active");
+    }
+
+    if (currentMain === "weekly") {
+      document.querySelectorAll("#weekly-panels .section-panel").forEach(p => p.classList.remove("active"));
+      document.getElementById(prog)?.classList.add("active");
+    } else {
+      document.querySelectorAll("#block-panels .section-panel").forEach(p => p.classList.remove("active"));
+      document.getElementById("block-" + prog)?.classList.add("active");
+    }
+  }
+
+  function openAddEntryModal() {
+    document.getElementById("editModal").classList.add("open");
+  }
+
+  function closeEditModal() {
+    document.getElementById("editModal").classList.remove("open");
+  }
+
+  async function postTimetableNotice() {
+    const title    = document.getElementById("noticeTitle").value.trim();
+    const message  = document.getElementById("noticeMessage").value.trim();
+    const priority = document.getElementById("noticePriority").value;
+    const audience = document.getElementById("noticeAudience").value;
+
+    if (!title || !message) { alert("Please fill in both title and message."); return; }
+
+    const meta = document.querySelector('meta[name="sb-url"]');
+    const key  = document.querySelector('meta[name="sb-key"]');
+    if (!meta || !key) { alert("Supabase not configured."); return; }
+
+    const client = supabase.createClient(meta.content, key.content);
+    const { error } = await client.from("notices").insert([{
+      title, message, priority, audience,
+      author:     "admin",
+      pinned:     priority === "urgent",
+      created_at: new Date().toISOString()
+    }]);
+
+    if (error) { alert("Error posting notice: " + error.message); return; }
+    alert("✅ Notice posted successfully! Students will see it on the Notice Board.");
+    closeEditModal();
+    document.getElementById("noticeMessage").value = "";
+  }
+</script>
+</body>
+</html>
