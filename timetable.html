@@ -1,507 +1,1015 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Second Semester Timetable — UCC Nyakrom Campus</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
-  <style>
-    :root{--bg:#f4f6fa;--white:#fff;--navy:#0f2044;--gold:#b8860b;--gold-bg:#fff8e1;--border:#dde3ee;--text-main:#111827;--text-sub:#374151;--text-muted:#6b7280;--teal-bg:#ccfbf1;--teal-border:#0d9488;--teal-code:#0f766e;--teal-name:#134e4a;--teal-lect:#1d6f6a;--rose-bg:#ffe4ec;--rose-border:#be185d;--rose-code:#9d174d;--rose-name:#831843;--rose-lect:#a0255a;--plum-bg:#ede9fe;--plum-border:#7c3aed;--plum-code:#5b21b6;--plum-name:#3b0764;--plum-lect:#6d28d9;--moss-bg:#dcfce7;--moss-border:#16a34a;--moss-code:#15803d;--moss-name:#14532d;--moss-lect:#166534;}
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text-main);font-family:'DM Sans',sans-serif;min-height:100vh;padding-bottom:60px;}
-    .hero{background:var(--navy);padding:32px 40px 24px;}
-    .hero-inner{max-width:1300px;margin:0 auto;display:flex;align-items:center;gap:16px;}
-    .crest{width:56px;height:56px;border:2px solid #f0c040;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:rgba(240,192,64,.1);}
-    .hero-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#f0c040;margin-bottom:4px;}
-    .hero-title{font-family:'Playfair Display',serif;font-size:clamp(18px,3vw,30px);font-weight:900;color:#fff;line-height:1.1;}
-    .hero-title span{color:#f0c040;}
-    .hero-sub{margin-top:4px;font-size:12px;color:#94a3b8;}
-    .hero-actions{margin-left:auto;display:flex;gap:.5rem;align-items:center;}
-    .back-btn{font-size:12px;color:rgba(255,255,255,.7);text-decoration:none;border:1px solid rgba(255,255,255,.2);padding:5px 14px;border-radius:100px;}
-    .admin-banner{background:#1e3a5f;border-bottom:2px solid var(--gold);padding:.6rem 1.5rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap;}
-    .admin-banner.visible{display:flex;}
-    .admin-banner span{color:#c9a84c;font-size:13px;font-weight:600;}
-    .btn-gold{background:var(--gold);color:#fff;border:none;padding:.4rem 1rem;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;}
-    .tabs-wrap{max-width:1300px;margin:20px auto 0;padding:0 40px;}
-    .tabs{display:flex;gap:8px;flex-wrap:wrap;}
-    .tab{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text-sub);transition:all .18s;}
-    .tab:hover{border-color:var(--navy);color:var(--navy);}
-    .tab.active{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600;}
-    .sub-tabs{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
-    .sub-tab{padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text-muted);transition:all .18s;}
-    .sub-tab.active{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:600;}
-    .section-panel{display:none;}
-    .section-panel.active{display:block;}
-    .timetable-wrap{max-width:1300px;margin:20px auto 0;padding:0 40px;}
-    .section-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
-    .section-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
-    .section-label{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--navy);}
-    .section-venue{margin-left:auto;font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted);background:var(--white);border:1px solid var(--border);padding:3px 10px;border-radius:6px;}
-    .tt-scroll{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
-    table{width:100%;border-collapse:collapse;min-width:900px;background:var(--white);}
-    thead{background:var(--navy);}
-    thead th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;padding:9px 4px;text-align:center;white-space:nowrap;border-right:1px solid rgba(255,255,255,.07);}
-    thead th.day-head{color:#f0c040;width:52px;text-align:left;padding-left:12px;}
-    tbody tr:not(:last-child) td{border-bottom:1px solid #eef0f6;}
-    td{padding:4px 3px;vertical-align:middle;border-right:1px solid #eef0f6;min-width:80px;}
-    .day-cell{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--navy);background:#f8fafc;padding:12px;white-space:nowrap;border-right:2px solid var(--border) !important;}
-    tbody tr:hover{background:#f8fafc;}
-    .card{border-radius:6px;padding:6px 8px;border-left:3px solid transparent;position:relative;}
-    .card-code{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.1em;margin-bottom:2px;}
-    .card-name{font-size:11px;font-weight:600;line-height:1.3;margin-bottom:2px;}
-    .card-lect{font-size:9.5px;line-height:1.3;}
-    .card-edit-btn{display:none;position:absolute;top:2px;right:2px;background:rgba(255,255,255,.85);border:1px solid #ddd;border-radius:3px;padding:1px 5px;font-size:9px;cursor:pointer;}
-    .admin-mode .card:hover .card-edit-btn{display:block;}
-    .empty-slot{width:100%;min-height:44px;cursor:default;border-radius:4px;}
-    .admin-mode .empty-slot{cursor:pointer;}
-    .admin-mode .empty-slot:hover{background:rgba(184,134,11,.12);outline:1.5px dashed var(--gold);}
-    .theme-teal .section-dot{background:var(--teal-border);}
-    .theme-teal .card{background:var(--teal-bg);border-left-color:var(--teal-border);}
-    .theme-teal .card-code{color:var(--teal-code);}
-    .theme-teal .card-name{color:var(--teal-name);}
-    .theme-teal .card-lect{color:var(--teal-lect);}
-    .theme-rose .section-dot{background:var(--rose-border);}
-    .theme-rose .card{background:var(--rose-bg);border-left-color:var(--rose-border);}
-    .theme-rose .card-code{color:var(--rose-code);}
-    .theme-rose .card-name{color:var(--rose-name);}
-    .theme-rose .card-lect{color:var(--rose-lect);}
-    .theme-plum .section-dot{background:var(--plum-border);}
-    .theme-plum .card{background:var(--plum-bg);border-left-color:var(--plum-border);}
-    .theme-plum .card-code{color:var(--plum-code);}
-    .theme-plum .card-name{color:var(--plum-name);}
-    .theme-plum .card-lect{color:var(--plum-lect);}
-    .theme-moss .section-dot{background:var(--moss-border);}
-    .theme-moss .card{background:var(--moss-bg);border-left-color:var(--moss-border);}
-    .theme-moss .card-code{color:var(--moss-code);}
-    .theme-moss .card-name{color:var(--moss-name);}
-    .theme-moss .card-lect{color:var(--moss-lect);}
-    .block-table{width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
-    .block-table thead{background:var(--navy);}
-    .block-table thead th{color:#94a3b8;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;text-align:left;}
-    .block-table tbody tr:nth-child(even){background:#f8fafc;}
-    .block-table tbody td{padding:9px 14px;font-size:13px;border-bottom:1px solid #eef0f6;}
-    .week-cell{font-family:'DM Mono',monospace;font-size:11px;color:var(--navy);font-weight:600;white-space:nowrap;}
-    .date-cell{font-size:12px;color:var(--text-muted);white-space:nowrap;}
-    .revision-badge{background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;}
-    .empty-week{color:var(--text-muted);font-style:italic;font-size:12px;}
-    .notes{max-width:1300px;margin:24px auto 0;padding:0 40px 40px;}
-    .notes-box{background:var(--gold-bg);border:1px solid #e6c84a;border-radius:10px;padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;}
-    .note-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#4b3a00;line-height:1.5;}
-    .note-bullet{width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:5px;}
-    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;}
-    .modal-overlay.open{display:flex;}
-    .modal-box{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:520px;max-height:90vh;overflow-y:auto;}
-    .modal-title{font-family:'Playfair Display',serif;color:var(--navy);font-size:1.1rem;font-weight:700;margin-bottom:1rem;}
-    .form-group{margin-bottom:.85rem;}
-    .form-group label{display:block;font-size:12px;font-weight:600;color:var(--navy);margin-bottom:.3rem;}
-    .form-group input,.form-group select{width:100%;padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;}
-    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
-    .btn-primary{background:var(--navy);color:#fff;border:none;padding:.55rem 1.1rem;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;}
-    .btn-danger2{background:#ef4444;color:#fff;border:none;padding:.45rem .8rem;border-radius:6px;font-size:12px;cursor:pointer;}
-    .btn-secondary{background:#f4f6fa;color:var(--navy);border:1px solid var(--border);padding:.55rem 1.1rem;border-radius:6px;font-size:13px;cursor:pointer;}
-    .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--navy);color:#fff;padding:.7rem 1.2rem;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
-    .toast.show{opacity:1;}
-    @media(max-width:600px){.hero,.tabs-wrap,.timetable-wrap,.notes{padding-left:16px;padding-right:16px;}.form-row{grid-template-columns:1fr;}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UCC Nyakrom Campus — Timetable</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --navy: #0f2044;
+    --navy-light: #1a3060;
+    --teal: #0d7377;
+    --teal-bg: #e8f7f7;
+    --rose: #b5294a;
+    --rose-bg: #fde8ee;
+    --plum: #5c2d91;
+    --plum-bg: #f0e8fb;
+    --moss: #2d6a2d;
+    --moss-bg: #e8f5e8;
+    --gold: #c8973a;
+    --border: #dce4ef;
+    --text: #1a2540;
+    --muted: #6b7fa3;
+    --bg: #f5f7fb;
+    --white: #ffffff;
+    --shadow: 0 2px 12px rgba(15,32,68,0.10);
+    --shadow-lg: 0 8px 32px rgba(15,32,68,0.14);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 24px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(15,32,68,0.3);
+  }
+  .header-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .header-logo {
+    width: 44px;
+    height: 44px;
+    background: var(--gold);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy);
+    flex-shrink: 0;
+  }
+  .header-text h1 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+  .header-text p {
+    font-size: 12px;
+    opacity: 0.65;
+    margin-top: 2px;
+  }
+  .header-meta {
+    margin-left: auto;
+    text-align: right;
+    font-size: 12px;
+    opacity: 0.6;
+    line-height: 1.5;
+  }
+
+  /* TABS */
+  .tabs-bar {
+    background: var(--white);
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 84px;
+    z-index: 90;
+    box-shadow: 0 2px 8px rgba(15,32,68,0.06);
+  }
+  .tabs-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: flex;
+    padding: 0 24px;
+    gap: 4px;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 14px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab-btn:hover { color: var(--navy); }
+  .tab-btn.active {
+    color: var(--navy);
+    font-weight: 700;
+    border-bottom-color: var(--gold);
+  }
+
+  /* CONTENT */
+  .content {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* PROGRAMME FILTER */
+  .prog-filter {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .prog-btn {
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    background: var(--white);
+  }
+  .prog-btn[data-prog="all"] { border-color: var(--navy); color: var(--navy); }
+  .prog-btn[data-prog="all"].active { background: var(--navy); color: white; }
+  .prog-btn[data-prog="nur100"] { border-color: var(--teal); color: var(--teal); }
+  .prog-btn[data-prog="nur100"].active { background: var(--teal); color: white; }
+  .prog-btn[data-prog="nur200"] { border-color: var(--rose); color: var(--rose); }
+  .prog-btn[data-prog="nur200"].active { background: var(--rose); color: white; }
+  .prog-btn[data-prog="nut100"] { border-color: var(--plum); color: var(--plum); }
+  .prog-btn[data-prog="nut100"].active { background: var(--plum); color: white; }
+  .prog-btn[data-prog="nut200"] { border-color: var(--moss); color: var(--moss); }
+  .prog-btn[data-prog="nut200"].active { background: var(--moss); color: white; }
+
+  /* TIMETABLE GRID */
+  .timetable-grid {
+    background: var(--white);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .prog-header {
+    background: var(--navy);
+    color: white;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .prog-header .prog-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--navy-light);
+    color: rgba(255,255,255,0.9);
+    padding: 10px 14px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  thead th:first-child { text-align: left; }
+  tbody tr:nth-child(even) td { background: #f9fafd; }
+  tbody tr:hover td { background: #f0f4fa; }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  td:first-child {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  /* COURSE CARDS in cells */
+  .course-card {
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  .course-card:last-child { margin-bottom: 0; }
+  .course-card .code {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.75;
+  }
+  .course-card .name { font-size: 12.5px; font-weight: 600; }
+  .course-card .lecturer { font-size: 11.5px; opacity: 0.7; margin-top: 2px; }
+  .course-card.nur100 { background: var(--teal-bg); color: var(--teal); }
+  .course-card.nur200 { background: var(--rose-bg); color: var(--rose); }
+  .course-card.nut100 { background: var(--plum-bg); color: var(--plum); }
+  .course-card.nut200 { background: var(--moss-bg); color: var(--moss); }
+  .empty-cell { color: var(--muted); font-size: 12px; opacity: 0.4; }
+
+  /* BLOCK SCHEDULE */
+  .block-table { margin-bottom: 32px; }
+  .block-table table td:first-child {
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--navy-light);
+    background: #f0f4fa;
+    width: 70px;
+  }
+  .block-badge {
+    display: inline-block;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .block-badge .bcode { font-family: 'DM Mono', monospace; font-size: 11px; opacity: 0.75; display: block; }
+  .block-badge .bname { display: block; }
+  .block-badge .blec { font-size: 11px; opacity: 0.65; display: block; margin-top: 2px; }
+  .block-badge.nur100 { background: var(--teal-bg); color: var(--teal); }
+  .block-badge.nur200 { background: var(--rose-bg); color: var(--rose); }
+  .block-badge.nut100 { background: var(--plum-bg); color: var(--plum); }
+  .block-badge.nut200 { background: var(--moss-bg); color: var(--moss); }
+
+  /* WEEK SELECTOR */
+  .week-selector-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .week-selector-bar label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  #blockWeekSelector {
+    padding: 8px 14px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    background: white;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #blockWeekSelector:focus { border-color: var(--navy); }
+  .week-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* ADD ENTRY */
+  .add-btn {
+    background: var(--navy);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .add-btn:hover { background: var(--navy-light); transform: translateY(-1px); }
+  .add-btn:active { transform: translateY(0); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(15,32,68,0.55);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 20px;
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group select:focus,
+  .form-group input:focus { border-color: var(--navy); }
+  .modal-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .btn-save {
+    flex: 1;
+    padding: 11px;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-save:hover { background: var(--navy-light); }
+  .btn-cancel {
+    padding: 11px 20px;
+    background: var(--bg);
+    color: var(--muted);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-cancel:hover { border-color: var(--muted); }
+
+  /* LOADING / EMPTY */
+  .loading-msg, .empty-msg {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .loading-msg::before { content: '⏳ '; }
+  .empty-msg::before { content: '📭 '; }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 3px;
+  }
+
+  /* STATUS */
+  .status-bar {
+    background: #e8f7f7;
+    border: 1px solid #b3e0e0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: var(--teal);
+    margin-bottom: 20px;
+    display: none;
+  }
+  .status-bar.show { display: block; }
+  .status-bar.error { background: #fde8ee; border-color: #f4b8cb; color: var(--rose); }
+
+  @media (max-width: 700px) {
+    .content { padding: 16px 12px 40px; }
+    thead th, td { padding: 8px 8px; }
+    .tabs-inner { padding: 0 12px; }
+    .tab-btn { padding: 12px 12px; font-size: 12.5px; }
+  }
+</style>
 </head>
 <body>
 
-<div class="hero">
-  <div class="hero-inner">
-    <div class="crest">🎓</div>
-    <div class="hero-text">
-      <div class="hero-eyebrow">University of Cape Coast · Nyakrom Campus</div>
-      <h1 class="hero-title">Second Semester <span>Timetable</span></h1>
-      <p class="hero-sub">2025/2026 Academic Year &nbsp;·&nbsp; All Programmes</p>
+<!-- SUPABASE CONFIG — update these two lines after uploading to GitHub -->
+<meta name="supabase-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
+<meta name="supabase-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-logo">U</div>
+    <div class="header-text">
+      <h1>UCC Nyakrom Campus — Academic Timetable</h1>
+      <p>2025/2026 Second Semester · Centre for African and International Studies</p>
     </div>
-    <div class="hero-actions">
-      <a href="student.html" class="back-btn" id="backBtn">← Back to Portal</a>
+    <div class="header-meta">
+      Faculty of Arts<br>
+      University of Cape Coast
     </div>
   </div>
 </div>
 
-<div class="admin-banner" id="adminBanner">
-  <span>🔧 Admin Mode — Click an empty slot to add, or ✏️ on an entry to edit. Changes save permanently to the database.</span>
-  <button class="btn-gold" onclick="openAddModal(currentProg,currentMain,'MON',0,1)">+ Add Entry</button>
-</div>
-
-<div class="tabs-wrap">
-  <div class="tabs">
-    <button class="tab active" onclick="switchMain('weekly',this)">📅 Weekly Timetable</button>
-    <button class="tab" onclick="switchMain('block',this)">📋 Block Lecture Schedule</button>
-  </div>
-  <div class="sub-tabs">
-    <button class="sub-tab active" onclick="switchProg('nur100',this)">BSc Nursing · L100</button>
-    <button class="sub-tab" onclick="switchProg('nur200',this)">BSc Nursing · L200</button>
-    <button class="sub-tab" onclick="switchProg('nut100',this)">BSc Nutrition · L100</button>
-    <button class="sub-tab" onclick="switchProg('nut200',this)">BSc Nutrition · L200</button>
+<div class="tabs-bar">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="switchTab('weekly')">📅 Weekly Timetable</button>
+    <button class="tab-btn" onclick="switchTab('block')">📋 Block Lecture Schedule</button>
+    <button class="tab-btn" onclick="switchTab('blockweekly')">📅 Weekly Block Timetable</button>
   </div>
 </div>
 
-<div id="weekly-panels">
-  <div id="panel-weekly-nur100" class="section-panel active theme-teal">
-    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">BSc Nursing — Level 100</div><div class="section-venue">📍 Auditorium</div></div><div class="tt-scroll" id="grid-weekly-nur100"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
-  </div>
-  <div id="panel-weekly-nur200" class="section-panel theme-rose">
-    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">BSc Nursing — Level 200</div><div class="section-venue">📍 Auditorium</div></div><div class="tt-scroll" id="grid-weekly-nur200"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
-  </div>
-  <div id="panel-weekly-nut100" class="section-panel theme-plum">
-    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">BSc Nutrition — Level 100</div><div class="section-venue">📍 Seminar Room B5</div></div><div class="tt-scroll" id="grid-weekly-nut100"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
-  </div>
-  <div id="panel-weekly-nut200" class="section-panel theme-moss">
-    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">BSc Nutrition — Level 200</div><div class="section-venue">📍 Multipurpose Lab 2</div></div><div class="tt-scroll" id="grid-weekly-nut200"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
-  </div>
-</div>
+<div class="content">
 
-<div id="block-panels" style="display:none">
-  <div id="panel-block-nur100" class="section-panel active theme-teal">
-    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">Block Lectures — BSc Nursing L100</div><div class="section-venue">📍 Auditorium</div></div><div id="grid-block-nur100"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
-  </div>
-  <div id="panel-block-nur200" class="section-panel theme-rose">
-    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">Block Lectures — BSc Nursing L200</div><div class="section-venue">📍 Auditorium</div></div><div id="grid-block-nur200"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
-  </div>
-  <div id="panel-block-nut100" class="section-panel theme-plum">
-    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">Block Lectures — BSc Nutrition L100</div><div class="section-venue">📍 Seminar Room B5</div></div><div id="grid-block-nut100"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
-  </div>
-  <div id="panel-block-nut200" class="section-panel theme-moss">
-    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">Block Lectures — BSc Nutrition L200</div><div class="section-venue">📍 Multipurpose Lab 2</div></div><div id="grid-block-nut200"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
-  </div>
-</div>
+  <!-- STATUS BAR -->
+  <div class="status-bar" id="statusBar"></div>
 
-<div class="notes">
-  <div class="notes-box">
-    <div class="note-item"><div class="note-bullet"></div><div><strong>★ Block Lectures</strong> — Courses marked ★ are delivered as block lectures. Resident lecturers should use these periods to compensate.</div></div>
-    <div class="note-item"><div class="note-bullet"></div><div><strong>ILT101 Online</strong> — Information Literacy Skills will be delivered online for the first 4 weeks.</div></div>
-    <div class="note-item"><div class="note-bullet"></div><div><strong>Updates</strong> — Check the Notice Board for timetable changes.</div></div>
-  </div>
-</div>
-
-<!-- ENTRY MODAL -->
-<div class="modal-overlay" id="entryModal">
-  <div class="modal-box">
-    <div class="modal-title" id="modalTitle">➕ Add Timetable Entry</div>
-    <input type="hidden" id="editEntryId">
-    <div class="form-row">
-      <div class="form-group">
-        <label>Programme</label>
-        <select id="entryProg">
-          <option value="nur100">BSc Nursing L100</option>
-          <option value="nur200">BSc Nursing L200</option>
-          <option value="nut100">BSc Nutrition L100</option>
-          <option value="nut200">BSc Nutrition L200</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Timetable Type</label>
-        <select id="entryView" onchange="toggleFields()">
-          <option value="weekly">Weekly</option>
-          <option value="block">Block Lecture</option>
-        </select>
-      </div>
+  <!-- ======================================================
+       TAB 1: WEEKLY TIMETABLE
+       ====================================================== -->
+  <div class="tab-panel active" id="panel-weekly">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div> BSc Nursing L100</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--rose)"></div> BSc Nursing L200</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--plum)"></div> BSc Nutrition L100</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--moss)"></div> BSc Nutrition L200</div>
     </div>
-    <div id="weeklyFields">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Day</label>
-          <select id="entryDay">
-            <option value="MON">Monday</option><option value="TUE">Tuesday</option>
-            <option value="WED">Wednesday</option><option value="THU">Thursday</option>
-            <option value="FRI">Friday</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Start Time</label>
-          <select id="entrySlot">
-            <option value="0">07:00–08:00</option><option value="1">08:00–09:00</option>
-            <option value="2">09:00–10:00</option><option value="3">10:00–11:00</option>
-            <option value="4">11:00–12:00</option><option value="5">12:00–13:00</option>
-            <option value="6">13:00–14:00</option><option value="7">14:00–15:00</option>
-            <option value="8">15:00–16:00</option><option value="9">16:00–17:00</option>
-            <option value="10">17:00–18:00</option><option value="11">18:00–19:00</option>
-            <option value="12">19:00–20:00</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Duration (hours)</label>
-        <select id="entrySpan">
-          <option value="1">1 hour</option><option value="2">2 hours</option><option value="3">3 hours</option>
-        </select>
-      </div>
+    <div class="prog-filter">
+      <button class="prog-btn active" data-prog="all" onclick="filterProg('all',this)">All Programmes</button>
+      <button class="prog-btn" data-prog="nur100" onclick="filterProg('nur100',this)">BSc Nursing L100</button>
+      <button class="prog-btn" data-prog="nur200" onclick="filterProg('nur200',this)">BSc Nursing L200</button>
+      <button class="prog-btn" data-prog="nut100" onclick="filterProg('nut100',this)">BSc Nutrition L100</button>
+      <button class="prog-btn" data-prog="nut200" onclick="filterProg('nut200',this)">BSc Nutrition L200</button>
     </div>
-    <div id="blockFields" style="display:none">
-      <div class="form-group">
-        <label>Week Number</label>
-        <select id="entryWeek">
-          <option value="1">Week 1 (27 Apr – 1 May)</option><option value="2">Week 2 (4 – 8 May)</option>
-          <option value="3">Week 3 (11 – 15 May)</option><option value="4">Week 4 (18 – 22 May)</option>
-          <option value="5">Week 5 (25 – 29 May)</option><option value="6">Week 6 (1 – 5 Jun)</option>
-          <option value="7">Week 7 (8 – 12 Jun)</option><option value="8">Week 8 (15 – 19 Jun)</option>
-          <option value="9">Week 9 (22 – 26 Jun)</option><option value="10">Week 10 (29 Jun – 3 Jul)</option>
-        </select>
-      </div>
+    <div id="weeklyContainer"><div class="loading-msg">Loading timetable data…</div></div>
+  </div>
+
+  <!-- ======================================================
+       TAB 2: BLOCK LECTURE SCHEDULE
+       ====================================================== -->
+  <div class="tab-panel" id="panel-block">
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">
+      Block lectures are intensive sessions held during designated weeks. Each entry shows which week a block course is scheduled.
+    </p>
+    <div class="prog-filter">
+      <button class="prog-btn active" data-prog="all" onclick="filterBlockProg('all',this)">All Programmes</button>
+      <button class="prog-btn" data-prog="nur100" onclick="filterBlockProg('nur100',this)">BSc Nursing L100</button>
+      <button class="prog-btn" data-prog="nur200" onclick="filterBlockProg('nur200',this)">BSc Nursing L200</button>
+      <button class="prog-btn" data-prog="nut100" onclick="filterBlockProg('nut100',this)">BSc Nutrition L100</button>
+      <button class="prog-btn" data-prog="nut200" onclick="filterBlockProg('nut200',this)">BSc Nutrition L200</button>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Course Code</label>
-        <input type="text" id="entryCode" placeholder="e.g. NUR108">
-      </div>
-      <div class="form-group">
-        <label>Block Lecture ★?</label>
-        <select id="entryIsBlock">
-          <option value="false">No</option>
-          <option value="true">Yes ★</option>
-        </select>
-      </div>
+    <div id="blockContainer"><div class="loading-msg">Loading block schedule…</div></div>
+  </div>
+
+  <!-- ======================================================
+       TAB 3: WEEKLY BLOCK TIMETABLE
+       ====================================================== -->
+  <div class="tab-panel" id="panel-blockweekly">
+    <div class="week-selector-bar">
+      <label for="blockWeekSelector">Block Week:</label>
+      <select id="blockWeekSelector" onchange="loadBlockWeekly()">
+        <option value="1">Week 1</option>
+        <option value="2">Week 2</option>
+        <option value="3" selected>Week 3 (11–15 May)</option>
+        <option value="4">Week 4</option>
+        <option value="5">Week 5</option>
+        <option value="6">Week 6</option>
+        <option value="7">Week 7</option>
+        <option value="8">Week 8</option>
+        <option value="9">Week 9</option>
+        <option value="10">Week 10</option>
+      </select>
+      <span class="week-label" id="weekDateLabel"></span>
+    </div>
+
+    <button class="add-btn" onclick="openAddModal()">＋ Add Entry</button>
+
+    <div class="prog-filter">
+      <button class="prog-btn active" data-prog="all" onclick="filterBWProg('all',this)">All Programmes</button>
+      <button class="prog-btn" data-prog="nur100" onclick="filterBWProg('nur100',this)">BSc Nursing L100</button>
+      <button class="prog-btn" data-prog="nur200" onclick="filterBWProg('nur200',this)">BSc Nursing L200</button>
+      <button class="prog-btn" data-prog="nut100" onclick="filterBWProg('nut100',this)">BSc Nutrition L100</button>
+      <button class="prog-btn" data-prog="nut200" onclick="filterBWProg('nut200',this)">BSc Nutrition L200</button>
+    </div>
+
+    <div id="blockWeeklyContainer"><div class="loading-msg">Loading weekly block timetable…</div></div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ADD ENTRY MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h3>Add Block Week Entry</h3>
+    <div class="form-group">
+      <label>Programme</label>
+      <select id="entryProg">
+        <option value="nur100">BSc Nursing Level 100</option>
+        <option value="nur200">BSc Nursing Level 200</option>
+        <option value="nut100">BSc Nutrition Level 100</option>
+        <option value="nut200">BSc Nutrition Level 200</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Week Number</label>
+      <select id="entryWeek">
+        <option value="1">Week 1</option>
+        <option value="2">Week 2</option>
+        <option value="3" selected>Week 3</option>
+        <option value="4">Week 4</option>
+        <option value="5">Week 5</option>
+        <option value="6">Week 6</option>
+        <option value="7">Week 7</option>
+        <option value="8">Week 8</option>
+        <option value="9">Week 9</option>
+        <option value="10">Week 10</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Day</label>
+      <select id="entryDay">
+        <option value="Mon">Monday</option>
+        <option value="Tue">Tuesday</option>
+        <option value="Wed">Wednesday</option>
+        <option value="Thu">Thursday</option>
+        <option value="Fri">Friday</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Time Slot</label>
+      <select id="entryTime">
+        <option value="1">07:00 – 08:00</option>
+        <option value="2">08:00 – 10:00</option>
+        <option value="3">10:00 – 12:00</option>
+        <option value="4">12:00 – 13:00</option>
+        <option value="5">13:00 – 15:00</option>
+        <option value="6">15:00 – 17:00</option>
+        <option value="7">17:00 – 19:00</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Course Code</label>
+      <input type="text" id="entryCourseCode" placeholder="e.g. NUR202">
     </div>
     <div class="form-group">
       <label>Course Name</label>
-      <input type="text" id="entryName" placeholder="e.g. Human Anatomy II">
+      <input type="text" id="entryCourseName" placeholder="e.g. Pathology">
     </div>
     <div class="form-group">
       <label>Lecturer</label>
-      <input type="text" id="entryLecturer" placeholder="e.g. Dr Benjamin Aboagye">
+      <input type="text" id="entryLecturer" placeholder="e.g. Dr. Justice Afrifa">
     </div>
-    <div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap;">
-      <button class="btn-primary" onclick="saveEntry()">💾 Save</button>
-      <button id="deleteBtn" class="btn-danger2" style="display:none" onclick="deleteEntry()">🗑 Delete</button>
-      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEntry()">Save Entry</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-const SB_URL = document.querySelector('meta[name="sb-url"]').content;
-const SB_KEY = document.querySelector('meta[name="sb-key"]').content;
-const db = supabase.createClient(SB_URL, SB_KEY);
+// ============================================================
+// CONFIG
+// ============================================================
+const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content;
+const SUPABASE_KEY = document.querySelector('meta[name="supabase-key"]').content;
 
-let currentMain = 'weekly';
-let currentProg = 'nur100';
-let isAdmin = false;
-let allEntries = [];
+const DAYS = ['Mon','Tue','Wed','Thu','Fri'];
+const DAY_NAMES = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday' };
+// time_slot in DB is integer: 1=07:00-08:00, 2=08:00-10:00, 3=10:00-12:00,
+// 4=12:00-13:00, 5=13:00-15:00, 6=15:00-17:00, 7=17:00-19:00
+const TIME_SLOTS = [1,2,3,4,5,6,7];
+const SLOT_LABEL = {
+  1:'07:00–08:00', 2:'08:00–10:00', 3:'10:00–12:00',
+  4:'12:00–13:00', 5:'13:00–15:00', 6:'15:00–17:00', 7:'17:00–19:00'
+};
 
-const DAYS = ['MON','TUE','WED','THU','FRI'];
-const SLOTS = ['07-08','08-09','09-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20'];
-const WEEK_DATES = {1:'27 Apr - 1 May',2:'4 - 8 May',3:'11 - 15 May',4:'18 - 22 May',5:'25 - 29 May',6:'1 - 5 Jun',7:'8 - 12 Jun',8:'15 - 19 Jun',9:'22 - 26 Jun',10:'29 Jun - 3 Jul'};
+const PROGS = {
+  nur100: { label:'BSc Nursing Level 100', short:'NSG L100', color:'teal' },
+  nur200: { label:'BSc Nursing Level 200', short:'NSG L200', color:'rose' },
+  nut100: { label:'BSc Nutrition Level 100', short:'NUT L100', color:'plum' },
+  nut200: { label:'BSc Nutrition Level 200', short:'NUT L200', color:'moss' }
+};
 
-function getSession(){try{return JSON.parse(sessionStorage.getItem('portalUser'));}catch{return null;}}
-function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.background=ok?'#0f2044':'#dc2626';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+// Week dates for display
+const WEEK_DATES = {
+  1:'5–9 May', 2:'5–9 May', 3:'11–15 May', 4:'19–23 May',
+  5:'26–30 May', 6:'2–6 Jun', 7:'9–13 Jun', 8:'16–20 Jun',
+  9:'23–27 Jun', 10:'30 Jun–4 Jul'
+};
 
-async function init(){
-  const s=getSession();
-  isAdmin=s&&s.role&&s.role!=='student';
-  if(isAdmin){
-    document.getElementById('adminBanner').classList.add('visible');
-    document.getElementById('backBtn').href='admin.html';
-    document.getElementById('backBtn').textContent='← Admin Dashboard';
-    document.body.classList.add('admin-mode');
-  }
-  await loadEntries();
-  renderAll();
-}
+let allWeeklyData = [];
+let allBlockData = [];
+let allBWData = [];
+let currentBWProg = 'all';
+let currentWeeklyProg = 'all';
+let currentBlockProg = 'all';
 
-async function loadEntries(){
-  const {data,error}=await db.from('timetable_entries').select('*');
-  if(error){console.error(error);return;}
-  allEntries=data||[];
-}
-
-function renderAll(){
-  ['nur100','nur200','nut100','nut200'].forEach(p=>{
-    renderWeekly(p);
-    renderBlock(p);
-  });
-}
-
-function renderWeekly(prog){
-  const el=document.getElementById('grid-weekly-'+prog);
-  if(!el)return;
-  const entries=allEntries.filter(e=>e.programme===prog&&e.view_type==='weekly');
-  const grid={};const skip={};
-  entries.forEach(e=>{
-    grid[e.day+'-'+e.time_slot]=e;
-    for(let i=1;i<(e.span||1);i++) skip[e.day+'-'+(e.time_slot+i)]=true;
-  });
-  let h='<table><thead><tr><th class="day-head">Day</th>';
-  SLOTS.forEach(s=>h+='<th>'+s+'</th>');
-  h+='</tr></thead><tbody>';
-  DAYS.forEach(day=>{
-    h+='<tr><td class="day-cell">'+day+'</td>';
-    for(let i=0;i<13;i++){
-      if(skip[day+'-'+i])continue;
-      const e=grid[day+'-'+i];
-      if(e){
-        const star=e.is_block_lecture?' &#9733;':'';
-        h+='<td colspan="'+(e.span||1)+'"><div class="card">'
-          +'<div class="card-code">'+escH(e.course_code)+star+'</div>'
-          +'<div class="card-name">'+escH(e.course_name)+'</div>'
-          +'<div class="card-lect">'+escH(e.lecturer||'')+'</div>'
-          +(isAdmin?'<button class="card-edit-btn" onclick="openEdit(\''+e.id+'\')">&#9998;</button>':'')
-          +'</div></td>';
-      }else{
-        h+='<td>'+(isAdmin?'<div class="empty-slot" onclick="openAddModal(\''+prog+'\',\'weekly\',\''+day+'\','+i+',1)"></div>':'')+'</td>';
-      }
+// ============================================================
+// SUPABASE FETCH
+// ============================================================
+async function supabaseFetch(query) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/timetable_entries?${query}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
     }
-    h+='</tr>';
   });
-  h+='</tbody></table>';
-  el.innerHTML=h;
+  if (!res.ok) throw new Error(`DB error: ${res.status}`);
+  return res.json();
 }
 
-function renderBlock(prog){
-  const el=document.getElementById('grid-block-'+prog);
-  if(!el)return;
-  const entries=allEntries.filter(e=>e.programme===prog&&e.view_type==='block');
-  const byWeek={};
-  entries.forEach(e=>{if(!byWeek[e.week_number])byWeek[e.week_number]=[];byWeek[e.week_number].push(e);});
-  let h='<table class="block-table"><thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th>'+(isAdmin?'<th></th>':'')+'</tr></thead><tbody>';
-  for(let w=1;w<=10;w++){
-    const we=byWeek[w]||[];
-    if(we.length===0){
-      h+='<tr><td class="week-cell">Week '+w+'</td><td class="date-cell">'+WEEK_DATES[w]+'</td>'
-        +'<td>'+(w===10?'<span class="revision-badge">REVISION</span>':'<span class="empty-week">—</span>')+'</td><td>—</td>'
-        +(isAdmin?'<td><button class="btn-gold" style="font-size:10px;padding:3px 8px" onclick="openAddModal(\''+prog+'\',\'block\',\'\',0,'+w+')">+ Add</button></td>':'')
-        +'</tr>';
-    }else{
-      we.forEach((e,idx)=>{
-        const star=e.is_block_lecture?' &#9733;':'';
-        h+='<tr>'
-          +(idx===0?'<td class="week-cell" rowspan="'+we.length+'">Week '+w+'</td><td class="date-cell" rowspan="'+we.length+'">'+WEEK_DATES[w]+'</td>':'')
-          +'<td><strong>'+escH(e.course_code)+star+'</strong><br><small>'+escH(e.course_name)+'</small></td>'
-          +'<td>'+escH(e.lecturer||'—')+'</td>'
-          +(isAdmin?'<td><button class="btn-gold" style="font-size:10px;padding:3px 8px" onclick="openEdit(\''+e.id+'\')">&#9998; Edit</button></td>':'')
-          +'</tr>';
-      });
-    }
+async function supabaseInsert(row) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/timetable_entries`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(row)
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
   }
-  h+='</tbody></table>';
-  el.innerHTML=h;
+  return true;
 }
 
-function switchMain(type,btn){
-  currentMain=type;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (tab === 'blockweekly') loadBlockWeekly();
+}
+
+// ============================================================
+// STATUS
+// ============================================================
+function showStatus(msg, isError = false) {
+  const bar = document.getElementById('statusBar');
+  bar.textContent = msg;
+  bar.className = 'status-bar show' + (isError ? ' error' : '');
+  setTimeout(() => bar.classList.remove('show'), 4000);
+}
+
+// ============================================================
+// TAB 1: WEEKLY TIMETABLE
+// ============================================================
+async function loadWeekly() {
+  try {
+    allWeeklyData = await supabaseFetch('view_type=eq.weekly&order=programme,day,time_slot');
+    renderWeekly(currentWeeklyProg);
+  } catch(e) {
+    document.getElementById('weeklyContainer').innerHTML = '<div class="empty-msg">Could not load data. Check Supabase connection.</div>';
+  }
+}
+
+function filterProg(prog, btn) {
+  currentWeeklyProg = prog;
+  document.querySelectorAll('#panel-weekly .prog-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('weekly-panels').style.display=type==='weekly'?'':'none';
-  document.getElementById('block-panels').style.display=type==='block'?'':'none';
-  if(type==='block'){
-    document.querySelectorAll('#block-panels .section-panel').forEach(p=>p.classList.remove('active'));
-    const bp=document.getElementById('panel-block-'+currentProg);
-    if(bp)bp.classList.add('active');
+  renderWeekly(prog);
+}
+
+function renderWeekly(filterProg) {
+  const progs = filterProg === 'all' ? Object.keys(PROGS) : [filterProg];
+  let html = '';
+
+  progs.forEach(prog => {
+    const rows = allWeeklyData.filter(r => r.programme === prog);
+    if (!rows.length && filterProg !== 'all') return;
+
+    // Build lookup: day → timeslot → entries
+    const lookup = {};
+    DAYS.forEach(d => { lookup[d] = {}; TIME_SLOTS.forEach(t => { lookup[d][t] = []; }); });
+    rows.forEach(r => { if (r.day && r.time_slot) (lookup[r.day][r.time_slot] = lookup[r.day][r.time_slot] || []).push(r); });
+
+    const usedSlots = TIME_SLOTS.filter(t => DAYS.some(d => (lookup[d][t]||[]).length));
+
+    html += `<div class="timetable-grid">
+      <div class="prog-header">
+        <div class="prog-dot" style="background:var(--${PROGS[prog].color})"></div>
+        ${PROGS[prog].label}
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            ${DAYS.map(d => `<th>${d}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>`;
+
+    usedSlots.forEach(slot => {
+      html += `<tr><td>${SLOT_LABEL[slot]||slot}</td>`;
+      DAYS.forEach(d => {
+        const entries = lookup[d][slot] || [];
+        if (!entries.length) {
+          html += `<td><span class="empty-cell">—</span></td>`;
+        } else {
+          html += `<td>${entries.map(e => `
+            <div class="course-card ${e.programme}">
+              <div class="code">${e.course_code}</div>
+              <div class="name">${e.course_name}</div>
+              ${e.lecturer ? `<div class="lecturer">${e.lecturer}</div>` : ''}
+            </div>`).join('')}</td>`;
+        }
+      });
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+  });
+
+  document.getElementById('weeklyContainer').innerHTML = html || '<div class="empty-msg">No timetable data available. Run seed_timetable.sql in Supabase.</div>';
+}
+
+// ============================================================
+// TAB 2: BLOCK LECTURE SCHEDULE
+// ============================================================
+async function loadBlock() {
+  try {
+    allBlockData = await supabaseFetch('view_type=eq.block&day=is.null&order=week_number,programme');
+    renderBlock(currentBlockProg);
+  } catch(e) {
+    document.getElementById('blockContainer').innerHTML = '<div class="empty-msg">Could not load block data.</div>';
   }
 }
 
-function switchProg(prog,btn){
-  currentProg=prog;
-  document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  if(currentMain==='weekly'){
-    document.querySelectorAll('#weekly-panels .section-panel').forEach(p=>p.classList.remove('active'));
-    const wp=document.getElementById('panel-weekly-'+prog);
-    if(wp)wp.classList.add('active');
-  }else{
-    document.querySelectorAll('#block-panels .section-panel').forEach(p=>p.classList.remove('active'));
-    const bp=document.getElementById('panel-block-'+prog);
-    if(bp)bp.classList.add('active');
+function filterBlockProg(prog, btn) {
+  currentBlockProg = prog;
+  document.querySelectorAll('#panel-block .prog-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBlock(prog);
+}
+
+function renderBlock(filterProg) {
+  const data = filterProg === 'all' ? allBlockData : allBlockData.filter(r => r.programme === filterProg);
+  if (!data.length) {
+    document.getElementById('blockContainer').innerHTML = '<div class="empty-msg">No block schedule data available.</div>';
+    return;
+  }
+
+  // Group by week
+  const byWeek = {};
+  data.forEach(r => {
+    const w = r.week_number || 0;
+    if (!byWeek[w]) byWeek[w] = [];
+    byWeek[w].push(r);
+  });
+
+  let html = `<div class="timetable-grid block-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Week</th>
+          <th style="text-align:left">Block Lectures</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  Object.keys(byWeek).sort((a,b) => a-b).forEach(wk => {
+    html += `<tr>
+      <td>Wk ${wk}<br><span style="font-size:10px;opacity:0.6">${WEEK_DATES[wk]||''}</span></td>
+      <td>`;
+    byWeek[wk].forEach(e => {
+      html += `<div class="block-badge ${e.programme}" style="display:inline-flex;flex-direction:column">
+        <span class="bcode">${e.course_code} · ${PROGS[e.programme]?.short || e.programme}</span>
+        <span class="bname">${e.course_name}</span>
+        ${e.lecturer ? `<span class="blec">${e.lecturer}</span>` : ''}
+      </div>`;
+    });
+    html += `</td></tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  document.getElementById('blockContainer').innerHTML = html;
+}
+
+// ============================================================
+// TAB 3: WEEKLY BLOCK TIMETABLE
+// ============================================================
+async function loadBlockWeekly() {
+  const weekNum = parseInt(document.getElementById('blockWeekSelector').value);
+  document.getElementById('weekDateLabel').textContent = WEEK_DATES[weekNum] ? `(${WEEK_DATES[weekNum]})` : '';
+
+  document.getElementById('blockWeeklyContainer').innerHTML = '<div class="loading-msg">Loading…</div>';
+
+  try {
+    allBWData = await supabaseFetch(`view_type=eq.block&week_number=eq.${weekNum}&day=not.is.null&order=programme,day,time_slot`);
+    renderBlockWeekly(currentBWProg);
+  } catch(e) {
+    document.getElementById('blockWeeklyContainer').innerHTML = '<div class="empty-msg">Could not load data. Check Supabase connection.</div>';
   }
 }
 
-function toggleFields(){
-  const v=document.getElementById('entryView').value;
-  document.getElementById('weeklyFields').style.display=v==='weekly'?'':'none';
-  document.getElementById('blockFields').style.display=v==='block'?'':'none';
+function filterBWProg(prog, btn) {
+  currentBWProg = prog;
+  document.querySelectorAll('#panel-blockweekly .prog-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBlockWeekly(prog);
 }
 
-function openAddModal(prog,view,day,slot,week){
-  document.getElementById('modalTitle').textContent='+ Add Timetable Entry';
-  document.getElementById('editEntryId').value='';
-  document.getElementById('deleteBtn').style.display='none';
-  document.getElementById('entryProg').value=prog||currentProg;
-  document.getElementById('entryView').value=view||currentMain;
-  document.getElementById('entryDay').value=day||'MON';
-  document.getElementById('entrySlot').value=slot||0;
-  document.getElementById('entryWeek').value=week||1;
-  document.getElementById('entryCode').value='';
-  document.getElementById('entryName').value='';
-  document.getElementById('entryLecturer').value='';
-  document.getElementById('entrySpan').value='1';
-  document.getElementById('entryIsBlock').value='false';
-  toggleFields();
-  document.getElementById('entryModal').classList.add('open');
-}
+function renderBlockWeekly(filterProg) {
+  const progs = filterProg === 'all' ? Object.keys(PROGS) : [filterProg];
+  const data = allBWData.filter(r => progs.includes(r.programme));
 
-function openEdit(id){
-  const e=allEntries.find(x=>x.id===id);
-  if(!e)return;
-  document.getElementById('modalTitle').textContent='Edit Timetable Entry';
-  document.getElementById('editEntryId').value=id;
-  document.getElementById('deleteBtn').style.display='inline-block';
-  document.getElementById('entryProg').value=e.programme;
-  document.getElementById('entryView').value=e.view_type;
-  document.getElementById('entryDay').value=e.day||'MON';
-  document.getElementById('entrySlot').value=e.time_slot||0;
-  document.getElementById('entryWeek').value=e.week_number||1;
-  document.getElementById('entryCode').value=e.course_code;
-  document.getElementById('entryName').value=e.course_name;
-  document.getElementById('entryLecturer').value=e.lecturer||'';
-  document.getElementById('entrySpan').value=e.span||1;
-  document.getElementById('entryIsBlock').value=e.is_block_lecture?'true':'false';
-  toggleFields();
-  document.getElementById('entryModal').classList.add('open');
-}
-
-function closeModal(){document.getElementById('entryModal').classList.remove('open');}
-
-async function saveEntry(){
-  const id=document.getElementById('editEntryId').value;
-  const view=document.getElementById('entryView').value;
-  const code=document.getElementById('entryCode').value.trim().toUpperCase();
-  const name=document.getElementById('entryName').value.trim();
-  if(!code||!name){alert('Course Code and Course Name are required.');return;}
-  const payload={
-    programme:document.getElementById('entryProg').value,
-    view_type:view,
-    day:view==='weekly'?document.getElementById('entryDay').value:null,
-    time_slot:view==='weekly'?parseInt(document.getElementById('entrySlot').value):null,
-    week_number:view==='block'?parseInt(document.getElementById('entryWeek').value):null,
-    course_code:code,course_name:name,
-    lecturer:document.getElementById('entryLecturer').value.trim(),
-    span:view==='weekly'?parseInt(document.getElementById('entrySpan').value):1,
-    is_block_lecture:document.getElementById('entryIsBlock').value==='true',
-    updated_at:new Date().toISOString()
-  };
-  let error;
-  if(id){
-    ({error}=await db.from('timetable_entries').update(payload).eq('id',id));
-  }else{
-    payload.created_at=new Date().toISOString();
-    ({error}=await db.from('timetable_entries').insert([payload]));
+  if (!data.length) {
+    document.getElementById('blockWeeklyContainer').innerHTML =
+      '<div class="empty-msg">No entries for this week yet. Click + Add Entry to add sessions.</div>';
+    return;
   }
-  if(error){toast('Error: '+error.message,false);return;}
-  toast('Saved successfully!');
-  closeModal();
-  await loadEntries();
-  renderAll();
+
+  let html = '';
+  progs.forEach(prog => {
+    const rows = data.filter(r => r.programme === prog);
+    if (!rows.length) return;
+
+    const lookup = {};
+    DAYS.forEach(d => { lookup[d] = {}; TIME_SLOTS.forEach(t => { lookup[d][t] = []; }); });
+    rows.forEach(r => { if (r.day && r.time_slot) (lookup[r.day][r.time_slot] = lookup[r.day][r.time_slot] || []).push(r); });
+
+    const usedSlots = TIME_SLOTS.filter(t => DAYS.some(d => (lookup[d][t]||[]).length));
+    if (!usedSlots.length) return;
+
+    html += `<div class="timetable-grid">
+      <div class="prog-header">
+        <div class="prog-dot" style="background:var(--${PROGS[prog].color})"></div>
+        ${PROGS[prog].label}
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            ${DAYS.map(d => `<th>${d}<br><small style="opacity:0.6;font-size:10px">${DAY_NAMES[d]}</small></th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>`;
+
+    usedSlots.forEach(slot => {
+      html += `<tr><td>${SLOT_LABEL[slot]||slot}</td>`;
+      DAYS.forEach(d => {
+        const entries = lookup[d][slot] || [];
+        if (!entries.length) {
+          html += `<td><span class="empty-cell">—</span></td>`;
+        } else {
+          html += `<td>${entries.map(e => `
+            <div class="course-card ${e.programme}">
+              <div class="code">${e.course_code}</div>
+              <div class="name">${e.course_name}</div>
+              ${e.lecturer ? `<div class="lecturer">${e.lecturer}</div>` : ''}
+            </div>`).join('')}</td>`;
+        }
+      });
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+  });
+
+  if (!html) {
+    html = '<div class="empty-msg">No entries for the selected programme this week.</div>';
+  }
+  document.getElementById('blockWeeklyContainer').innerHTML = html;
 }
 
-async function deleteEntry(){
-  const id=document.getElementById('editEntryId').value;
-  if(!id||!confirm('Delete this timetable entry?'))return;
-  const{error}=await db.from('timetable_entries').delete().eq('id',id);
-  if(error){toast('Error: '+error.message,false);return;}
-  toast('Entry deleted.');
-  closeModal();
-  await loadEntries();
-  renderAll();
+// ============================================================
+// ADD ENTRY MODAL
+// ============================================================
+function openAddModal() {
+  const wk = document.getElementById('blockWeekSelector').value;
+  document.getElementById('entryWeek').value = wk;
+  document.getElementById('addModal').classList.add('open');
 }
 
-init();
+function closeModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+async function saveEntry() {
+  const prog = document.getElementById('entryProg').value;
+  const week = parseInt(document.getElementById('entryWeek').value);
+  const day = document.getElementById('entryDay').value;
+  const timeSlot = parseInt(document.getElementById('entryTime').value);
+  const courseCode = document.getElementById('entryCourseCode').value.trim().toUpperCase();
+  const courseName = document.getElementById('entryCourseName').value.trim();
+  const lecturer = document.getElementById('entryLecturer').value.trim();
+
+  if (!courseCode || !courseName) {
+    showStatus('Please fill in Course Code and Course Name.', true);
+    return;
+  }
+
+  try {
+    await supabaseInsert({
+      programme: prog,
+      view_type: 'block',
+      week_number: week,
+      day,
+      time_slot: timeSlot,
+      span: 2,
+      course_code: courseCode,
+      course_name: courseName,
+      lecturer: lecturer || null,
+      is_block_lecture: true
+    });
+    closeModal();
+    showStatus(`✓ Entry saved — ${courseCode} on ${day} at ${SLOT_LABEL[timeSlot]}`);
+    // Reload the current week
+    document.getElementById('blockWeekSelector').value = week;
+    await loadBlockWeekly();
+  } catch(e) {
+    showStatus('Failed to save: ' + e.message, true);
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('addModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ============================================================
+// INIT — load all data on page load
+// ============================================================
+(async () => {
+  await Promise.all([loadWeekly(), loadBlock()]);
+  // Set week 3 label on load
+  document.getElementById('weekDateLabel').textContent = '(11–15 May)';
+  // Pre-load week 3 blockweekly data so it's ready when tab is clicked
+  try {
+    allBWData = await supabaseFetch('view_type=eq.block&week_number=eq.3&day=not.is.null&order=programme,day,time_slot');
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>
