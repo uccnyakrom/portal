@@ -28,6 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".nav-link").forEach(link => {
     link.addEventListener("click", e => {
+      // Skip links that go to real pages (href not "#")
+      const href = link.getAttribute("href");
+      if (href && href !== "#" && !href.startsWith("#")) {
+        return; // Let browser navigate normally
+      }
       e.preventDefault();
       navigateTo(link.dataset.section);
     });
