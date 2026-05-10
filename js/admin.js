@@ -100,6 +100,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".nav-link").forEach(link => {
     link.addEventListener("click", e => {
+      const href = link.getAttribute("href");
+      if (href && href !== "#" && !href.startsWith("#")) {
+        return; // Let browser navigate to real pages
+      }
       e.preventDefault();
       navigateTo(link.dataset.section);
     });
