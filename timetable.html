@@ -5,187 +5,105 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Second Semester Timetable — UCC Nyakrom Campus</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-  <!--
-    SUPABASE CREDENTIALS
-    Replace the content values below with your real Supabase credentials.
-  -->
   <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
   <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
-
   <style>
-    :root {
-      --bg: #f4f6fa; --white: #ffffff; --navy: #0f2044; --gold: #b8860b;
-      --gold-bg: #fff8e1; --border: #dde3ee; --text-main: #111827;
-      --text-sub: #374151; --text-muted: #6b7280;
-      --teal-bg:#ccfbf1; --teal-border:#0d9488; --teal-code:#0f766e; --teal-name:#134e4a; --teal-lect:#1d6f6a;
-      --rose-bg:#ffe4ec; --rose-border:#be185d; --rose-code:#9d174d; --rose-name:#831843; --rose-lect:#a0255a;
-      --plum-bg:#ede9fe; --plum-border:#7c3aed; --plum-code:#5b21b6; --plum-name:#3b0764; --plum-lect:#6d28d9;
-      --moss-bg:#dcfce7; --moss-border:#16a34a; --moss-code:#15803d; --moss-name:#14532d; --moss-lect:#166534;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text-main); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding-bottom: 60px; }
-
-    /* HERO */
-    .hero { background: var(--navy); padding: 36px 40px 28px; }
-    .hero-inner { max-width: 1300px; margin: 0 auto; display: flex; align-items: center; gap: 20px; }
-    .crest { width: 60px; height: 60px; border: 2px solid #f0c040; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; background: rgba(240,192,64,.1); }
-    .hero-eyebrow { font-family: 'DM Mono',monospace; font-size: 10px; letter-spacing:.2em; text-transform:uppercase; color:#f0c040; margin-bottom:5px; }
-    .hero-title { font-family:'Playfair Display',serif; font-size:clamp(20px,3vw,32px); font-weight:900; color:#fff; line-height:1.1; }
-    .hero-title span { color:#f0c040; }
-    .hero-sub { margin-top:5px; font-size:12px; color:#94a3b8; }
-    .hero-actions { margin-left:auto; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
-    .hero-badge { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; padding:5px 14px; border:1px solid rgba(240,192,64,.4); border-radius:100px; color:#f0c040; }
-    .back-btn { font-size:12px; color:rgba(255,255,255,.7); text-decoration:none; border:1px solid rgba(255,255,255,.2); padding:5px 14px; border-radius:100px; }
-    .back-btn:hover { color:#fff; border-color:rgba(255,255,255,.5); }
-
-    /* ADMIN EDIT BANNER */
-    .admin-banner { background:#1e3a5f; border-bottom:2px solid var(--gold); padding:.6rem 1.5rem; display:none; }
-    .admin-banner.visible { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
-    .admin-banner span { color:#c9a84c; font-size:13px; font-weight:600; }
-    .btn-edit { background:var(--gold); color:#fff; border:none; padding:.4rem .9rem; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; }
-    .btn-edit:hover { background:#9a6e09; }
-
-    /* TABS */
-    .tabs-wrap { max-width:1300px; margin:24px auto 0; padding:0 40px; }
-    .tabs { display:flex; gap:8px; flex-wrap:wrap; }
-    .tab { padding:9px 18px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:1.5px solid var(--border); background:var(--white); color:var(--text-sub); transition:all .18s; }
-    .tab:hover { border-color:var(--navy); color:var(--navy); }
-    .tab.active { background:var(--navy); color:#fff; border-color:var(--navy); font-weight:600; }
-
-    /* SUB TABS */
-    .sub-tabs { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
-    .sub-tab { padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer; border:1px solid var(--border); background:var(--white); color:var(--text-muted); }
-    .sub-tab.active { background:var(--gold); color:#fff; border-color:var(--gold); font-weight:600; }
-
-    /* PANELS */
-    .section-panel { display:none; }
-    .section-panel.active { display:block; }
-
-    /* TIMETABLE */
-    .timetable-wrap { max-width:1300px; margin:24px auto 0; padding:0 40px; }
-    .section-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
-    .section-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
-    .section-label { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--navy); }
-    .section-venue { margin-left:auto; font-size:11px; font-family:'DM Mono',monospace; letter-spacing:.08em; color:var(--text-muted); background:var(--white); border:1px solid var(--border); padding:4px 12px; border-radius:6px; }
-    .tt-scroll { overflow-x:auto; border-radius:10px; border:1px solid var(--border); }
-    table { width:100%; border-collapse:collapse; min-width:900px; background:var(--white); }
-    thead { background:var(--navy); }
-    thead th { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#94a3b8; padding:10px 5px; text-align:center; white-space:nowrap; border-right:1px solid rgba(255,255,255,.07); }
-    thead th:last-child { border-right:none; }
-    thead th.day-head { color:#f0c040; width:54px; text-align:left; padding-left:14px; }
-    tbody tr:not(:last-child) td { border-bottom:1px solid #eef0f6; }
-    td { padding:5px 4px; vertical-align:middle; border-right:1px solid #eef0f6; min-width:85px; }
-    td:last-child { border-right:none; }
-    .day-cell { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; letter-spacing:.12em; color:var(--navy); background:#f8fafc; padding:14px; white-space:nowrap; border-right:2px solid var(--border) !important; }
-    tbody tr:hover { background:#f8fafc; }
-    .card { border-radius:7px; padding:7px 9px; border-left:3px solid transparent; }
-    .card-code { font-family:'DM Mono',monospace; font-size:9px; font-weight:500; letter-spacing:.1em; margin-bottom:2px; }
-    .card-name { font-size:11px; font-weight:600; line-height:1.3; margin-bottom:3px; }
-    .card-lect { font-size:9.5px; line-height:1.3; }
-    .card-venue { font-size:9px; color:#0d9488; margin-top:3px; }
-    .card-time  { font-size:9px; color:#7c3aed; margin-top:2px; }
-
-    /* Editable venue in section header */
-    .section-venue { cursor:default; }
-    body.admin-mode .section-venue { cursor:pointer; border-color:var(--gold); }
-    body.admin-mode .section-venue:hover { background:var(--gold-bg); color:var(--navy); }
-    body.admin-mode .section-venue::after { content:" ✏️"; font-size:10px; }
-
-    /* THEMES */
-    .theme-teal .section-dot { background:var(--teal-border); }
-    .theme-teal .card { background:var(--teal-bg); border-left-color:var(--teal-border); }
-    .theme-teal .card-code { color:var(--teal-code); }
-    .theme-teal .card-name { color:var(--teal-name); }
-    .theme-teal .card-lect { color:var(--teal-lect); }
-    .theme-rose .section-dot { background:var(--rose-border); }
-    .theme-rose .card { background:var(--rose-bg); border-left-color:var(--rose-border); }
-    .theme-rose .card-code { color:var(--rose-code); }
-    .theme-rose .card-name { color:var(--rose-name); }
-    .theme-rose .card-lect { color:var(--rose-lect); }
-    .theme-plum .section-dot { background:var(--plum-border); }
-    .theme-plum .card { background:var(--plum-bg); border-left-color:var(--plum-border); }
-    .theme-plum .card-code { color:var(--plum-code); }
-    .theme-plum .card-name { color:var(--plum-name); }
-    .theme-plum .card-lect { color:var(--plum-lect); }
-    .theme-moss .section-dot { background:var(--moss-border); }
-    .theme-moss .card { background:var(--moss-bg); border-left-color:var(--moss-border); }
-    .theme-moss .card-code { color:var(--moss-code); }
-    .theme-moss .card-name { color:var(--moss-name); }
-    .theme-moss .card-lect { color:var(--moss-lect); }
-
-    /* BLOCK LECTURE TABLE */
-    .block-table { width:100%; border-collapse:collapse; border-radius:10px; overflow:hidden; border:1px solid var(--border); }
-    .block-table thead { background:var(--navy); }
-    .block-table thead th { color:#94a3b8; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; padding:10px 16px; text-align:left; }
-    .block-table tbody tr:nth-child(even) { background:#f8fafc; }
-    .block-table tbody td { padding:10px 16px; font-size:13px; border-bottom:1px solid #eef0f6; }
-    .block-table tbody tr:last-child td { border-bottom:none; }
-    .week-cell { font-family:'DM Mono',monospace; font-size:11px; color:var(--navy); font-weight:600; white-space:nowrap; }
-    .date-cell { font-size:12px; color:var(--text-muted); white-space:nowrap; }
-    .course-cell strong { color:var(--navy); font-size:13px; }
-    .course-cell small { color:var(--text-muted); font-size:11px; }
-    .empty-week { color:var(--text-muted); font-style:italic; font-size:12px; }
-    .revision-badge { background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
-
-    /* NOTES */
-    .notes { max-width:1300px; margin:28px auto 0; padding:0 40px 40px; }
-    .notes-box { background:var(--gold-bg); border:1px solid #e6c84a; border-radius:10px; padding:16px 22px; display:flex; gap:24px; flex-wrap:wrap; }
-    .note-item { display:flex; align-items:flex-start; gap:9px; font-size:12px; color:#4b3a00; line-height:1.5; }
-    .note-bullet { width:7px; height:7px; border-radius:50%; background:var(--gold); flex-shrink:0; margin-top:5px; }
-
-    /* EDIT MODAL */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
-    .modal-overlay.open { display:flex; }
-    .modal-box { background:#fff; border-radius:12px; padding:1.5rem; width:90%; max-width:600px; max-height:90vh; overflow-y:auto; }
-    .modal-title { font-family:'Playfair Display',serif; color:var(--navy); font-size:1.1rem; font-weight:700; margin-bottom:1rem; }
-    .form-group { margin-bottom:1rem; }
-    .form-group label { display:block; font-size:12px; font-weight:600; color:var(--navy); margin-bottom:.3rem; }
-    .form-group input, .form-group select, .form-group textarea { width:100%; padding:.5rem .7rem; border:1.5px solid var(--border); border-radius:6px; font-size:13px; font-family:'DM Sans',sans-serif; }
-    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
-    .btn-primary { background:var(--navy); color:#fff; border:none; padding:.6rem 1.2rem; border-radius:6px; font-size:13px; cursor:pointer; font-weight:600; }
-    .btn-danger { background:#ef4444; color:#fff; border:none; padding:.4rem .8rem; border-radius:6px; font-size:12px; cursor:pointer; }
-    .btn-secondary { background:var(--bg); color:var(--navy); border:1px solid var(--border); padding:.6rem 1.2rem; border-radius:6px; font-size:13px; cursor:pointer; }
-
-
-    /* PERIOD BADGE */
-    .period-badge { display:flex; align-items:center; gap:.5rem; margin-left:auto; background:#fff; border:1.5px solid var(--gold); border-radius:8px; padding:.35rem .8rem; font-size:12px; }
-    .period-label { color:var(--text-muted); font-weight:600; }
-    .period-value { color:var(--navy); font-weight:700; font-family:"DM Mono",monospace; }
-    .edit-period-btn { background:none; border:none; cursor:pointer; font-size:14px; padding:0; line-height:1; }
-    .edit-period-btn:hover { opacity:.7; }
-
-    /* ADMIN EDIT OVERLAY */
-    .admin-only { display:none !important; }
-    body.admin-mode .admin-only { display:inline-flex !important; }
-    body.admin-mode [data-editable] { position:relative; cursor:pointer; }
-    body.admin-mode [data-editable]:hover::after {
-      content:"✏️ Click to edit";
-      position:absolute; top:2px; right:2px;
-      background:rgba(14,32,68,.85); color:#fff;
-      font-size:9px; padding:2px 5px; border-radius:4px;
-      pointer-events:none; white-space:nowrap; z-index:10;
-    }
-    body.admin-mode [data-editable]:hover { outline:2px dashed var(--gold); outline-offset:2px; }
-
-    /* CELL EDIT MODAL */
-    .cell-edit-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:2000; align-items:center; justify-content:center; }
-    .cell-edit-modal.open { display:flex; }
-    .cell-edit-box { background:#fff; border-radius:12px; padding:1.5rem; width:90%; max-width:440px; }
-    .cell-edit-title { font-family:"Playfair Display",serif; color:var(--navy); font-size:1rem; font-weight:700; margin-bottom:1rem; }
-    .cell-edit-box .form-group { margin-bottom:.8rem; }
-    .cell-edit-box label { display:block; font-size:11px; font-weight:700; color:var(--navy); margin-bottom:.3rem; text-transform:uppercase; letter-spacing:.05em; }
-    .cell-edit-box input, .cell-edit-box select { width:100%; padding:.4rem .6rem; border:1.5px solid var(--border); border-radius:6px; font-size:13px; }
-    .cell-btn-row { display:flex; gap:.5rem; margin-top:1rem; flex-wrap:wrap; }
-    .btn-save { background:var(--navy); color:#fff; border:none; padding:.5rem 1.1rem; border-radius:6px; font-size:13px; cursor:pointer; font-weight:600; }
-    .btn-clear { background:#fee2e2; color:#991b1b; border:none; padding:.5rem 1.1rem; border-radius:6px; font-size:13px; cursor:pointer; }
-    .btn-cancel { background:var(--bg); color:var(--navy); border:1px solid var(--border); padding:.5rem 1.1rem; border-radius:6px; font-size:13px; cursor:pointer; }
-
-    @media (max-width:600px) {
-      .hero, .tabs-wrap, .timetable-wrap, .notes { padding-left:16px; padding-right:16px; }
-      .hero-badge { display:none; }
-      .form-row { grid-template-columns:1fr; }
-    }
+    :root{--bg:#f4f6fa;--white:#fff;--navy:#0f2044;--gold:#b8860b;--gold-bg:#fff8e1;--border:#dde3ee;--text-main:#111827;--text-sub:#374151;--text-muted:#6b7280;--teal-bg:#ccfbf1;--teal-border:#0d9488;--teal-code:#0f766e;--teal-name:#134e4a;--teal-lect:#1d6f6a;--rose-bg:#ffe4ec;--rose-border:#be185d;--rose-code:#9d174d;--rose-name:#831843;--rose-lect:#a0255a;--plum-bg:#ede9fe;--plum-border:#7c3aed;--plum-code:#5b21b6;--plum-name:#3b0764;--plum-lect:#6d28d9;--moss-bg:#dcfce7;--moss-border:#16a34a;--moss-code:#15803d;--moss-name:#14532d;--moss-lect:#166534;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text-main);font-family:'DM Sans',sans-serif;min-height:100vh;padding-bottom:60px;}
+    .hero{background:var(--navy);padding:32px 40px 24px;}
+    .hero-inner{max-width:1300px;margin:0 auto;display:flex;align-items:center;gap:16px;}
+    .crest{width:56px;height:56px;border:2px solid #f0c040;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:rgba(240,192,64,.1);}
+    .hero-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#f0c040;margin-bottom:4px;}
+    .hero-title{font-family:'Playfair Display',serif;font-size:clamp(18px,3vw,30px);font-weight:900;color:#fff;line-height:1.1;}
+    .hero-title span{color:#f0c040;}
+    .hero-sub{margin-top:4px;font-size:12px;color:#94a3b8;}
+    .hero-actions{margin-left:auto;display:flex;gap:.5rem;align-items:center;}
+    .back-btn{font-size:12px;color:rgba(255,255,255,.7);text-decoration:none;border:1px solid rgba(255,255,255,.2);padding:5px 14px;border-radius:100px;}
+    .admin-banner{background:#1e3a5f;border-bottom:2px solid var(--gold);padding:.6rem 1.5rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap;}
+    .admin-banner.visible{display:flex;}
+    .admin-banner span{color:#c9a84c;font-size:13px;font-weight:600;}
+    .btn-gold{background:var(--gold);color:#fff;border:none;padding:.4rem 1rem;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;}
+    .tabs-wrap{max-width:1300px;margin:20px auto 0;padding:0 40px;}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;}
+    .tab{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text-sub);transition:all .18s;}
+    .tab:hover{border-color:var(--navy);color:var(--navy);}
+    .tab.active{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600;}
+    .sub-tabs{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+    .sub-tab{padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text-muted);transition:all .18s;}
+    .sub-tab.active{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:600;}
+    .section-panel{display:none;}
+    .section-panel.active{display:block;}
+    .timetable-wrap{max-width:1300px;margin:20px auto 0;padding:0 40px;}
+    .section-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+    .section-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+    .section-label{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--navy);}
+    .section-venue{margin-left:auto;font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted);background:var(--white);border:1px solid var(--border);padding:3px 10px;border-radius:6px;}
+    .tt-scroll{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+    table{width:100%;border-collapse:collapse;min-width:900px;background:var(--white);}
+    thead{background:var(--navy);}
+    thead th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;padding:9px 4px;text-align:center;white-space:nowrap;border-right:1px solid rgba(255,255,255,.07);}
+    thead th.day-head{color:#f0c040;width:52px;text-align:left;padding-left:12px;}
+    tbody tr:not(:last-child) td{border-bottom:1px solid #eef0f6;}
+    td{padding:4px 3px;vertical-align:middle;border-right:1px solid #eef0f6;min-width:80px;}
+    .day-cell{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--navy);background:#f8fafc;padding:12px;white-space:nowrap;border-right:2px solid var(--border) !important;}
+    tbody tr:hover{background:#f8fafc;}
+    .card{border-radius:6px;padding:6px 8px;border-left:3px solid transparent;position:relative;}
+    .card-code{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.1em;margin-bottom:2px;}
+    .card-name{font-size:11px;font-weight:600;line-height:1.3;margin-bottom:2px;}
+    .card-lect{font-size:9.5px;line-height:1.3;}
+    .card-edit-btn{display:none;position:absolute;top:2px;right:2px;background:rgba(255,255,255,.85);border:1px solid #ddd;border-radius:3px;padding:1px 5px;font-size:9px;cursor:pointer;}
+    .admin-mode .card:hover .card-edit-btn{display:block;}
+    .empty-slot{width:100%;min-height:44px;cursor:default;border-radius:4px;}
+    .admin-mode .empty-slot{cursor:pointer;}
+    .admin-mode .empty-slot:hover{background:rgba(184,134,11,.12);outline:1.5px dashed var(--gold);}
+    .theme-teal .section-dot{background:var(--teal-border);}
+    .theme-teal .card{background:var(--teal-bg);border-left-color:var(--teal-border);}
+    .theme-teal .card-code{color:var(--teal-code);}
+    .theme-teal .card-name{color:var(--teal-name);}
+    .theme-teal .card-lect{color:var(--teal-lect);}
+    .theme-rose .section-dot{background:var(--rose-border);}
+    .theme-rose .card{background:var(--rose-bg);border-left-color:var(--rose-border);}
+    .theme-rose .card-code{color:var(--rose-code);}
+    .theme-rose .card-name{color:var(--rose-name);}
+    .theme-rose .card-lect{color:var(--rose-lect);}
+    .theme-plum .section-dot{background:var(--plum-border);}
+    .theme-plum .card{background:var(--plum-bg);border-left-color:var(--plum-border);}
+    .theme-plum .card-code{color:var(--plum-code);}
+    .theme-plum .card-name{color:var(--plum-name);}
+    .theme-plum .card-lect{color:var(--plum-lect);}
+    .theme-moss .section-dot{background:var(--moss-border);}
+    .theme-moss .card{background:var(--moss-bg);border-left-color:var(--moss-border);}
+    .theme-moss .card-code{color:var(--moss-code);}
+    .theme-moss .card-name{color:var(--moss-name);}
+    .theme-moss .card-lect{color:var(--moss-lect);}
+    .block-table{width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+    .block-table thead{background:var(--navy);}
+    .block-table thead th{color:#94a3b8;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;text-align:left;}
+    .block-table tbody tr:nth-child(even){background:#f8fafc;}
+    .block-table tbody td{padding:9px 14px;font-size:13px;border-bottom:1px solid #eef0f6;}
+    .week-cell{font-family:'DM Mono',monospace;font-size:11px;color:var(--navy);font-weight:600;white-space:nowrap;}
+    .date-cell{font-size:12px;color:var(--text-muted);white-space:nowrap;}
+    .revision-badge{background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;}
+    .empty-week{color:var(--text-muted);font-style:italic;font-size:12px;}
+    .notes{max-width:1300px;margin:24px auto 0;padding:0 40px 40px;}
+    .notes-box{background:var(--gold-bg);border:1px solid #e6c84a;border-radius:10px;padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;}
+    .note-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#4b3a00;line-height:1.5;}
+    .note-bullet{width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:5px;}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;}
+    .modal-overlay.open{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:520px;max-height:90vh;overflow-y:auto;}
+    .modal-title{font-family:'Playfair Display',serif;color:var(--navy);font-size:1.1rem;font-weight:700;margin-bottom:1rem;}
+    .form-group{margin-bottom:.85rem;}
+    .form-group label{display:block;font-size:12px;font-weight:600;color:var(--navy);margin-bottom:.3rem;}
+    .form-group input,.form-group select{width:100%;padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+    .btn-primary{background:var(--navy);color:#fff;border:none;padding:.55rem 1.1rem;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;}
+    .btn-danger2{background:#ef4444;color:#fff;border:none;padding:.45rem .8rem;border-radius:6px;font-size:12px;cursor:pointer;}
+    .btn-secondary{background:#f4f6fa;color:var(--navy);border:1px solid var(--border);padding:.55rem 1.1rem;border-radius:6px;font-size:13px;cursor:pointer;}
+    .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--navy);color:#fff;padding:.7rem 1.2rem;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
+    .toast.show{opacity:1;}
+    @media(max-width:600px){.hero,.tabs-wrap,.timetable-wrap,.notes{padding-left:16px;padding-right:16px;}.form-row{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
@@ -199,26 +117,22 @@
       <p class="hero-sub">2025/2026 Academic Year &nbsp;·&nbsp; All Programmes</p>
     </div>
     <div class="hero-actions">
-      <a href="student.html" class="back-btn">← Back to Portal</a>
-      <div class="hero-badge">V1.1</div>
+      <a href="student.html" class="back-btn" id="backBtn">← Back to Portal</a>
     </div>
   </div>
 </div>
 
-<!-- Admin Edit Banner -->
 <div class="admin-banner" id="adminBanner">
-  <span>🔧 Admin Mode — You can edit timetable entries</span>
-  <button class="btn-edit" onclick="openAddEntryModal()">+ Add Entry</button>
-  <a href="admin.html" style="color:#c9a84c;font-size:12px;text-decoration:none">← Admin Dashboard</a>
+  <span>🔧 Admin Mode — Click an empty slot to add, or ✏️ on an entry to edit. Changes save permanently to the database.</span>
+  <button class="btn-gold" onclick="openAddModal(currentProg,currentMain,'MON',0,1)">+ Add Entry</button>
 </div>
 
 <div class="tabs-wrap">
   <div class="tabs">
     <button class="tab active" onclick="switchMain('weekly',this)">📅 Weekly Timetable</button>
     <button class="tab" onclick="switchMain('block',this)">📋 Block Lecture Schedule</button>
-    <button class="tab" onclick="switchMain('blockweekly',this)">🗓️ Block Weekly Timetable</button>
   </div>
-  <div class="sub-tabs" id="programTabs">
+  <div class="sub-tabs">
     <button class="sub-tab active" onclick="switchProg('nur100',this)">BSc Nursing · L100</button>
     <button class="sub-tab" onclick="switchProg('nur200',this)">BSc Nursing · L200</button>
     <button class="sub-tab" onclick="switchProg('nut100',this)">BSc Nutrition · L100</button>
@@ -226,1235 +140,368 @@
   </div>
 </div>
 
-<!-- ── WEEKLY TIMETABLE PANELS ──────────────────────────────────────── -->
 <div id="weekly-panels">
-
-  <!-- NUR 100 -->
-  <div id="nur100" class="section-panel active theme-teal">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">BSc Nursing — Level 100</div>
-        <div class="section-venue" data-venue-key="nur100-venue" title="Click to edit venue">📍 Auditorium</div>
-      </div>
-      <div class="tt-scroll"><table>
-        <thead><tr>
-          <th class="day-head">Day</th>
-          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
-          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="day-cell">MON</td>
-            <td colspan="2"><div class="card"><div class="card-code">ILT101 ★</div><div class="card-name">Information Literacy Skills</div><div class="card-lect">Dr Kwaku Barfi</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">TUE</td>
-            <td></td><td></td><td></td>
-            <td colspan="2"><div class="card"><div class="card-code">NUR108</div><div class="card-name">Human Anatomy II</div><div class="card-lect">Dr Benjamin Aboagye</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">WED</td>
-            <td></td>
-            <td colspan="2"><div class="card"><div class="card-code">NUR112</div><div class="card-name">Introduction to Nursing</div><div class="card-lect">Ms. Yvonne D Berko</div></div></td>
-            <td></td>
-            <td colspan="2"><div class="card"><div class="card-code">LED120 ★</div><div class="card-name">Intro to Early Childhood Care &amp; Dev.</div><div class="card-lect">Prof. Isaac Buabeng</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">THU</td>
-            <td></td><td></td><td></td><td></td><td></td>
-            <td colspan="2"><div class="card"><div class="card-code">CMS108</div><div class="card-name">Communicative Studies II</div><div class="card-lect">Mr. Wisdom Kofi Vifah</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">FRI</td>
-            <td></td><td></td>
-            <td colspan="2"><div class="card"><div class="card-code">NUR110 ★</div><div class="card-name">Human Physiology II</div><div class="card-lect">Dr Benjamin Aboagye</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
+  <div id="panel-weekly-nur100" class="section-panel active theme-teal">
+    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">BSc Nursing — Level 100</div><div class="section-venue">📍 Auditorium</div></div><div class="tt-scroll" id="grid-weekly-nur100"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
   </div>
-
-  <!-- NUR 200 -->
-  <div id="nur200" class="section-panel theme-rose">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">BSc Nursing — Level 200</div>
-        <div class="section-venue" data-venue-key="nur200-venue" title="Click to edit venue">📍 Auditorium</div>
-      </div>
-      <div class="tt-scroll"><table>
-        <thead><tr>
-          <th class="day-head">Day</th>
-          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
-          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="day-cell">MON</td>
-            <td></td><td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUR236</div><div class="card-name">Surgical Nursing I</div><div class="card-lect">Ms. Yvonne D Berko</div></div></td>
-            <td><div class="card"><div class="card-code">NUR226 ★</div><div class="card-name">Teaching &amp; Learning in Health Care</div><div class="card-lect">Dr. Irene Aboh</div></div></td>
-            <td></td><td></td>
-            <td><div class="card"><div class="card-code">NUR234</div><div class="card-name">Medical Nursing I</div><div class="card-lect">Mr. Victor Kpatsi</div></div></td>
-            <td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">TUE</td>
-            <td></td><td></td><td></td><td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUR228 ★</div><div class="card-name">Intro to Community Health</div><div class="card-lect">Dr. Irene Aboh</div></div></td>
-            <td></td>
-            <td><div class="card"><div class="card-code">NUR230 ★</div><div class="card-name">Nutrition and Dietetics</div><div class="card-lect">Dr. Kasim</div></div></td>
-            <td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">WED</td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">THU</td>
-            <td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUR220</div><div class="card-name">Nursing Practice I</div><div class="card-lect">Mr. Victor Kpatsi</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUR240 ★</div><div class="card-name">Pharmacology I</div><div class="card-lect">Dean, Sch. of Pharmacy</div></div></td>
-            <td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">FRI</td>
-            <td></td><td></td><td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUR202 ★</div><div class="card-name">Pathology</div><div class="card-lect">Dr. Justice Afrifa</div></div></td>
-            <td></td>
-            <td><div class="card"><div class="card-code">NUR238 ★</div><div class="card-name">Introductory French for Healthcare</div><div class="card-lect">Dr. Michael Kudi</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
+  <div id="panel-weekly-nur200" class="section-panel theme-rose">
+    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">BSc Nursing — Level 200</div><div class="section-venue">📍 Auditorium</div></div><div class="tt-scroll" id="grid-weekly-nur200"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
   </div>
-
-  <!-- NUT 100 -->
-  <div id="nut100" class="section-panel theme-plum">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">BSc Nutrition — Level 100</div>
-        <div class="section-venue" data-venue-key="nut100-venue" title="Click to edit venue">📍 Seminar Room B5</div>
-      </div>
-      <div class="tt-scroll"><table>
-        <thead><tr>
-          <th class="day-head">Day</th>
-          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
-          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="day-cell">MON</td>
-            <td></td><td></td>
-            <td><div class="card"><div class="card-code">NUT102 ★</div><div class="card-name">Intro to Food Science</div><div class="card-lect">Dr Gifty Williams</div></div></td>
-            <td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUD104 ★</div><div class="card-name">Intro to Professional Practice</div><div class="card-lect">Dr. Aliyu Tijani Jibril</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">TUE</td>
-            <td><div class="card"><div class="card-code">ILT101 ★</div><div class="card-name">Information Literacy Skills</div><div class="card-lect">Dr Emmanuel Manu Agyapong</div></div></td>
-            <td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUD102</div><div class="card-name">Nutrition &amp; Dietetics Standards</div><div class="card-lect">Dr. Aliyu Tijani Jibril</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">WED</td>
-            <td><div class="card"><div class="card-code">NUD112 ★</div><div class="card-name">Intro to Psychology</div><div class="card-lect">Dr. Rebecca A. A. Assie</div></div></td>
-            <td></td><td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">CHE110 ★</div><div class="card-name">Intro Organic Chemistry (Practicals)</div><div class="card-lect">Dr Justice Addo</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">THU</td>
-            <td></td>
-            <td><div class="card"><div class="card-code">LED120 ★</div><div class="card-name">Intro to Early Childhood Care &amp; Dev.</div><div class="card-lect">Prof. Isaac Buabeng</div></div></td>
-            <td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">CHE108 ★</div><div class="card-name">Intro to Organic Chemistry</div><div class="card-lect">Dr Justice Addo</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">FRI</td>
-            <td></td>
-            <td><div class="card"><div class="card-code">CMS108</div><div class="card-name">Communicative Studies II</div><div class="card-lect">Mr. Wisdom Kofi Vifah</div></div></td>
-            <td></td>
-            <td><div class="card"><div class="card-code">CMS108</div><div class="card-name">Communicative Studies II</div><div class="card-lect">Mr. Wisdom Kofi Vifah</div></div></td>
-            <td></td>
-            <td><div class="card"><div class="card-code">BIO102</div><div class="card-name">Basic Cytology &amp; Genetics</div><div class="card-lect">Prof Kyei (CORD)</div></div></td>
-            <td></td>
-            <td><div class="card"><div class="card-code">BIO102</div><div class="card-name">Basic Cytology &amp; Genetics</div><div class="card-lect">Prof Kyei (CORD)</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
+  <div id="panel-weekly-nut100" class="section-panel theme-plum">
+    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">BSc Nutrition — Level 100</div><div class="section-venue">📍 Seminar Room B5</div></div><div class="tt-scroll" id="grid-weekly-nut100"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
   </div>
-
-  <!-- NUT 200 -->
-  <div id="nut200" class="section-panel theme-moss">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">BSc Nutrition — Level 200</div>
-        <div class="section-venue" data-venue-key="nut200-venue" title="Click to edit venue">📍 Multipurpose Lab 2</div>
-      </div>
-      <div class="tt-scroll"><table>
-        <thead><tr>
-          <th class="day-head">Day</th>
-          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
-          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="day-cell">MON</td>
-            <td></td><td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUD210</div><div class="card-name">Nutritional Needs Throughout the Life Cycle</div><div class="card-lect">Dr. Aliyu Tijani Jibril</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">TUE</td>
-            <td></td><td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUD214 ★</div><div class="card-name">Food Microbiology</div><div class="card-lect">Dr. Gifty Williams</div></div></td>
-            <td></td>
-            <td><div class="card"><div class="card-code">NUT202</div><div class="card-name">Nutritional Surveillance</div><div class="card-lect">TBA</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">WED</td>
-            <td><div class="card"><div class="card-code">NUD212</div><div class="card-name">Nutritional Assessment Methods II</div><div class="card-lect">Dr. Aliyu Tijani Jibril</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td>
-            <td><div class="card"><div class="card-code">NUD220 ★</div><div class="card-name">Food Analysis &amp; Product Development</div><div class="card-lect">Dr. Gifty Williams</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">THU</td>
-            <td></td>
-            <td><div class="card"><div class="card-code">NUD205 ★</div><div class="card-name">Nutritional Biochemistry</div><div class="card-lect">Dr. Precious Barnes &amp; Dr. Ekloh</div></div></td>
-            <td></td><td></td>
-            <td><div class="card"><div class="card-code">PHL205 ★</div><div class="card-name">Critical Thinking &amp; Practical Reasoning</div><div class="card-lect">TBA</div></div></td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-          <tr>
-            <td class="day-cell">FRI</td>
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
-  </div>
-
-</div><!-- end weekly-panels -->
-
-<!-- ── BLOCK LECTURE PANELS ─────────────────────────────────────────── -->
-<div id="block-panels" style="display:none">
-
-  <!-- NUR100 Block -->
-  <div id="block-nur100" class="section-panel active theme-teal">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">Block Lectures — BSc Nursing Level 100</div>
-        <div class="section-venue" data-venue-key="block-nur100-venue" title="Click to edit venue">📍 Auditorium</div>
-      </div>
-      <table class="block-table">
-        <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
-        <tbody>
-          <tr><td class="week-cell">Week 1</td><td class="date-cell">27 Apr – 1 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 2</td><td class="date-cell">4 – 8 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 3</td><td class="date-cell">11 – 15 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 4</td><td class="date-cell">18 – 22 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 5</td><td class="date-cell">25 – 29 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 6</td><td class="date-cell">1 – 5 Jun</td><td class="course-cell"><strong>NUR110</strong><br><small>Human Physiology II</small></td><td>Dr Benjamin Aboagye</td></tr>
-          <tr><td class="week-cell">Week 7</td><td class="date-cell">8 – 12 Jun</td><td class="course-cell"><strong>NUR108</strong><br><small>Human Anatomy II</small></td><td>Dr Benjamin Aboagye</td></tr>
-          <tr><td class="week-cell">Week 8</td><td class="date-cell">15 – 19 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 9</td><td class="date-cell">22 – 26 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 10</td><td class="date-cell">29 Jun – 3 Jul</td><td><span class="revision-badge">REVISION</span></td><td>—</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- NUR200 Block -->
-  <div id="block-nur200" class="section-panel theme-rose">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">Block Lectures — BSc Nursing Level 200</div>
-        <div class="section-venue" data-venue-key="block-nur200-venue" title="Click to edit venue">📍 Auditorium</div>
-      </div>
-      <table class="block-table">
-        <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
-        <tbody>
-          <tr><td class="week-cell">Week 1</td><td class="date-cell">27 Apr – 1 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 2</td><td class="date-cell">4 – 8 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 3</td><td class="date-cell">11 – 15 May</td><td class="course-cell"><strong>NUR202</strong><br><small>Pathology</small></td><td>Dr. Justice Afrifa</td></tr>
-          <tr><td class="week-cell">Week 4</td><td class="date-cell">18 – 22 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 5</td><td class="date-cell">25 – 29 May</td><td class="course-cell"><strong>NUR230</strong> + <strong>NUR238</strong><br><small>Nutrition &amp; Dietetics / French for Healthcare</small></td><td>Dr. Kasim / Dr. Michael Kudi</td></tr>
-          <tr><td class="week-cell">Week 6</td><td class="date-cell">1 – 5 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 7</td><td class="date-cell">8 – 12 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 8</td><td class="date-cell">15 – 19 Jun</td><td class="course-cell"><strong>NUR240</strong><br><small>Pharmacology I</small></td><td>Dean, Sch. of Pharmacy</td></tr>
-          <tr><td class="week-cell">Week 9</td><td class="date-cell">22 – 26 Jun</td><td class="course-cell"><strong>NUR226</strong><br><small>Teaching &amp; Learning in Health Care</small></td><td>Dr. Irene Aboh</td></tr>
-          <tr><td class="week-cell">Week 10</td><td class="date-cell">29 Jun – 3 Jul</td><td class="course-cell"><strong>NUR228</strong> / <span class="revision-badge">REVISION</span><br><small>Intro to Community Health</small></td><td>Dr. Irene Aboh</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- NUT100 Block -->
-  <div id="block-nut100" class="section-panel theme-plum">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">Block Lectures — BSc Nutrition Level 100</div>
-        <div class="section-venue" data-venue-key="block-nut100-venue" title="Click to edit venue">📍 Seminar Room B5</div>
-      </div>
-      <table class="block-table">
-        <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
-        <tbody>
-          <tr><td class="week-cell">Week 1</td><td class="date-cell">27 Apr – 1 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 2</td><td class="date-cell">4 – 8 May</td><td class="course-cell"><strong>NUT102</strong><br><small>Introduction to Food Science</small></td><td>Dr. Gifty Williams</td></tr>
-          <tr><td class="week-cell">Week 3</td><td class="date-cell">11 – 15 May</td><td class="course-cell"><strong>NUD104</strong><br><small>Introduction to Professional Practice</small></td><td>Dr. Jessica Ayensu</td></tr>
-          <tr><td class="week-cell">Week 4</td><td class="date-cell">18 – 22 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 5</td><td class="date-cell">25 – 29 May</td><td class="course-cell"><strong>CHE108</strong><br><small>Introduction to Organic Chemistry</small></td><td>Dr Justice Addo</td></tr>
-          <tr><td class="week-cell">Week 6</td><td class="date-cell">1 – 5 Jun</td><td class="course-cell"><strong>NUD112</strong><br><small>Introduction to Psychology</small></td><td>Dr. Rebecca A. A. Assie</td></tr>
-          <tr><td class="week-cell">Week 7</td><td class="date-cell">8 – 12 Jun</td><td class="course-cell"><strong>CHE110</strong><br><small>Intro Organic Chemistry (Practicals)</small></td><td>Dr Justice Addo</td></tr>
-          <tr><td class="week-cell">Week 8</td><td class="date-cell">15 – 19 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 9</td><td class="date-cell">22 – 26 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 10</td><td class="date-cell">29 Jun – 3 Jul</td><td><span class="revision-badge">REVISION</span></td><td>—</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- NUT200 Block -->
-  <div id="block-nut200" class="section-panel theme-moss">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">Block Lectures — BSc Nutrition Level 200</div>
-        <div class="section-venue" data-venue-key="block-nut200-venue" title="Click to edit venue">📍 Multipurpose Lab 2</div>
-      </div>
-      <table class="block-table">
-        <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th></tr></thead>
-        <tbody>
-          <tr><td class="week-cell">Week 1</td><td class="date-cell">27 Apr – 1 May</td><td class="course-cell"><strong>NUD205</strong><br><small>Nutritional Biochemistry</small></td><td>Dr. Precious Barnes &amp; Dr. Ekloh</td></tr>
-          <tr><td class="week-cell">Week 2</td><td class="date-cell">4 – 8 May</td><td class="course-cell"><strong>NUD220</strong><br><small>Food Analysis &amp; Product Development</small></td><td>Dr. Gifty Williams</td></tr>
-          <tr><td class="week-cell">Week 3</td><td class="date-cell">11 – 15 May</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 4</td><td class="date-cell">18 – 22 May</td><td class="course-cell"><strong>NUD216</strong><br><small>General Pathology</small></td><td>Prof Ephraim</td></tr>
-          <tr><td class="week-cell">Week 5</td><td class="date-cell">25 – 29 May</td><td class="course-cell"><strong>NUD214</strong><br><small>Food Microbiology</small></td><td>Dr. Gifty Williams</td></tr>
-          <tr><td class="week-cell">Week 6</td><td class="date-cell">1 – 5 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 7</td><td class="date-cell">8 – 12 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 8</td><td class="date-cell">15 – 19 Jun</td><td class="course-cell"><strong>PHL205</strong><br><small>Critical Thinking &amp; Practical Reasoning</small></td><td>Not Allocated</td></tr>
-          <tr><td class="week-cell">Week 9</td><td class="date-cell">22 – 26 Jun</td><td class="empty-week">—</td><td>—</td></tr>
-          <tr><td class="week-cell">Week 10</td><td class="date-cell">29 Jun – 3 Jul</td><td><span class="revision-badge">REVISION</span></td><td>—</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-</div><!-- end block-panels -->
-
-<!-- ── BLOCK WEEKLY TIMETABLE PANELS ─────────────────────────────────────── -->
-<div id="blockweekly-panels" style="display:none">
-
-  <!-- BWKLY NUR100 -->
-  <div id="bwk-nur100" class="section-panel theme-teal">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">Block Weekly Timetable — BSc Nursing Level 100</div>
-        <div class="section-venue" data-venue-key="bwk-nur100-venue" title="Click to edit venue">📍 Auditorium</div>
-        <div class="period-badge" id="period-nur100">
-          <span class="period-label">Period:</span>
-          <span class="period-value" id="period-val-nur100" data-key="period-nur100">Select period →</span>
-          <button class="edit-period-btn admin-only" onclick="editPeriod('nur100')">✏️</button>
-        </div>
-      </div>
-      <div style="margin-bottom:.5rem" id="merge-controls-nur100" class="admin-only">
-        <small style="color:#6b7280;font-size:11px">💡 To merge cells across periods: select a cell then use <strong>Merge →</strong> to extend it across consecutive hours</small>
-      </div>
-      <div class="tt-scroll"><table id="bwktable-nur100">
-        <thead><tr>
-          <th class="day-head">Day</th>
-          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
-          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="day-cell">MON</td>
-            <td data-editable data-key="bwk-nur100-mon-0" data-slot="0" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-1" data-slot="1" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-2" data-slot="2" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-3" data-slot="3" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-4" data-slot="4" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-5" data-slot="5" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-6" data-slot="6" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-7" data-slot="7" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-8" data-slot="8" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-9" data-slot="9" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-10" data-slot="10" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-11" data-slot="11" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur100-mon-12" data-slot="12" data-day="mon"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">TUE</td>
-            <td data-editable data-key="bwk-nur100-tue-0" data-slot="0" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-1" data-slot="1" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-2" data-slot="2" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-3" data-slot="3" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-4" data-slot="4" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-5" data-slot="5" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-6" data-slot="6" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-7" data-slot="7" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-8" data-slot="8" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-9" data-slot="9" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-10" data-slot="10" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-11" data-slot="11" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur100-tue-12" data-slot="12" data-day="tue"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">WED</td>
-            <td data-editable data-key="bwk-nur100-wed-0" data-slot="0" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-1" data-slot="1" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-2" data-slot="2" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-3" data-slot="3" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-4" data-slot="4" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-5" data-slot="5" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-6" data-slot="6" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-7" data-slot="7" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-8" data-slot="8" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-9" data-slot="9" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-10" data-slot="10" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-11" data-slot="11" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur100-wed-12" data-slot="12" data-day="wed"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">THU</td>
-            <td data-editable data-key="bwk-nur100-thu-0" data-slot="0" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-1" data-slot="1" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-2" data-slot="2" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-3" data-slot="3" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-4" data-slot="4" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-5" data-slot="5" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-6" data-slot="6" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-7" data-slot="7" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-8" data-slot="8" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-9" data-slot="9" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-10" data-slot="10" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-11" data-slot="11" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur100-thu-12" data-slot="12" data-day="thu"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">FRI</td>
-            <td data-editable data-key="bwk-nur100-fri-0" data-slot="0" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-1" data-slot="1" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-2" data-slot="2" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-3" data-slot="3" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-4" data-slot="4" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-5" data-slot="5" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-6" data-slot="6" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-7" data-slot="7" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-8" data-slot="8" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-9" data-slot="9" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-10" data-slot="10" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-11" data-slot="11" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur100-fri-12" data-slot="12" data-day="fri"></td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
-  </div>
-  <!-- BWKLY NUR200 -->
-  <div id="bwk-nur200" class="section-panel theme-rose">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">Block Weekly Timetable — BSc Nursing Level 200</div>
-        <div class="section-venue" data-venue-key="bwk-nur200-venue" title="Click to edit venue">📍 Auditorium</div>
-        <div class="period-badge" id="period-nur200">
-          <span class="period-label">Period:</span>
-          <span class="period-value" id="period-val-nur200" data-key="period-nur200">Select period →</span>
-          <button class="edit-period-btn admin-only" onclick="editPeriod('nur200')">✏️</button>
-        </div>
-      </div>
-      <div style="margin-bottom:.5rem" id="merge-controls-nur200" class="admin-only">
-        <small style="color:#6b7280;font-size:11px">💡 To merge cells across periods: select a cell then use <strong>Merge →</strong> to extend it across consecutive hours</small>
-      </div>
-      <div class="tt-scroll"><table id="bwktable-nur200">
-        <thead><tr>
-          <th class="day-head">Day</th>
-          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
-          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="day-cell">MON</td>
-            <td data-editable data-key="bwk-nur200-mon-0" data-slot="0" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-1" data-slot="1" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-2" data-slot="2" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-3" data-slot="3" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-4" data-slot="4" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-5" data-slot="5" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-6" data-slot="6" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-7" data-slot="7" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-8" data-slot="8" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-9" data-slot="9" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-10" data-slot="10" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-11" data-slot="11" data-day="mon"></td>
-            <td data-editable data-key="bwk-nur200-mon-12" data-slot="12" data-day="mon"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">TUE</td>
-            <td data-editable data-key="bwk-nur200-tue-0" data-slot="0" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-1" data-slot="1" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-2" data-slot="2" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-3" data-slot="3" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-4" data-slot="4" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-5" data-slot="5" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-6" data-slot="6" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-7" data-slot="7" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-8" data-slot="8" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-9" data-slot="9" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-10" data-slot="10" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-11" data-slot="11" data-day="tue"></td>
-            <td data-editable data-key="bwk-nur200-tue-12" data-slot="12" data-day="tue"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">WED</td>
-            <td data-editable data-key="bwk-nur200-wed-0" data-slot="0" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-1" data-slot="1" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-2" data-slot="2" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-3" data-slot="3" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-4" data-slot="4" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-5" data-slot="5" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-6" data-slot="6" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-7" data-slot="7" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-8" data-slot="8" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-9" data-slot="9" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-10" data-slot="10" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-11" data-slot="11" data-day="wed"></td>
-            <td data-editable data-key="bwk-nur200-wed-12" data-slot="12" data-day="wed"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">THU</td>
-            <td data-editable data-key="bwk-nur200-thu-0" data-slot="0" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-1" data-slot="1" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-2" data-slot="2" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-3" data-slot="3" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-4" data-slot="4" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-5" data-slot="5" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-6" data-slot="6" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-7" data-slot="7" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-8" data-slot="8" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-9" data-slot="9" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-10" data-slot="10" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-11" data-slot="11" data-day="thu"></td>
-            <td data-editable data-key="bwk-nur200-thu-12" data-slot="12" data-day="thu"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">FRI</td>
-            <td data-editable data-key="bwk-nur200-fri-0" data-slot="0" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-1" data-slot="1" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-2" data-slot="2" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-3" data-slot="3" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-4" data-slot="4" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-5" data-slot="5" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-6" data-slot="6" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-7" data-slot="7" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-8" data-slot="8" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-9" data-slot="9" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-10" data-slot="10" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-11" data-slot="11" data-day="fri"></td>
-            <td data-editable data-key="bwk-nur200-fri-12" data-slot="12" data-day="fri"></td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
-  </div>
-  <!-- BWKLY NUT100 -->
-  <div id="bwk-nut100" class="section-panel theme-plum">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">Block Weekly Timetable — BSc Nutrition Level 100</div>
-        <div class="section-venue" data-venue-key="bwk-nut100-venue" title="Click to edit venue">📍 Seminar Room B5</div>
-        <div class="period-badge" id="period-nut100">
-          <span class="period-label">Period:</span>
-          <span class="period-value" id="period-val-nut100" data-key="period-nut100">Select period →</span>
-          <button class="edit-period-btn admin-only" onclick="editPeriod('nut100')">✏️</button>
-        </div>
-      </div>
-      <div style="margin-bottom:.5rem" id="merge-controls-nut100" class="admin-only">
-        <small style="color:#6b7280;font-size:11px">💡 To merge cells across periods: select a cell then use <strong>Merge →</strong> to extend it across consecutive hours</small>
-      </div>
-      <div class="tt-scroll"><table id="bwktable-nut100">
-        <thead><tr>
-          <th class="day-head">Day</th>
-          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
-          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="day-cell">MON</td>
-            <td data-editable data-key="bwk-nut100-mon-0" data-slot="0" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-1" data-slot="1" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-2" data-slot="2" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-3" data-slot="3" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-4" data-slot="4" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-5" data-slot="5" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-6" data-slot="6" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-7" data-slot="7" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-8" data-slot="8" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-9" data-slot="9" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-10" data-slot="10" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-11" data-slot="11" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut100-mon-12" data-slot="12" data-day="mon"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">TUE</td>
-            <td data-editable data-key="bwk-nut100-tue-0" data-slot="0" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-1" data-slot="1" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-2" data-slot="2" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-3" data-slot="3" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-4" data-slot="4" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-5" data-slot="5" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-6" data-slot="6" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-7" data-slot="7" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-8" data-slot="8" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-9" data-slot="9" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-10" data-slot="10" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-11" data-slot="11" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut100-tue-12" data-slot="12" data-day="tue"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">WED</td>
-            <td data-editable data-key="bwk-nut100-wed-0" data-slot="0" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-1" data-slot="1" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-2" data-slot="2" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-3" data-slot="3" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-4" data-slot="4" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-5" data-slot="5" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-6" data-slot="6" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-7" data-slot="7" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-8" data-slot="8" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-9" data-slot="9" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-10" data-slot="10" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-11" data-slot="11" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut100-wed-12" data-slot="12" data-day="wed"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">THU</td>
-            <td data-editable data-key="bwk-nut100-thu-0" data-slot="0" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-1" data-slot="1" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-2" data-slot="2" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-3" data-slot="3" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-4" data-slot="4" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-5" data-slot="5" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-6" data-slot="6" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-7" data-slot="7" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-8" data-slot="8" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-9" data-slot="9" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-10" data-slot="10" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-11" data-slot="11" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut100-thu-12" data-slot="12" data-day="thu"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">FRI</td>
-            <td data-editable data-key="bwk-nut100-fri-0" data-slot="0" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-1" data-slot="1" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-2" data-slot="2" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-3" data-slot="3" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-4" data-slot="4" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-5" data-slot="5" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-6" data-slot="6" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-7" data-slot="7" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-8" data-slot="8" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-9" data-slot="9" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-10" data-slot="10" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-11" data-slot="11" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut100-fri-12" data-slot="12" data-day="fri"></td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
-  </div>
-  <!-- BWKLY NUT200 -->
-  <div id="bwk-nut200" class="section-panel theme-moss">
-    <div class="timetable-wrap">
-      <div class="section-header">
-        <div class="section-dot"></div>
-        <div class="section-label">Block Weekly Timetable — BSc Nutrition Level 200</div>
-        <div class="section-venue" data-venue-key="bwk-nut200-venue" title="Click to edit venue">📍 Multipurpose Lab 2</div>
-        <div class="period-badge" id="period-nut200">
-          <span class="period-label">Period:</span>
-          <span class="period-value" id="period-val-nut200" data-key="period-nut200">Select period →</span>
-          <button class="edit-period-btn admin-only" onclick="editPeriod('nut200')">✏️</button>
-        </div>
-      </div>
-      <div style="margin-bottom:.5rem" id="merge-controls-nut200" class="admin-only">
-        <small style="color:#6b7280;font-size:11px">💡 To merge cells across periods: select a cell then use <strong>Merge →</strong> to extend it across consecutive hours</small>
-      </div>
-      <div class="tt-scroll"><table id="bwktable-nut200">
-        <thead><tr>
-          <th class="day-head">Day</th>
-          <th>07–08</th><th>08–09</th><th>09–10</th><th>10–11</th><th>11–12</th><th>12–13</th>
-          <th>13–14</th><th>14–15</th><th>15–16</th><th>16–17</th><th>17–18</th><th>18–19</th><th>19–20</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="day-cell">MON</td>
-            <td data-editable data-key="bwk-nut200-mon-0" data-slot="0" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-1" data-slot="1" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-2" data-slot="2" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-3" data-slot="3" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-4" data-slot="4" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-5" data-slot="5" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-6" data-slot="6" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-7" data-slot="7" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-8" data-slot="8" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-9" data-slot="9" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-10" data-slot="10" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-11" data-slot="11" data-day="mon"></td>
-            <td data-editable data-key="bwk-nut200-mon-12" data-slot="12" data-day="mon"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">TUE</td>
-            <td data-editable data-key="bwk-nut200-tue-0" data-slot="0" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-1" data-slot="1" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-2" data-slot="2" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-3" data-slot="3" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-4" data-slot="4" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-5" data-slot="5" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-6" data-slot="6" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-7" data-slot="7" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-8" data-slot="8" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-9" data-slot="9" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-10" data-slot="10" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-11" data-slot="11" data-day="tue"></td>
-            <td data-editable data-key="bwk-nut200-tue-12" data-slot="12" data-day="tue"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">WED</td>
-            <td data-editable data-key="bwk-nut200-wed-0" data-slot="0" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-1" data-slot="1" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-2" data-slot="2" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-3" data-slot="3" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-4" data-slot="4" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-5" data-slot="5" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-6" data-slot="6" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-7" data-slot="7" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-8" data-slot="8" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-9" data-slot="9" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-10" data-slot="10" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-11" data-slot="11" data-day="wed"></td>
-            <td data-editable data-key="bwk-nut200-wed-12" data-slot="12" data-day="wed"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">THU</td>
-            <td data-editable data-key="bwk-nut200-thu-0" data-slot="0" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-1" data-slot="1" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-2" data-slot="2" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-3" data-slot="3" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-4" data-slot="4" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-5" data-slot="5" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-6" data-slot="6" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-7" data-slot="7" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-8" data-slot="8" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-9" data-slot="9" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-10" data-slot="10" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-11" data-slot="11" data-day="thu"></td>
-            <td data-editable data-key="bwk-nut200-thu-12" data-slot="12" data-day="thu"></td>
-          </tr>
-          <tr>
-            <td class="day-cell">FRI</td>
-            <td data-editable data-key="bwk-nut200-fri-0" data-slot="0" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-1" data-slot="1" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-2" data-slot="2" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-3" data-slot="3" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-4" data-slot="4" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-5" data-slot="5" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-6" data-slot="6" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-7" data-slot="7" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-8" data-slot="8" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-9" data-slot="9" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-10" data-slot="10" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-11" data-slot="11" data-day="fri"></td>
-            <td data-editable data-key="bwk-nut200-fri-12" data-slot="12" data-day="fri"></td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
-  </div>
-
-</div><!-- end blockweekly-panels -->
-
-
-<!-- NOTES -->
-<div class="notes">
-  <div class="notes-box">
-    <div class="note-item">
-      <div class="note-bullet"></div>
-      <div><strong>★ Block Lectures</strong> — Courses marked ★ are delivered as block lectures. Resident lecturers should use these periods to compensate.</div>
-    </div>
-    <div class="note-item">
-      <div class="note-bullet"></div>
-      <div><strong>ILT101 Online</strong> — Information Literacy Skills will be delivered online for the first 4 weeks.</div>
-    </div>
-    <div class="note-item">
-      <div class="note-bullet"></div>
-      <div><strong>Academic Year</strong> — 2025/2026 Second Semester. Check Notice Board for updates.</div>
-    </div>
+  <div id="panel-weekly-nut200" class="section-panel theme-moss">
+    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">BSc Nutrition — Level 200</div><div class="section-venue">📍 Multipurpose Lab 2</div></div><div class="tt-scroll" id="grid-weekly-nut200"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
   </div>
 </div>
 
-<!-- ── ADMIN EDIT MODAL ──────────────────────────────────────────────── -->
-<div class="modal-overlay" id="editModal">
+<div id="block-panels" style="display:none">
+  <div id="panel-block-nur100" class="section-panel active theme-teal">
+    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">Block Lectures — BSc Nursing L100</div><div class="section-venue">📍 Auditorium</div></div><div id="grid-block-nur100"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
+  </div>
+  <div id="panel-block-nur200" class="section-panel theme-rose">
+    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">Block Lectures — BSc Nursing L200</div><div class="section-venue">📍 Auditorium</div></div><div id="grid-block-nur200"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
+  </div>
+  <div id="panel-block-nut100" class="section-panel theme-plum">
+    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">Block Lectures — BSc Nutrition L100</div><div class="section-venue">📍 Seminar Room B5</div></div><div id="grid-block-nut100"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
+  </div>
+  <div id="panel-block-nut200" class="section-panel theme-moss">
+    <div class="timetable-wrap"><div class="section-header"><div class="section-dot"></div><div class="section-label">Block Lectures — BSc Nutrition L200</div><div class="section-venue">📍 Multipurpose Lab 2</div></div><div id="grid-block-nut200"><p style="padding:2rem;color:#9ca3af">Loading…</p></div></div>
+  </div>
+</div>
+
+<div class="notes">
+  <div class="notes-box">
+    <div class="note-item"><div class="note-bullet"></div><div><strong>★ Block Lectures</strong> — Courses marked ★ are delivered as block lectures. Resident lecturers should use these periods to compensate.</div></div>
+    <div class="note-item"><div class="note-bullet"></div><div><strong>ILT101 Online</strong> — Information Literacy Skills will be delivered online for the first 4 weeks.</div></div>
+    <div class="note-item"><div class="note-bullet"></div><div><strong>Updates</strong> — Check the Notice Board for timetable changes.</div></div>
+  </div>
+</div>
+
+<!-- ENTRY MODAL -->
+<div class="modal-overlay" id="entryModal">
   <div class="modal-box">
-    <div class="modal-title">✏️ Add / Edit Timetable Notice</div>
-    <p style="font-size:12px;color:#6b7280;margin-bottom:1rem">
-      Post a timetable update as a pinned notice visible to all students.
-    </p>
-    <div class="form-group">
-      <label>Notice Title</label>
-      <input type="text" id="noticeTitle" placeholder="e.g. Timetable Change — NUR108 Week 5" value="📅 Timetable Update">
+    <div class="modal-title" id="modalTitle">➕ Add Timetable Entry</div>
+    <input type="hidden" id="editEntryId">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Programme</label>
+        <select id="entryProg">
+          <option value="nur100">BSc Nursing L100</option>
+          <option value="nur200">BSc Nursing L200</option>
+          <option value="nut100">BSc Nutrition L100</option>
+          <option value="nut200">BSc Nutrition L200</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Timetable Type</label>
+        <select id="entryView" onchange="toggleFields()">
+          <option value="weekly">Weekly</option>
+          <option value="block">Block Lecture</option>
+        </select>
+      </div>
     </div>
-    <div class="form-group">
-      <label>Message / Details</label>
-      <textarea id="noticeMessage" rows="5" placeholder="Describe the change..."></textarea>
+    <div id="weeklyFields">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Day</label>
+          <select id="entryDay">
+            <option value="MON">Monday</option><option value="TUE">Tuesday</option>
+            <option value="WED">Wednesday</option><option value="THU">Thursday</option>
+            <option value="FRI">Friday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Start Time</label>
+          <select id="entrySlot">
+            <option value="0">07:00–08:00</option><option value="1">08:00–09:00</option>
+            <option value="2">09:00–10:00</option><option value="3">10:00–11:00</option>
+            <option value="4">11:00–12:00</option><option value="5">12:00–13:00</option>
+            <option value="6">13:00–14:00</option><option value="7">14:00–15:00</option>
+            <option value="8">15:00–16:00</option><option value="9">16:00–17:00</option>
+            <option value="10">17:00–18:00</option><option value="11">18:00–19:00</option>
+            <option value="12">19:00–20:00</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Duration (hours)</label>
+        <select id="entrySpan">
+          <option value="1">1 hour</option><option value="2">2 hours</option><option value="3">3 hours</option>
+        </select>
+      </div>
+    </div>
+    <div id="blockFields" style="display:none">
+      <div class="form-group">
+        <label>Week Number</label>
+        <select id="entryWeek">
+          <option value="1">Week 1 (27 Apr – 1 May)</option><option value="2">Week 2 (4 – 8 May)</option>
+          <option value="3">Week 3 (11 – 15 May)</option><option value="4">Week 4 (18 – 22 May)</option>
+          <option value="5">Week 5 (25 – 29 May)</option><option value="6">Week 6 (1 – 5 Jun)</option>
+          <option value="7">Week 7 (8 – 12 Jun)</option><option value="8">Week 8 (15 – 19 Jun)</option>
+          <option value="9">Week 9 (22 – 26 Jun)</option><option value="10">Week 10 (29 Jun – 3 Jul)</option>
+        </select>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Priority</label>
-        <select id="noticePriority">
-          <option value="urgent">🔴 Urgent</option>
-          <option value="info" selected>🔵 Info</option>
-          <option value="general">🟡 General</option>
-        </select>
+        <label>Course Code</label>
+        <input type="text" id="entryCode" placeholder="e.g. NUR108">
       </div>
       <div class="form-group">
-        <label>Target Audience</label>
-        <select id="noticeAudience">
-          <option value="all">All Students</option>
-          <option value="nursing">BSc Nursing</option>
-          <option value="nutrition">BSc Nutrition</option>
+        <label>Block Lecture ★?</label>
+        <select id="entryIsBlock">
+          <option value="false">No</option>
+          <option value="true">Yes ★</option>
         </select>
       </div>
     </div>
-    <div style="display:flex;gap:.7rem;margin-top:.5rem">
-      <button class="btn-primary" onclick="postTimetableNotice()">📢 Post Notice</button>
-      <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script type="module">
-  import { getSession } from "./js/auth.js";
-
-  const session = getSession();
-  const isAdmin = session && session.role && session.role !== "student";
-
-  if (isAdmin) {
-    document.getElementById("adminBanner").classList.add("visible");
-    document.body.classList.add("admin-mode"); // enables editable cells and period buttons
-  }
-
-  // Back button
-  const backBtn = document.querySelector(".back-btn");
-  if (backBtn) {
-    backBtn.href = isAdmin ? "admin.html" : "student.html";
-    backBtn.textContent = isAdmin ? "← Admin Dashboard" : "← Back to Portal";
-  }
-</script>
-<script>
-  let currentMain = "weekly";
-  let currentProg = "nur100";
-  let _editingCell = null;
-  let _editingProg = null;
-  let _sbClient    = null;
-
-  // ── Supabase client ──────────────────────────────────────────────────────
-  function getSB() {
-    if (_sbClient) return _sbClient;
-    try {
-      const url = document.querySelector('meta[name="sb-url"]')?.content;
-      const key = document.querySelector('meta[name="sb-key"]')?.content;
-      if (url && key && window.supabase) {
-        _sbClient = window.supabase.createClient(url, key);
-      }
-    } catch(e) { console.error("SB init error:", e); }
-    return _sbClient;
-  }
-
-  // ── Save/load from Supabase notices table using title as key ─────────────
-  async function loadSavedData() {
-    const sb = getSB(); if (!sb) return;
-    const { data } = await sb.from("timetable_edits").select("*").limit(500).catch(() => ({ data: [] }));
-    if (!data?.length) return;
-    data.forEach(row => {
-      if (row.cell_key.startsWith("period-")) {
-        const prog  = row.cell_key.replace("period-","");
-        const valEl = document.getElementById("period-val-" + prog);
-        if (valEl) valEl.textContent = row.value;
-      } else if (row.cell_key.endsWith("-venue")) {
-        const badge = document.querySelector(`[data-venue-key="${row.cell_key}"]`);
-        if (badge && row.value) badge.textContent = "📍 " + row.value;
-      } else {
-        const el = document.querySelector('[data-key="' + row.cell_key + '"]');
-        if (!el) return;
-        if (!row.value) { el.innerHTML = ""; return; }
-        // Try parsing as JSON (new format with colspan)
-        try {
-          const parsed = JSON.parse(row.value);
-          el.innerHTML = parsed.html || row.value;
-          if (parsed.colspan && parsed.colspan > 1) applyColspan(el, parsed.colspan);
-        } catch(e) {
-          // Legacy plain HTML
-          el.innerHTML = row.value;
-        }
-      }
-    });
-  }
-
-  async function saveToSB(key, value) {
-    const sb = getSB();
-    if (!sb) {
-      showSaveStatus("❌ Not connected to database", "error");
-      return;
-    }
-    try {
-      const { error } = await sb.from("timetable_edits")
-        .upsert([{ cell_key: key, value, updated_at: new Date().toISOString() }],
-                { onConflict: "cell_key" });
-      if (error) {
-        console.error("Save error:", error);
-        showSaveStatus("❌ Save failed: " + error.message, "error");
-      } else {
-        showSaveStatus("✅ Saved!", "success");
-      }
-    } catch(e) {
-      console.error("Save exception:", e);
-      showSaveStatus("❌ Error: " + e.message, "error");
-    }
-  }
-
-  function showSaveStatus(msg, type) {
-    let el = document.getElementById("saveStatusBanner");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "saveStatusBanner";
-      el.style.cssText = "position:fixed;bottom:20px;right:20px;padding:.6rem 1.2rem;border-radius:8px;font-size:13px;font-weight:700;z-index:9999;transition:opacity .5s";
-      document.body.appendChild(el);
-    }
-    el.textContent = msg;
-    el.style.background = type === "success" ? "#d1fae5" : "#fee2e2";
-    el.style.color = type === "success" ? "#065f46" : "#991b1b";
-    el.style.opacity = "1";
-    clearTimeout(el._timeout);
-    el._timeout = setTimeout(() => { el.style.opacity = "0"; }, 3000);
-  }
-
-  // ── Tab switching ─────────────────────────────────────────────────────────
-  function switchMain(type, btn) {
-    currentMain = type;
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("weekly-panels").style.display      = type === "weekly"       ? "" : "none";
-    document.getElementById("block-panels").style.display       = type === "block"        ? "" : "none";
-    document.getElementById("blockweekly-panels").style.display = type === "blockweekly"  ? "" : "none";
-    switchProg(currentProg, null);
-  }
-
-  function switchProg(prog, btn) {
-    currentProg = prog;
-    if (btn) {
-      document.querySelectorAll(".sub-tab").forEach(t => t.classList.remove("active"));
-      btn.classList.add("active");
-    }
-    if (currentMain === "weekly") {
-      document.querySelectorAll("#weekly-panels .section-panel").forEach(p => p.classList.remove("active"));
-      document.getElementById(prog)?.classList.add("active");
-    } else if (currentMain === "block") {
-      document.querySelectorAll("#block-panels .section-panel").forEach(p => p.classList.remove("active"));
-      document.getElementById("block-" + prog)?.classList.add("active");
-    } else {
-      document.querySelectorAll("#blockweekly-panels .section-panel").forEach(p => p.classList.remove("active"));
-      document.getElementById("bwk-" + prog)?.classList.add("active");
-    }
-  }
-
-  // ── Admin cell editing ───────────────────────────────────────────────────
-  function initCellEditing() {
-    // Editable timetable cells
-    document.querySelectorAll("[data-editable]").forEach(cell => {
-      cell.addEventListener("click", () => {
-        if (!document.body.classList.contains("admin-mode")) return;
-        _editingCell = cell;
-        const card = cell.querySelector(".card");
-        document.getElementById("cellCode").value  = card?.querySelector(".card-code")?.textContent?.trim() || "";
-        document.getElementById("cellName").value  = card?.querySelector(".card-name")?.textContent?.trim() || "";
-        document.getElementById("cellLect").value  = card?.querySelector(".card-lect")?.textContent?.trim() || "";
-        const venueRaw = card?.querySelector(".card-venue")?.textContent?.trim() || "";
-        document.getElementById("cellVenue").value = venueRaw.replace(/^📍\s*/, "");
-        const timeRaw = card?.querySelector(".card-time")?.textContent?.trim() || "";
-        const timeParts = timeRaw.replace(/^🕐\s*/, "").split("–");
-        document.getElementById("cellTimeStart").value = timeParts[0]?.trim() || "";
-        document.getElementById("cellTimeEnd").value   = timeParts[1]?.trim() || "";
-        document.getElementById("cellColspan").value   = String(cell.colSpan || 1);
-        document.getElementById("cellEditModal").classList.add("open");
-      });
-    });
-
-    // Editable venue badges in section headers
-    document.querySelectorAll(".section-venue[data-venue-key]").forEach(badge => {
-      badge.addEventListener("click", () => {
-        if (!document.body.classList.contains("admin-mode")) return;
-        const current = badge.textContent.replace(/✏️/, "").trim().replace(/^📍\s*/, "");
-        const newVenue = prompt("Edit venue:", current);
-        if (newVenue === null) return;
-        badge.textContent = "📍 " + newVenue;
-        saveToSB(badge.dataset.venueKey, newVenue);
-      });
-    });
-  }
-
-  function saveCellEdit() {
-    if (!_editingCell) return;
-    const code    = document.getElementById("cellCode").value.trim();
-    const name    = document.getElementById("cellName").value.trim();
-    const lect    = document.getElementById("cellLect").value.trim();
-    const venue   = document.getElementById("cellVenue").value.trim();
-    const tStart  = document.getElementById("cellTimeStart").value;
-    const tEnd    = document.getElementById("cellTimeEnd").value;
-    const colspan = parseInt(document.getElementById("cellColspan").value) || 1;
-
-    if (!code && !name) { clearCell(); return; }
-
-    const timeStr  = tStart && tEnd ? tStart + "–" + tEnd : (tStart || "");
-    const venueStr = venue   ? '<div class="card-venue">📍 ' + venue + '</div>' : "";
-    const timeHTML = timeStr ? '<div class="card-time">🕐 ' + timeStr + '</div>' : "";
-
-    const html = '<div class="card"><div class="card-code">' + code + '</div><div class="card-name">' + name + '</div><div class="card-lect">' + lect + '</div>' + venueStr + timeHTML + '</div>';
-
-    // Handle colspan merging — remove next N-1 sibling cells in same row
-    if (colspan > 1) {
-      applyColspan(_editingCell, colspan);
-    } else {
-      // Reset colspan to 1 if previously merged
-      _editingCell.colSpan = 1;
-      _editingCell.style.removeProperty("min-width");
-    }
-
-    _editingCell.innerHTML = html;
-    const key = _editingCell.dataset.key;
-    if (key) {
-      // Save with colspan info
-      saveToSB(key, JSON.stringify({ html, colspan }));
-    }
-    closeCellEdit();
-  }
-
-  function applyColspan(cell, span) {
-    const row = cell.parentElement;
-    const cells = Array.from(row.cells);
-    const idx = Array.from(cells).indexOf(cell);
-
-    // First restore any previously hidden cells from this cell
-    const oldSpan = cell.colSpan || 1;
-    if (oldSpan > 1) {
-      for (let i = 1; i < oldSpan; i++) {
-        const nextCell = row.cells[idx + 1]; // cells shift after restore
-        if (nextCell && nextCell.dataset.hidden === "true") {
-          nextCell.style.display = "";
-          nextCell.dataset.hidden = "";
-        }
-      }
-    }
-
-    // Apply new colspan — hide next N-1 cells
-    cell.colSpan = span;
-    for (let i = 1; i < span; i++) {
-      const sibling = cells[idx + i];
-      if (sibling && !sibling.classList.contains("day-cell")) {
-        sibling.style.display = "none";
-        sibling.dataset.hidden = "true";
-      }
-    }
-  }
-
-  function clearCell() {
-    if (!_editingCell) return;
-    // Restore any merged cells
-    if (_editingCell.colSpan > 1) {
-      const row   = _editingCell.parentElement;
-      const cells = Array.from(row.cells);
-      const idx   = cells.indexOf(_editingCell);
-      const span  = _editingCell.colSpan;
-      _editingCell.colSpan = 1;
-      for (let i = 1; i < span; i++) {
-        const sibling = cells[idx + i];
-        if (sibling) { sibling.style.display = ""; sibling.dataset.hidden = ""; }
-      }
-    }
-    _editingCell.innerHTML = "";
-    const key = _editingCell.dataset.key;
-    if (key) saveToSB(key, "");
-    closeCellEdit();
-  }
-
-  function closeCellEdit() {
-    document.getElementById("cellEditModal").classList.remove("open");
-    _editingCell = null;
-  }
-
-  // ── Period editing ───────────────────────────────────────────────────────
-  function editPeriod(prog) {
-    _editingProg = prog;
-    const current = document.getElementById("period-val-" + prog)?.textContent || "";
-    const match = current.match(/^(Week \d+)\s*\((.+)\)$/);
-    document.getElementById("periodWeek").value  = match?.[1] || "Week 1";
-    document.getElementById("periodDates").value = match?.[2] || "";
-    document.getElementById("periodEditModal").classList.add("open");
-  }
-
-  function savePeriodEdit() {
-    if (!_editingProg) return;
-    const week  = document.getElementById("periodWeek").value;
-    const dates = document.getElementById("periodDates").value.trim();
-    const label = dates ? `${week} (${dates})` : week;
-    const valEl = document.getElementById("period-val-" + _editingProg);
-    if (valEl) valEl.textContent = label;
-    saveToSB("period-" + _editingProg, label);
-    document.getElementById("periodEditModal").classList.remove("open");
-    _editingProg = null;
-  }
-
-  // ── Notice posting ───────────────────────────────────────────────────────
-  function openAddEntryModal() { document.getElementById("editModal").classList.add("open"); }
-  function closeEditModal()    { document.getElementById("editModal").classList.remove("open"); }
-
-  async function postTimetableNotice() {
-    const title    = document.getElementById("noticeTitle").value.trim();
-    const message  = document.getElementById("noticeMessage").value.trim();
-    const priority = document.getElementById("noticePriority").value;
-    const audience = document.getElementById("noticeAudience").value;
-    if (!title || !message) { alert("Please fill in both title and message."); return; }
-    const sb = getSB(); if (!sb) { alert("Supabase not configured."); return; }
-    const { error } = await sb.from("notices").insert([{
-      title, message, priority, audience, author: "admin",
-      pinned: priority === "urgent", created_at: new Date().toISOString()
-    }]);
-    if (error) { alert("Error: " + error.message); return; }
-    alert("Notice posted! Students will see it on the Notice Board.");
-    closeEditModal();
-    document.getElementById("noticeMessage").value = "";
-  }
-
-  // ── INIT ─────────────────────────────────────────────────────────────────
-  document.addEventListener("DOMContentLoaded", () => {
-    initCellEditing();
-    loadSavedData();
-  });
-</script>
-
-<!-- ── CELL EDIT MODAL ──────────────────────────────────────────────── -->
-<div class="cell-edit-modal" id="cellEditModal">
-  <div class="cell-edit-box">
-    <div class="cell-edit-title">✏️ Edit Timetable Entry</div>
     <div class="form-group">
-      <label>Course Code</label>
-      <input type="text" id="cellCode" placeholder="e.g. NUR108">
-    </div>
-    <div class="form-group">
-      <label>Course Title</label>
-      <input type="text" id="cellName" placeholder="e.g. Human Anatomy II">
+      <label>Course Name</label>
+      <input type="text" id="entryName" placeholder="e.g. Human Anatomy II">
     </div>
     <div class="form-group">
       <label>Lecturer</label>
-      <input type="text" id="cellLect" placeholder="e.g. Dr Benjamin Aboagye">
+      <input type="text" id="entryLecturer" placeholder="e.g. Dr Benjamin Aboagye">
     </div>
-    <div class="form-group">
-      <label>Venue / Room</label>
-      <input type="text" id="cellVenue" placeholder="e.g. Auditorium, Lab 2, Room B5">
-    </div>
-    <div class="form-group">
-      <label>Time Slot</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
-        <select id="cellTimeStart">
-          <option value="">Start</option>
-          <option>07:00</option><option>08:00</option><option>09:00</option>
-          <option>10:00</option><option>11:00</option><option>12:00</option>
-          <option>13:00</option><option>14:00</option><option>15:00</option>
-          <option>16:00</option><option>17:00</option><option>18:00</option>
-          <option>19:00</option>
-        </select>
-        <select id="cellTimeEnd">
-          <option value="">End</option>
-          <option>08:00</option><option>09:00</option><option>10:00</option>
-          <option>11:00</option><option>12:00</option><option>13:00</option>
-          <option>14:00</option><option>15:00</option><option>16:00</option>
-          <option>17:00</option><option>18:00</option><option>19:00</option>
-          <option>20:00</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Periods (colspan) — for lectures spanning multiple hours</label>
-      <select id="cellColspan">
-        <option value="1">1 period (1 hour)</option>
-        <option value="2">2 periods (2 hours)</option>
-        <option value="3">3 periods (3 hours)</option>
-        <option value="4">4 periods (4 hours)</option>
-        <option value="5">5 periods (5 hours)</option>
-      </select>
-      <small style="color:#9ca3af;font-size:10px">Merges this cell across the selected number of consecutive hour columns</small>
-    </div>
-    <div class="cell-btn-row">
-      <button class="btn-save" onclick="saveCellEdit()">💾 Save &amp; View</button>
-      <button class="btn-clear" onclick="clearCell()">🗑 Clear</button>
-      <button class="btn-cancel" onclick="closeCellEdit()">Cancel</button>
+    <div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap;">
+      <button class="btn-primary" onclick="saveEntry()">💾 Save</button>
+      <button id="deleteBtn" class="btn-danger2" style="display:none" onclick="deleteEntry()">🗑 Delete</button>
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- ── PERIOD EDIT MODAL ─────────────────────────────────────────────── -->
-<div class="cell-edit-modal" id="periodEditModal">
-  <div class="cell-edit-box">
-    <div class="cell-edit-title">📅 Edit Block Period</div>
-    <div class="form-group">
-      <label>Week Number</label>
-      <select id="periodWeek">
-        <option value="Week 1">Week 1</option>
-        <option value="Week 2">Week 2</option>
-        <option value="Week 3">Week 3</option>
-        <option value="Week 4">Week 4</option>
-        <option value="Week 5">Week 5</option>
-        <option value="Week 6">Week 6</option>
-        <option value="Week 7">Week 7</option>
-        <option value="Week 8">Week 8</option>
-        <option value="Week 9">Week 9</option>
-        <option value="Week 10">Week 10</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Date Range</label>
-      <input type="text" id="periodDates" placeholder="e.g. 27 Apr – 1 May 2026">
-    </div>
-    <div class="cell-btn-row">
-      <button class="btn-save" onclick="savePeriodEdit()">💾 Save Period</button>
-      <button class="btn-cancel" onclick="document.getElementById('periodEditModal').classList.remove('open')">Cancel</button>
-    </div>
-  </div>
-</div>
+<div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = document.querySelector('meta[name="sb-url"]').content;
+const SB_KEY = document.querySelector('meta[name="sb-key"]').content;
+const db = supabase.createClient(SB_URL, SB_KEY);
+
+let currentMain = 'weekly';
+let currentProg = 'nur100';
+let isAdmin = false;
+let allEntries = [];
+
+const DAYS = ['MON','TUE','WED','THU','FRI'];
+const SLOTS = ['07-08','08-09','09-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20'];
+const WEEK_DATES = {1:'27 Apr - 1 May',2:'4 - 8 May',3:'11 - 15 May',4:'18 - 22 May',5:'25 - 29 May',6:'1 - 5 Jun',7:'8 - 12 Jun',8:'15 - 19 Jun',9:'22 - 26 Jun',10:'29 Jun - 3 Jul'};
+
+function getSession(){try{return JSON.parse(sessionStorage.getItem('portalUser'));}catch{return null;}}
+function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.background=ok?'#0f2044':'#dc2626';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+async function init(){
+  const s=getSession();
+  isAdmin=s&&s.role&&s.role!=='student';
+  if(isAdmin){
+    document.getElementById('adminBanner').classList.add('visible');
+    document.getElementById('backBtn').href='admin.html';
+    document.getElementById('backBtn').textContent='← Admin Dashboard';
+    document.body.classList.add('admin-mode');
+  }
+  await loadEntries();
+  renderAll();
+}
+
+async function loadEntries(){
+  const {data,error}=await db.from('timetable_entries').select('*');
+  if(error){console.error(error);return;}
+  allEntries=data||[];
+}
+
+function renderAll(){
+  ['nur100','nur200','nut100','nut200'].forEach(p=>{
+    renderWeekly(p);
+    renderBlock(p);
+  });
+}
+
+function renderWeekly(prog){
+  const el=document.getElementById('grid-weekly-'+prog);
+  if(!el)return;
+  const entries=allEntries.filter(e=>e.programme===prog&&e.view_type==='weekly');
+  const grid={};const skip={};
+  entries.forEach(e=>{
+    grid[e.day+'-'+e.time_slot]=e;
+    for(let i=1;i<(e.span||1);i++) skip[e.day+'-'+(e.time_slot+i)]=true;
+  });
+  let h='<table><thead><tr><th class="day-head">Day</th>';
+  SLOTS.forEach(s=>h+='<th>'+s+'</th>');
+  h+='</tr></thead><tbody>';
+  DAYS.forEach(day=>{
+    h+='<tr><td class="day-cell">'+day+'</td>';
+    for(let i=0;i<13;i++){
+      if(skip[day+'-'+i])continue;
+      const e=grid[day+'-'+i];
+      if(e){
+        const star=e.is_block_lecture?' &#9733;':'';
+        h+='<td colspan="'+(e.span||1)+'"><div class="card">'
+          +'<div class="card-code">'+escH(e.course_code)+star+'</div>'
+          +'<div class="card-name">'+escH(e.course_name)+'</div>'
+          +'<div class="card-lect">'+escH(e.lecturer||'')+'</div>'
+          +(isAdmin?'<button class="card-edit-btn" onclick="openEdit(\''+e.id+'\')">&#9998;</button>':'')
+          +'</div></td>';
+      }else{
+        h+='<td>'+(isAdmin?'<div class="empty-slot" onclick="openAddModal(\''+prog+'\',\'weekly\',\''+day+'\','+i+',1)"></div>':'')+'</td>';
+      }
+    }
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+function renderBlock(prog){
+  const el=document.getElementById('grid-block-'+prog);
+  if(!el)return;
+  const entries=allEntries.filter(e=>e.programme===prog&&e.view_type==='block');
+  const byWeek={};
+  entries.forEach(e=>{if(!byWeek[e.week_number])byWeek[e.week_number]=[];byWeek[e.week_number].push(e);});
+  let h='<table class="block-table"><thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Lecturer</th>'+(isAdmin?'<th></th>':'')+'</tr></thead><tbody>';
+  for(let w=1;w<=10;w++){
+    const we=byWeek[w]||[];
+    if(we.length===0){
+      h+='<tr><td class="week-cell">Week '+w+'</td><td class="date-cell">'+WEEK_DATES[w]+'</td>'
+        +'<td>'+(w===10?'<span class="revision-badge">REVISION</span>':'<span class="empty-week">—</span>')+'</td><td>—</td>'
+        +(isAdmin?'<td><button class="btn-gold" style="font-size:10px;padding:3px 8px" onclick="openAddModal(\''+prog+'\',\'block\',\'\',0,'+w+')">+ Add</button></td>':'')
+        +'</tr>';
+    }else{
+      we.forEach((e,idx)=>{
+        const star=e.is_block_lecture?' &#9733;':'';
+        h+='<tr>'
+          +(idx===0?'<td class="week-cell" rowspan="'+we.length+'">Week '+w+'</td><td class="date-cell" rowspan="'+we.length+'">'+WEEK_DATES[w]+'</td>':'')
+          +'<td><strong>'+escH(e.course_code)+star+'</strong><br><small>'+escH(e.course_name)+'</small></td>'
+          +'<td>'+escH(e.lecturer||'—')+'</td>'
+          +(isAdmin?'<td><button class="btn-gold" style="font-size:10px;padding:3px 8px" onclick="openEdit(\''+e.id+'\')">&#9998; Edit</button></td>':'')
+          +'</tr>';
+      });
+    }
+  }
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+function switchMain(type,btn){
+  currentMain=type;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('weekly-panels').style.display=type==='weekly'?'':'none';
+  document.getElementById('block-panels').style.display=type==='block'?'':'none';
+  if(type==='block'){
+    document.querySelectorAll('#block-panels .section-panel').forEach(p=>p.classList.remove('active'));
+    const bp=document.getElementById('panel-block-'+currentProg);
+    if(bp)bp.classList.add('active');
+  }
+}
+
+function switchProg(prog,btn){
+  currentProg=prog;
+  document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(currentMain==='weekly'){
+    document.querySelectorAll('#weekly-panels .section-panel').forEach(p=>p.classList.remove('active'));
+    const wp=document.getElementById('panel-weekly-'+prog);
+    if(wp)wp.classList.add('active');
+  }else{
+    document.querySelectorAll('#block-panels .section-panel').forEach(p=>p.classList.remove('active'));
+    const bp=document.getElementById('panel-block-'+prog);
+    if(bp)bp.classList.add('active');
+  }
+}
+
+function toggleFields(){
+  const v=document.getElementById('entryView').value;
+  document.getElementById('weeklyFields').style.display=v==='weekly'?'':'none';
+  document.getElementById('blockFields').style.display=v==='block'?'':'none';
+}
+
+function openAddModal(prog,view,day,slot,week){
+  document.getElementById('modalTitle').textContent='+ Add Timetable Entry';
+  document.getElementById('editEntryId').value='';
+  document.getElementById('deleteBtn').style.display='none';
+  document.getElementById('entryProg').value=prog||currentProg;
+  document.getElementById('entryView').value=view||currentMain;
+  document.getElementById('entryDay').value=day||'MON';
+  document.getElementById('entrySlot').value=slot||0;
+  document.getElementById('entryWeek').value=week||1;
+  document.getElementById('entryCode').value='';
+  document.getElementById('entryName').value='';
+  document.getElementById('entryLecturer').value='';
+  document.getElementById('entrySpan').value='1';
+  document.getElementById('entryIsBlock').value='false';
+  toggleFields();
+  document.getElementById('entryModal').classList.add('open');
+}
+
+function openEdit(id){
+  const e=allEntries.find(x=>x.id===id);
+  if(!e)return;
+  document.getElementById('modalTitle').textContent='Edit Timetable Entry';
+  document.getElementById('editEntryId').value=id;
+  document.getElementById('deleteBtn').style.display='inline-block';
+  document.getElementById('entryProg').value=e.programme;
+  document.getElementById('entryView').value=e.view_type;
+  document.getElementById('entryDay').value=e.day||'MON';
+  document.getElementById('entrySlot').value=e.time_slot||0;
+  document.getElementById('entryWeek').value=e.week_number||1;
+  document.getElementById('entryCode').value=e.course_code;
+  document.getElementById('entryName').value=e.course_name;
+  document.getElementById('entryLecturer').value=e.lecturer||'';
+  document.getElementById('entrySpan').value=e.span||1;
+  document.getElementById('entryIsBlock').value=e.is_block_lecture?'true':'false';
+  toggleFields();
+  document.getElementById('entryModal').classList.add('open');
+}
+
+function closeModal(){document.getElementById('entryModal').classList.remove('open');}
+
+async function saveEntry(){
+  const id=document.getElementById('editEntryId').value;
+  const view=document.getElementById('entryView').value;
+  const code=document.getElementById('entryCode').value.trim().toUpperCase();
+  const name=document.getElementById('entryName').value.trim();
+  if(!code||!name){alert('Course Code and Course Name are required.');return;}
+  const payload={
+    programme:document.getElementById('entryProg').value,
+    view_type:view,
+    day:view==='weekly'?document.getElementById('entryDay').value:null,
+    time_slot:view==='weekly'?parseInt(document.getElementById('entrySlot').value):null,
+    week_number:view==='block'?parseInt(document.getElementById('entryWeek').value):null,
+    course_code:code,course_name:name,
+    lecturer:document.getElementById('entryLecturer').value.trim(),
+    span:view==='weekly'?parseInt(document.getElementById('entrySpan').value):1,
+    is_block_lecture:document.getElementById('entryIsBlock').value==='true',
+    updated_at:new Date().toISOString()
+  };
+  let error;
+  if(id){
+    ({error}=await db.from('timetable_entries').update(payload).eq('id',id));
+  }else{
+    payload.created_at=new Date().toISOString();
+    ({error}=await db.from('timetable_entries').insert([payload]));
+  }
+  if(error){toast('Error: '+error.message,false);return;}
+  toast('Saved successfully!');
+  closeModal();
+  await loadEntries();
+  renderAll();
+}
+
+async function deleteEntry(){
+  const id=document.getElementById('editEntryId').value;
+  if(!id||!confirm('Delete this timetable entry?'))return;
+  const{error}=await db.from('timetable_entries').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,false);return;}
+  toast('Entry deleted.');
+  closeModal();
+  await loadEntries();
+  renderAll();
+}
+
+init();
+</script>
 </body>
 </html>
