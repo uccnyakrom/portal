@@ -532,16 +532,16 @@
     <div class="week-selector-bar">
       <label for="blockWeekSelector">Block Week:</label>
       <select id="blockWeekSelector" onchange="loadBlockWeekly()">
-        <option value="1">Week 1</option>
-        <option value="2">Week 2</option>
-        <option value="3" selected>Week 3 (11–15 May)</option>
-        <option value="4">Week 4</option>
-        <option value="5">Week 5</option>
-        <option value="6">Week 6</option>
-        <option value="7">Week 7</option>
-        <option value="8">Week 8</option>
-        <option value="9">Week 9</option>
-        <option value="10">Week 10</option>
+        <option value="1">Week 1 — 27 Apr–1 May</option>
+        <option value="2">Week 2 — 4–8 May</option>
+        <option value="3" selected>Week 3 — 11–15 May</option>
+        <option value="4">Week 4 — 18–22 May</option>
+        <option value="5">Week 5 — 25–29 May</option>
+        <option value="6">Week 6 — 1–5 Jun</option>
+        <option value="7">Week 7 — 8–12 Jun</option>
+        <option value="8">Week 8 — 15–19 Jun</option>
+        <option value="9">Week 9 — 22–26 Jun</option>
+        <option value="10">Week 10 — 29 Jun–3 Jul</option>
       </select>
       <span class="week-label" id="weekDateLabel"></span>
     </div>
@@ -603,12 +603,18 @@
       <label>Time Slot</label>
       <select id="entryTime">
         <option value="1">07:00 – 08:00</option>
-        <option value="2">08:00 – 10:00</option>
-        <option value="3">10:00 – 12:00</option>
-        <option value="4">12:00 – 13:00</option>
-        <option value="5">13:00 – 15:00</option>
-        <option value="6">15:00 – 17:00</option>
-        <option value="7">17:00 – 19:00</option>
+        <option value="2">08:00 – 09:00</option>
+        <option value="3">09:00 – 10:00</option>
+        <option value="4">10:00 – 11:00</option>
+        <option value="5">11:00 – 12:00</option>
+        <option value="6">12:00 – 13:00</option>
+        <option value="7">13:00 – 14:00</option>
+        <option value="8">14:00 – 15:00</option>
+        <option value="9">15:00 – 16:00</option>
+        <option value="10">16:00 – 17:00</option>
+        <option value="11">17:00 – 18:00</option>
+        <option value="12">18:00 – 19:00</option>
+        <option value="13">19:00 – 20:00</option>
       </select>
     </div>
     <div class="form-group">
@@ -641,10 +647,12 @@ const DAYS = ['Mon','Tue','Wed','Thu','Fri'];
 const DAY_NAMES = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday' };
 // time_slot in DB is integer: 1=07:00-08:00, 2=08:00-10:00, 3=10:00-12:00,
 // 4=12:00-13:00, 5=13:00-15:00, 6=15:00-17:00, 7=17:00-19:00
-const TIME_SLOTS = [1,2,3,4,5,6,7];
+const TIME_SLOTS = [1,2,3,4,5,6,7,8,9,10,11,12,13];
 const SLOT_LABEL = {
-  1:'07:00–08:00', 2:'08:00–10:00', 3:'10:00–12:00',
-  4:'12:00–13:00', 5:'13:00–15:00', 6:'15:00–17:00', 7:'17:00–19:00'
+  1:'07:00–08:00', 2:'08:00–09:00', 3:'09:00–10:00',
+  4:'10:00–11:00', 5:'11:00–12:00', 6:'12:00–13:00',
+  7:'13:00–14:00', 8:'14:00–15:00', 9:'15:00–16:00',
+  10:'16:00–17:00', 11:'17:00–18:00', 12:'18:00–19:00', 13:'19:00–20:00'
 };
 
 const PROGS = {
@@ -656,9 +664,9 @@ const PROGS = {
 
 // Week dates for display
 const WEEK_DATES = {
-  1:'5–9 May', 2:'5–9 May', 3:'11–15 May', 4:'19–23 May',
-  5:'26–30 May', 6:'2–6 Jun', 7:'9–13 Jun', 8:'16–20 Jun',
-  9:'23–27 Jun', 10:'30 Jun–4 Jul'
+  1:'27 Apr – 1 May', 2:'4–8 May', 3:'11–15 May', 4:'18–22 May',
+  5:'25–29 May', 6:'1–5 Jun', 7:'8–12 Jun', 8:'15–19 Jun',
+  9:'22–26 Jun', 10:'29 Jun – 3 Jul'
 };
 
 let allWeeklyData = [];
@@ -1004,7 +1012,7 @@ document.getElementById('addModal').addEventListener('click', function(e) {
 (async () => {
   await Promise.all([loadWeekly(), loadBlock()]);
   // Set week 3 label on load
-  document.getElementById('weekDateLabel').textContent = '(11–15 May)';
+  document.getElementById('weekDateLabel').textContent = '';
   // Pre-load week 3 blockweekly data so it's ready when tab is clicked
   try {
     allBWData = await supabaseFetch('view_type=eq.block&week_number=eq.3&day=not.is.null&order=programme,day,time_slot');
