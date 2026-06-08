@@ -15,7 +15,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
-  <title>UCC Nyakrom — Campus Accommodation Portal</title>
+  <title>UCC Nyakrom — Smart Campus Portal</title>
 
   <!-- ╔══════════════════════════════════════════════════════════════════════╗
        ║  SUPABASE CREDENTIALS (replace content values below)               ║
@@ -47,10 +47,9 @@
   <div style="position:relative;z-index:1">
     <div class="hero-crest">🏛️</div>
     <p class="hero-eyebrow">University of Cape Coast · Nyakrom Campus</p>
-    <h1 class="hero-title">Campus<br><span>Accommodation</span><br>Portal</h1>
+    <h1 class="hero-title">UCC Nyakrom<br><span>Smart Campus</span><br>Portal</h1>
     <p class="hero-subtitle">
-      Manage room allocations, track availability, and access your accommodation
-      details — all in one place.
+      Your all-in-one campus platform — accommodation, timetables, maintenance reporting, notices, and facilities — available anytime, anywhere.
     </p>
     <div class="hero-actions">
       <button class="btn btn-gold" id="signInBtnHero">Sign In to Dashboard</button>
@@ -60,6 +59,74 @@
 </section>
 
 <!-- ── Live Stats Strip ────────────────────────────────────────────────────── -->
+
+
+<!-- ── Portal Features Section ────────────────────────────────────────────── -->
+<section style="background:var(--white);padding:4rem 2rem;border-top:1px solid var(--gray-200)">
+  <div style="max-width:1100px;margin:0 auto">
+    <h2 class="section-title" style="text-align:center;margin-bottom:.5rem">Everything You Need in One Place</h2>
+    <p style="text-align:center;color:var(--gray-500);font-size:14px;margin-bottom:3rem">
+      UCC Nyakrom Smart Campus Portal brings together all essential student and administrative services.
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem">
+
+      <!-- Accommodation -->
+      <div style="background:var(--gray-50);border-radius:12px;padding:1.5rem;border-top:4px solid #0f2044">
+        <div style="font-size:2.2rem;margin-bottom:.7rem">🏠</div>
+        <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.5rem;font-size:1.1rem">Accommodation Management</h3>
+        <p style="font-size:13px;color:var(--gray-600);line-height:1.6">View your room assignment, check roommates, apply for accommodation, and track your application status — all from your phone.</p>
+      </div>
+
+      <!-- Timetable -->
+      <div style="background:var(--gray-50);border-radius:12px;padding:1.5rem;border-top:4px solid #b8860b">
+        <div style="font-size:2.2rem;margin-bottom:.7rem">📅</div>
+        <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.5rem;font-size:1.1rem">Teaching Timetable</h3>
+        <p style="font-size:13px;color:var(--gray-600);line-height:1.6">Access your weekly timetable, block lecture schedule, and weekly block timetable for all programmes — updated in real time by the administration.</p>
+      </div>
+
+      <!-- Maintenance -->
+      <div style="background:var(--gray-50);border-radius:12px;padding:1.5rem;border-top:4px solid #ef4444">
+        <div style="font-size:2.2rem;margin-bottom:.7rem">🔧</div>
+        <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.5rem;font-size:1.1rem">Maintenance Reporting</h3>
+        <p style="font-size:13px;color:var(--gray-600);line-height:1.6">Report electrical, plumbing, structural, or cleaning issues in your room directly through the portal and track the resolution status in real time.</p>
+      </div>
+
+      <!-- Notices -->
+      <div style="background:var(--gray-50);border-radius:12px;padding:1.5rem;border-top:4px solid #22c55e">
+        <div style="font-size:2.2rem;margin-bottom:.7rem">📢</div>
+        <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.5rem;font-size:1.1rem">Notice Board</h3>
+        <p style="font-size:13px;color:var(--gray-600);line-height:1.6">Stay informed with urgent and general notices from the General Office and campus management, pinned and accessible on every login.</p>
+      </div>
+
+      <!-- Facilities -->
+      <div style="background:var(--gray-50);border-radius:12px;padding:1.5rem;border-top:4px solid #3b82f6">
+        <div style="font-size:2.2rem;margin-bottom:.7rem">🏛️</div>
+        <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.5rem;font-size:1.1rem">Campus Facilities</h3>
+        <p style="font-size:13px;color:var(--gray-600);line-height:1.6">Browse available campus facilities, view their status and availability, and report any facility-related issues to the management team.</p>
+      </div>
+
+      <!-- Application -->
+      <div style="background:var(--gray-50);border-radius:12px;padding:1.5rem;border-top:4px solid #a855f7">
+        <div style="font-size:2.2rem;margin-bottom:.7rem">📋</div>
+        <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.5rem;font-size:1.1rem">Online Applications</h3>
+        <p style="font-size:13px;color:var(--gray-600);line-height:1.6">New students can apply for campus accommodation online, select a preferred room, and receive updates on their application without visiting the office.</p>
+      </div>
+
+    </div>
+
+    <!-- How to access strip -->
+    <div style="margin-top:3rem;background:var(--navy);border-radius:12px;padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div style="color:#c9a84c;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem">How to Access</div>
+        <div style="color:#fff;font-size:14px">Log in with your <strong>Registration Number</strong> and default password, or apply below if you are new.</div>
+      </div>
+      <button onclick="document.getElementById('loginModal').classList.add('open')"
+        style="background:var(--gold);color:#fff;border:none;padding:.7rem 1.8rem;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">
+        Sign In to Portal →
+      </button>
+    </div>
+  </div>
+</section>
 
 <!-- ── Public Application Section ─────────────────────────────────────────── -->
 <section style="background:var(--gray-50);padding:4rem 2rem;border-top:1px solid var(--gray-200)" id="apply">
