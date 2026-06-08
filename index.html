@@ -20,8 +20,8 @@
   <!-- ╔══════════════════════════════════════════════════════════════════════╗
        ║  SUPABASE CREDENTIALS (replace content values below)               ║
        ╚══════════════════════════════════════════════════════════════════════╝ -->
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="stylesheet" href="css/styles.css">
 
@@ -55,42 +55,11 @@
     <div class="hero-actions">
       <button class="btn btn-gold" id="signInBtnHero">Sign In to Dashboard</button>
       <button class="btn btn-outline" id="applyPublicBtn">Apply for Room →</button>
-      <a href="#availability" class="btn btn-outline" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6)">View Availability ↓</a>
     </div>
   </div>
 </section>
 
 <!-- ── Live Stats Strip ────────────────────────────────────────────────────── -->
-<div class="stats-strip">
-  <div class="stat-item">
-    <div class="stat-number" id="stripTotal">505</div>
-    <div class="stat-label">Total Students</div>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <div class="stat-number" id="stripBeds">—</div>
-    <div class="stat-label">Available Beds</div>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <div class="stat-number" id="stripVacant">—</div>
-    <div class="stat-label">Vacant Rooms</div>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <div class="stat-number" id="stripOccRate">—</div>
-    <div class="stat-label">Occupancy Rate</div>
-  </div>
-</div>
-
-<!-- ── Room Availability Grid ─────────────────────────────────────────────── -->
-<section class="availability-section" id="availability">
-  <h2 class="section-title">Room Availability</h2>
-  <p class="section-subtitle">Live view of accommodation blocks — click a room for details</p>
-  <div id="publicRoomGrid">
-    <p style="color:var(--gray-400);text-align:center;padding:3rem">Loading availability…</p>
-  </div>
-</section>
 
 <!-- ── Public Application Section ─────────────────────────────────────────── -->
 <section style="background:var(--gray-50);padding:4rem 2rem;border-top:1px solid var(--gray-200)" id="apply">
@@ -279,23 +248,7 @@
     }
   });
 
-  // Live stats
-  async function loadPublicStats() {
-    const { data: rooms } = await supabase.from("rooms").select("capacity, occupancy_count, type");
-    if (!rooms) return;
-    const total    = rooms.reduce((a,r)=>a+r.capacity,0);
-    const occupied = rooms.reduce((a,r)=>a+r.occupancy_count,0);
-    const el = (id,val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
-    el("stripBeds",    total - occupied);
-    el("stripVacant",  rooms.filter(r=>r.type==="vacant").length);
-    el("stripOccRate", total>0 ? Math.round((occupied/total)*100)+"%" : "0%");
-  }
 
-  // Room grid
-  async function loadPublicGrid() {
-    const rooms = await fetchRooms();
-    renderRoomGrid("publicRoomGrid", rooms);
-  }
 
   // Available rooms dropdown
   async function loadRoomDropdown() {
@@ -310,8 +263,6 @@
       data.map(r=>`<option value="${r.block}-${r.room_number}">Block ${r.block} – Room ${r.room_number} (${r.occupancy_count}/${r.capacity})</option>`).join("");
   }
 
-  loadPublicStats();
-  loadPublicGrid();
   loadRoomDropdown();
 
   // Check existing student on reg number blur
@@ -369,11 +320,8 @@
     document.getElementById("appRefNum").textContent = "APP-" + Date.now().toString().slice(-6);
   });
 
-  // Real-time
-  supabase.channel("landing").on("postgres_changes",
-    { event:"*", schema:"public", table:"rooms" },
-    () => { loadPublicStats(); loadPublicGrid(); loadRoomDropdown(); }
-  ).subscribe();
+  // Real-time — rooms availability removed from landing page for security
+  // Admin portal manages room data with authentication
 </script>
 
 </body>
