@@ -462,6 +462,13 @@
     <div class="hero-actions">
       <button class="btn btn-gold" id="signInBtnHero" onclick="document.getElementById('loginModal').classList.add('open')">Sign In to Dashboard</button>
       <button class="btn btn-outline" id="applyPublicBtn">Apply for Room →</button>
+      <!-- Applications status badge — shown when closed -->
+      <div id="appClosedBadge" style="display:none;
+           background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);
+           color:#fca5a5;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;
+           padding:0.5rem 1rem;border-radius:var(--radius);white-space:nowrap">
+        🔒 Applications Closed
+      </div>
     </div>
 
     <div class="hero-stats">
@@ -544,11 +551,14 @@
         <div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem">How to Access</div>
         <div style="color:#fff;font-size:14px">Log in with your <strong>Registration Number</strong> and default password, or apply below if you are new.</div>
       </div>
-      <button onclick="document.getElementById('loginModal').classList.add('open')"
-        style="background:var(--gold);color:var(--navy);border:none;padding:.75rem 1.8rem;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;transition:background 0.2s"
-        onmouseover="this.style.background='#e2c05a'" onmouseout="this.style.background='#c9a030'">
-        Sign In to Portal →
-      </button>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div id="appStatusBadgeStrip" style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.4rem 0.9rem;border-radius:999px"></div>
+        <button onclick="document.getElementById('loginModal').classList.add('open')"
+          style="background:var(--gold);color:var(--navy);border:none;padding:.75rem 1.8rem;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;transition:background 0.2s"
+          onmouseover="this.style.background='#e2c05a'" onmouseout="this.style.background='#c9a030'">
+          Sign In to Portal →
+        </button>
+      </div>
     </div>
   </div>
 </section>
@@ -744,6 +754,14 @@
         <div class="section-label">Campus News</div>
         <h2 class="section-title">Latest from the Campus</h2>
       </div>
+      <!-- Admin: Application toggle (hidden until admin logs in) -->
+      <button id="toggleAppBtn"
+        style="display:none;border:1.5px solid;padding:0.6rem 1.4rem;border-radius:var(--radius);
+               font-size:0.76rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+               cursor:pointer;transition:all 0.2s"
+        onclick="toggleApplications()">
+        ⏸ Close Applications
+      </button>
       <!-- Admin: Manage News button (hidden until admin logs in) -->
       <button id="manageNewsBtn"
         style="display:none;background:var(--navy);color:var(--gold);border:1.5px solid var(--gold);
@@ -1519,6 +1537,146 @@
   50%       { opacity: 0.5; }
 }
 </style>
+
+
+<script type="module">
+  import { supabase } from "./js/supabaseClient.js";
+  window._sbApp = supabase;
+
+  // ── Load and apply application status ──────────────────────────────
+  async function loadAppStatus() {
+    const { data, error } = await supabase
+      .from('campus_settings')
+      .select('value')
+      .eq('key', 'room_applications_open')
+      .single();
+
+    const isOpen = error ? true : data.value === 'true';
+    applyAppStatus(isOpen);
+    return isOpen;
+  }
+
+  function applyAppStatus(isOpen) {
+    const applyBtn        = document.getElementById('applyPublicBtn');
+    const closedBadge     = document.getElementById('appClosedBadge');
+    const stripBadge      = document.getElementById('appStatusBadgeStrip');
+    const toggleBtn       = document.getElementById('toggleAppBtn');
+
+    if (isOpen) {
+      // Button active
+      if (applyBtn) {
+        applyBtn.style.display      = '';
+        applyBtn.disabled           = false;
+        applyBtn.style.opacity      = '1';
+        applyBtn.style.cursor       = 'pointer';
+        applyBtn.textContent        = 'Apply for Room →';
+      }
+      if (closedBadge) closedBadge.style.display = 'none';
+
+      // Strip badge
+      if (stripBadge) {
+        stripBadge.textContent        = '✅ Applications Open';
+        stripBadge.style.background   = 'rgba(16,185,129,0.15)';
+        stripBadge.style.color        = '#6ee7b7';
+        stripBadge.style.border       = '1px solid rgba(16,185,129,0.35)';
+      }
+
+      // Admin toggle button
+      if (toggleBtn) {
+        toggleBtn.textContent         = '⏸ Close Applications';
+        toggleBtn.style.background    = 'rgba(220,38,38,0.1)';
+        toggleBtn.style.color         = '#fca5a5';
+        toggleBtn.style.borderColor   = 'rgba(220,38,38,0.4)';
+      }
+    } else {
+      // Button disabled
+      if (applyBtn) {
+        applyBtn.style.display        = 'none';
+      }
+      if (closedBadge) closedBadge.style.display = 'inline-flex';
+
+      // Strip badge
+      if (stripBadge) {
+        stripBadge.textContent        = '🔒 Applications Closed';
+        stripBadge.style.background   = 'rgba(220,38,38,0.12)';
+        stripBadge.style.color        = '#fca5a5';
+        stripBadge.style.border       = '1px solid rgba(220,38,38,0.35)';
+      }
+
+      // Admin toggle button
+      if (toggleBtn) {
+        toggleBtn.textContent         = '✅ Open Applications';
+        toggleBtn.style.background    = 'rgba(16,185,129,0.1)';
+        toggleBtn.style.color         = '#6ee7b7';
+        toggleBtn.style.borderColor   = 'rgba(16,185,129,0.4)';
+      }
+    }
+
+    // Store current state for toggle
+    window._appIsOpen = isOpen;
+  }
+
+  // ── Toggle application status ───────────────────────────────────────
+  window.toggleApplications = async function() {
+    const newState = !window._appIsOpen;
+    const label    = newState ? 'open' : 'close';
+
+    if (!confirm(`Are you sure you want to ${label} room applications?`)) return;
+
+    const btn = document.getElementById('toggleAppBtn');
+    btn.disabled    = true;
+    btn.textContent = 'Updating…';
+
+    const { error } = await window._sbApp
+      .from('campus_settings')
+      .upsert({ key: 'room_applications_open', value: String(newState), updated_at: new Date().toISOString() });
+
+    btn.disabled = false;
+
+    if (error) {
+      alert('Failed to update: ' + error.message);
+      btn.textContent = newState ? '✅ Open Applications' : '⏸ Close Applications';
+      return;
+    }
+
+    applyAppStatus(newState);
+
+    // Show a quick toast
+    showToast(newState
+      ? '✅ Room applications are now OPEN'
+      : '🔒 Room applications are now CLOSED');
+  };
+
+  // ── Simple toast notification ───────────────────────────────────────
+  function showToast(msg) {
+    let t = document.getElementById('appToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'appToast';
+      t.style.cssText = `position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);
+        background:var(--navy);color:#fff;padding:.85rem 1.6rem;border-radius:8px;
+        font-size:.82rem;font-weight:600;z-index:9999;
+        box-shadow:0 8px 24px rgba(0,0,0,0.3);border:1px solid rgba(201,160,48,0.3);
+        opacity:0;transition:all 0.3s ease;white-space:nowrap`;
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => {
+      t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 3500);
+  }
+
+  // ── Show admin controls when admin logs in ──────────────────────────
+  window.addEventListener('ucc:adminLoggedIn', () => {
+    const btn = document.getElementById('toggleAppBtn');
+    if (btn) btn.style.display = 'inline-flex';
+    loadAppStatus(); // re-fetch to ensure toggle label is correct
+  });
+
+  // Load on page open
+  loadAppStatus();
+</script>
 
 </body>
 </html>
