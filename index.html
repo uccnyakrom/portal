@@ -1048,6 +1048,30 @@
     <p class="section-subtitle" style="text-align:center;margin-bottom:2rem">
       Not yet in the system? Submit your accommodation request below and the General Office will process it.
     </p>
+
+    <!-- Applications Closed Notice — shown when admin closes applications -->
+    <div id="appClosedNotice" style="display:none;text-align:center;padding:2.5rem 2rem;
+         background:#fff;border-radius:12px;border:2px solid rgba(220,38,38,0.25);
+         box-shadow:0 4px 16px rgba(0,0,0,0.07);margin-bottom:1.5rem">
+      <div style="font-size:3rem;margin-bottom:0.8rem">🔒</div>
+      <h3 style="color:#991b1b;font-family:var(--font-serif);font-size:1.3rem;margin-bottom:0.5rem">
+        Applications Currently Closed
+      </h3>
+      <p style="color:#78350f;font-size:0.88rem;line-height:1.7;max-width:440px;margin:0 auto">
+        Accommodation applications are not open at this time. Please check back later or
+        contact the General Office for more information.
+      </p>
+      <div style="margin-top:1.2rem">
+        <a href="mailto:eaidoo@ucc.edu.gh"
+           style="display:inline-flex;align-items:center;gap:0.5rem;font-size:0.78rem;font-weight:700;
+                  color:var(--navy);text-decoration:none;border-bottom:2px solid var(--gold);padding-bottom:2px">
+          📧 Contact the General Office
+        </a>
+      </div>
+    </div>
+
+    <!-- Wrap the actual form so we can show/hide it as a unit -->
+    <div id="applyFormSection">
     <div id="existingStudentAlert" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:var(--radius);padding:1.2rem 1.5rem;margin-bottom:1.5rem;text-align:center">
       <div style="font-size:1.8rem;margin-bottom:.5rem">⚠️</div>
       <h3 style="color:#92400e;margin-bottom:.4rem">You are already in our system!</h3>
@@ -1123,6 +1147,7 @@
         <p style="color:var(--gray-400);font-size:13px;margin-top:.5rem">Reference: <strong id="appRefNum"></strong></p>
       </div>
     </div>
+    </div><!-- /applyFormSection -->
   </div>
 </section>
 
@@ -1263,6 +1288,12 @@
 
   // Submit application
   document.getElementById("publicApplyForm")?.addEventListener("submit", async e => {
+    // Safety net: block submission if applications are closed
+    if (window._appIsOpen === false) {
+      e.preventDefault();
+      showToast('Applications are currently closed.', 'error');
+      return;
+    }
     e.preventDefault();
     const btn = document.getElementById("pubSubmitBtn");
     btn.disabled = true; btn.textContent = "Submitting…";
@@ -1561,54 +1592,60 @@
     const closedBadge     = document.getElementById('appClosedBadge');
     const stripBadge      = document.getElementById('appStatusBadgeStrip');
     const toggleBtn       = document.getElementById('toggleAppBtn');
+    const applyFormSec    = document.getElementById('applyFormSection');
+    const appClosedNotice = document.getElementById('appClosedNotice');
 
     if (isOpen) {
-      // Button active
+      // Hero button — restore
       if (applyBtn) {
-        applyBtn.style.display      = '';
-        applyBtn.disabled           = false;
-        applyBtn.style.opacity      = '1';
-        applyBtn.style.cursor       = 'pointer';
-        applyBtn.textContent        = 'Apply for Room →';
+        applyBtn.style.display  = '';
+        applyBtn.disabled       = false;
+        applyBtn.textContent    = 'Apply for Room →';
       }
       if (closedBadge) closedBadge.style.display = 'none';
 
+      // Apply section — show form, hide notice
+      if (applyFormSec)    applyFormSec.style.display    = '';
+      if (appClosedNotice) appClosedNotice.style.display = 'none';
+
       // Strip badge
       if (stripBadge) {
-        stripBadge.textContent        = '✅ Applications Open';
-        stripBadge.style.background   = 'rgba(16,185,129,0.15)';
-        stripBadge.style.color        = '#6ee7b7';
-        stripBadge.style.border       = '1px solid rgba(16,185,129,0.35)';
+        stripBadge.textContent      = '✅ Applications Open';
+        stripBadge.style.background = 'rgba(16,185,129,0.15)';
+        stripBadge.style.color      = '#6ee7b7';
+        stripBadge.style.border     = '1px solid rgba(16,185,129,0.35)';
       }
 
       // Admin toggle button
       if (toggleBtn) {
-        toggleBtn.textContent         = '⏸ Close Applications';
-        toggleBtn.style.background    = 'rgba(220,38,38,0.1)';
-        toggleBtn.style.color         = '#fca5a5';
-        toggleBtn.style.borderColor   = 'rgba(220,38,38,0.4)';
+        toggleBtn.textContent       = '⏸ Close Applications';
+        toggleBtn.style.background  = 'rgba(220,38,38,0.1)';
+        toggleBtn.style.color       = '#fca5a5';
+        toggleBtn.style.borderColor = 'rgba(220,38,38,0.4)';
       }
     } else {
-      // Button disabled
-      if (applyBtn) {
-        applyBtn.style.display        = 'none';
-      }
+      // Hero button — hide
+      if (applyBtn) applyBtn.style.display = 'none';
       if (closedBadge) closedBadge.style.display = 'inline-flex';
+
+      // Apply section — hide form, show notice
+      if (applyFormSec)    applyFormSec.style.display    = 'none';
+      if (appClosedNotice) appClosedNotice.style.display = 'block';
 
       // Strip badge
       if (stripBadge) {
-        stripBadge.textContent        = '🔒 Applications Closed';
-        stripBadge.style.background   = 'rgba(220,38,38,0.12)';
-        stripBadge.style.color        = '#fca5a5';
-        stripBadge.style.border       = '1px solid rgba(220,38,38,0.35)';
+        stripBadge.textContent      = '🔒 Applications Closed';
+        stripBadge.style.background = 'rgba(220,38,38,0.12)';
+        stripBadge.style.color      = '#fca5a5';
+        stripBadge.style.border     = '1px solid rgba(220,38,38,0.35)';
       }
 
       // Admin toggle button
       if (toggleBtn) {
-        toggleBtn.textContent         = '✅ Open Applications';
-        toggleBtn.style.background    = 'rgba(16,185,129,0.1)';
-        toggleBtn.style.color         = '#6ee7b7';
-        toggleBtn.style.borderColor   = 'rgba(16,185,129,0.4)';
+        toggleBtn.textContent       = '✅ Open Applications';
+        toggleBtn.style.background  = 'rgba(16,185,129,0.1)';
+        toggleBtn.style.color       = '#6ee7b7';
+        toggleBtn.style.borderColor = 'rgba(16,185,129,0.4)';
       }
     }
 
