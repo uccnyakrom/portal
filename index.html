@@ -1230,16 +1230,18 @@
 
   // ── Auto-unlock admin features if already logged in ──────────────────────
   // Admin always gets redirected to admin.html after login. When they navigate
-  // back to the landing page the session is still in sessionStorage — so we
-  // check on load and fire the event immediately if they are already an admin.
-  (function checkExistingAdminSession() {
+  // back to the landing page the session is still in sessionStorage.
+  // We defer the dispatch slightly so all three module scripts have time to
+  // register their ucc:adminLoggedIn listeners before the event fires.
+  setTimeout(() => {
     try {
       const session = JSON.parse(sessionStorage.getItem('portalUser') || 'null');
+      // Fire for any admin-type user regardless of specific role
       if (session && session.type === 'admin') {
         window.dispatchEvent(new Event('ucc:adminLoggedIn'));
       }
     } catch(e) {}
-  })();
+  }, 300);
 
   // Wire ALL sign in buttons
   ["signInBtn", "signInBtnHero"].forEach(id => {
@@ -1441,10 +1443,21 @@
 
   loadNews();
 
-  // ── Show Manage News button for admins after login ──────────────────
+  // ── Show Manage News button + update nav for admins after login ──────
   window.addEventListener('ucc:adminLoggedIn', () => {
+    // Show Post News button
     const btn = document.getElementById('manageNewsBtn');
     if (btn) btn.style.display = 'inline-flex';
+
+    // Swap "Sign In" nav button → "Admin Dashboard" link
+    const signInBtn = document.getElementById('signInBtn');
+    if (signInBtn) {
+      signInBtn.textContent  = '⚙ Dashboard →';
+      signInBtn.style.background = 'var(--gold)';
+      signInBtn.style.color      = '#fff';
+      signInBtn.style.border     = 'none';
+      signInBtn.onclick = () => { window.location.href = 'admin.html'; };
+    }
   });
 
   // ── News Modal ──────────────────────────────────────────────────────
