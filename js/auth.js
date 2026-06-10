@@ -237,20 +237,8 @@ export function initLoginModal() {
     const password = document.getElementById("adminPass").value;
     const result = await loginAdmin(username, password);
     if (result.success) {
-      // If we're on the landing page (index.html), stay and unlock admin features
-      // rather than redirecting away to admin.html
-      const path = window.location.pathname;
-      const onLandingPage = path.endsWith("index.html") ||
-                            path.endsWith("/portal/") ||
-                            path.endsWith("/portal") ||
-                            path === "/";
-      if (onLandingPage) {
-        modal.classList.remove("open");
-        showToast(`Welcome, ${result.admin?.username || "Admin"}! Admin features unlocked.`, "success");
-        window.dispatchEvent(new Event("ucc:adminLoggedIn"));
-      } else {
-        window.location.href = "admin.html";
-      }
+      // Always redirect to the admin dashboard after successful login
+      window.location.href = "admin.html";
     } else {
       showToast(result.error, "error");
       btn.disabled = false; btn.textContent = "Sign In";
