@@ -81,6 +81,12 @@
       <a href="#" class="nav-link" data-section="notices">
         <span class="nav-icon">📢</span> Notices
       </a>
+      <a href="#" class="nav-link" data-section="campusnews">
+        <span class="nav-icon">📰</span> Campus News
+      </a>
+      <a href="#" class="nav-link" data-section="appsettings">
+        <span class="nav-icon">🔓</span> Application Settings
+      </a>
       <a href="timetable.html" class="nav-link">
         <span class="nav-icon">📅</span> Timetable
       </a>
@@ -542,6 +548,110 @@
             </div>
           </div>
 
+        </div>
+      </section>
+
+      <!-- ── CAMPUS NEWS ──────────────────────────────────────────────────── -->
+      <section id="section-campusnews" class="dash-section hidden">
+        <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.5rem;align-items:start">
+
+          <!-- Form -->
+          <div class="form-card">
+            <h3 id="newsAdminFormTitle" style="font-family:var(--font-display);color:var(--navy);margin-bottom:1.2rem">
+              📰 Post New Article
+            </h3>
+            <input type="hidden" id="newsAdminEditId">
+            <form id="adminNewsForm">
+              <div class="form-group">
+                <label>Headline *</label>
+                <input type="text" id="newsAdminTitle" placeholder="Article headline" required>
+              </div>
+              <div class="form-group">
+                <label>Body</label>
+                <textarea id="newsAdminBody" rows="5" placeholder="Full article content…"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Category</label>
+                  <select id="newsAdminCategory">
+                    <option value="academic">📚 Academic</option>
+                    <option value="health">🏥 Health</option>
+                    <option value="sports">⚽ Sports</option>
+                    <option value="events">🎉 Events</option>
+                    <option value="admin">📋 Administration</option>
+                    <option value="urgent">🔴 Urgent</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Date</label>
+                  <input type="date" id="newsAdminDate">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Location (optional)</label>
+                <input type="text" id="newsAdminLocation" placeholder="e.g. Main Hall, Block A">
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;gap:.5rem">
+                <input type="checkbox" id="newsAdminPublished" checked style="width:auto">
+                <label for="newsAdminPublished" style="margin:0">Publish immediately</label>
+              </div>
+              <div style="display:flex;gap:.8rem">
+                <button type="submit" class="btn btn-primary" style="flex:1" id="newsAdminSubmitBtn">Publish Article</button>
+                <button type="button" class="btn btn-secondary" onclick="resetNewsAdminForm()" style="flex:0 0 auto">Cancel</button>
+              </div>
+              <div id="newsAdminMsg" style="display:none;margin-top:.8rem;padding:.7rem 1rem;border-radius:var(--radius);font-size:.83rem;font-weight:600"></div>
+            </form>
+          </div>
+
+          <!-- Article list -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+              <h3 style="font-family:var(--font-display);color:var(--navy)">Published Articles</h3>
+              <button class="btn-sm btn-secondary" onclick="loadAdminNewsList()">↻ Refresh</button>
+            </div>
+            <div id="adminNewsListPanel" style="max-height:520px;overflow-y:auto">
+              <p style="color:var(--gray-400)">Loading…</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── APPLICATION SETTINGS ─────────────────────────────────────────── -->
+      <section id="section-appsettings" class="dash-section hidden">
+        <div style="max-width:560px">
+          <div class="form-card">
+            <h3 style="font-family:var(--font-display);color:var(--navy);margin-bottom:.4rem">
+              🔓 Room Application Settings
+            </h3>
+            <p style="color:var(--gray-500);font-size:13px;margin-bottom:1.5rem">
+              Control whether students can submit new accommodation applications from the portal.
+              This affects both the landing page form and the student portal apply section.
+            </p>
+
+            <div id="appSettingsPanel" style="background:var(--gray-50);border-radius:var(--radius);padding:1.5rem;border:1px solid var(--gray-200)">
+              <p style="color:var(--gray-400)">Loading current status…</p>
+            </div>
+
+            <div style="margin-top:1.5rem;padding-top:1.2rem;border-top:1px solid var(--gray-200)">
+              <h4 style="font-family:var(--font-display);color:var(--navy);font-size:.95rem;margin-bottom:.8rem">
+                Application Deadline
+              </h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Opens on</label>
+                  <input type="date" id="appOpenDate">
+                </div>
+                <div class="form-group">
+                  <label>Closes on</label>
+                  <input type="date" id="appCloseDate">
+                </div>
+              </div>
+              <p style="font-size:12px;color:var(--gray-400);margin-top:.3rem">
+                These dates are informational only — the toggle above controls actual access.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1075,5 +1185,224 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+<script type="module">
+// ─────────────────────────────────────────────────────────────────────────────
+// CAMPUS NEWS — Admin Management
+// ─────────────────────────────────────────────────────────────────────────────
+import { supabase, showToast, logAudit } from "./js/supabaseClient.js";
+import { getSession } from "./js/auth.js";
+const ADMIN = getSession();
+
+// Set today's date as default
+document.addEventListener("DOMContentLoaded", () => {
+  const d = document.getElementById("newsAdminDate");
+  if (d) d.value = new Date().toISOString().split("T")[0];
+});
+
+// Load all articles into the right panel
+window.loadAdminNewsList = async function() {
+  const panel = document.getElementById("adminNewsListPanel");
+  if (!panel) return;
+  panel.innerHTML = '<p style="color:var(--gray-400)">Loading…</p>';
+
+  const { data, error } = await supabase
+    .from("campus_news")
+    .select("*")
+    .order("published_date", { ascending: false });
+
+  if (error) { panel.innerHTML = `<p style="color:var(--red)">Error: ${error.message}</p>`; return; }
+  if (!data?.length) { panel.innerHTML = '<p style="color:var(--gray-400)">No articles yet.</p>'; return; }
+
+  const catColors = {
+    academic:"#1e3a5f", health:"#059669", sports:"#2563eb",
+    events:"#7c3aed", admin:"#b45309", urgent:"#dc2626"
+  };
+
+  panel.innerHTML = data.map(n => `
+    <div style="background:#fff;border-radius:var(--radius);padding:1rem;margin-bottom:.8rem;
+                border-left:4px solid ${catColors[n.category]||'#9ca3af'};
+                box-shadow:0 1px 4px rgba(0,0,0,.06)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+                      color:${catColors[n.category]||'#9ca3af'};margin-bottom:.25rem">${n.category}</div>
+          <div style="font-weight:700;color:var(--navy);font-size:.9rem;margin-bottom:.3rem">${n.title}</div>
+          <div style="font-size:.78rem;color:var(--gray-500)">${n.published_date}${n.location?' · '+n.location:''}</div>
+        </div>
+        <div style="display:flex;gap:.4rem;flex-shrink:0;margin-top:.2rem">
+          <button class="btn-sm" style="background:var(--navy);color:#fff;border:none;padding:.3rem .7rem;
+                  border-radius:6px;cursor:pointer;font-size:.72rem"
+            onclick="editNewsItem('${n.id}')">Edit</button>
+          <button class="btn-sm btn-danger" style="padding:.3rem .7rem;font-size:.72rem;border-radius:6px;cursor:pointer"
+            onclick="deleteNewsItem('${n.id}','${n.title.replace(/'/g,'')}')">🗑</button>
+          <span style="font-size:.72rem;padding:.3rem .6rem;border-radius:999px;font-weight:700;
+                       background:${n.is_published?'rgba(5,150,105,.12)':'rgba(107,114,128,.1)'};
+                       color:${n.is_published?'#065f46':'#6b7280'}">
+            ${n.is_published?'✓ Live':'Draft'}
+          </span>
+        </div>
+      </div>
+    </div>
+  `).join("");
+};
+
+// Submit (create or update)
+document.getElementById("adminNewsForm")?.addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn   = document.getElementById("newsAdminSubmitBtn");
+  const msgEl = document.getElementById("newsAdminMsg");
+  const editId = document.getElementById("newsAdminEditId").value;
+  btn.disabled = true; btn.textContent = "Saving…";
+
+  const payload = {
+    title:          document.getElementById("newsAdminTitle").value.trim(),
+    body:           document.getElementById("newsAdminBody").value.trim(),
+    category:       document.getElementById("newsAdminCategory").value,
+    published_date: document.getElementById("newsAdminDate").value,
+    location:       document.getElementById("newsAdminLocation").value.trim() || null,
+    is_published:   document.getElementById("newsAdminPublished").checked,
+  };
+
+  let error;
+  if (editId) {
+    ({ error } = await supabase.from("campus_news").update(payload).eq("id", editId));
+  } else {
+    ({ error } = await supabase.from("campus_news").insert([payload]));
+  }
+
+  btn.disabled = false;
+  if (error) {
+    msgEl.style.display = "block";
+    msgEl.style.background = "#fee2e2"; msgEl.style.color = "#991b1b";
+    msgEl.textContent = "Error: " + error.message;
+    btn.textContent = editId ? "Update Article" : "Publish Article";
+    return;
+  }
+
+  msgEl.style.display = "block";
+  msgEl.style.background = "#d1fae5"; msgEl.style.color = "#065f46";
+  msgEl.textContent = editId ? "Article updated!" : "Article published!";
+  btn.textContent = editId ? "Update Article" : "Publish Article";
+  logAudit(`${editId?"Updated":"Published"} news: ${payload.title}`, ADMIN?.username || "admin");
+  resetNewsAdminForm();
+  loadAdminNewsList();
+  setTimeout(() => { msgEl.style.display = "none"; }, 3000);
+});
+
+window.resetNewsAdminForm = function() {
+  document.getElementById("adminNewsForm")?.reset();
+  document.getElementById("newsAdminEditId").value = "";
+  document.getElementById("newsAdminFormTitle").textContent = "📰 Post New Article";
+  document.getElementById("newsAdminSubmitBtn").textContent = "Publish Article";
+  document.getElementById("newsAdminDate").value = new Date().toISOString().split("T")[0];
+  document.getElementById("newsAdminPublished").checked = true;
+  document.getElementById("newsAdminMsg").style.display = "none";
+};
+
+window.editNewsItem = async function(id) {
+  const { data, error } = await supabase.from("campus_news").select("*").eq("id", id).single();
+  if (error || !data) { showToast("Could not load article.", "error"); return; }
+  document.getElementById("newsAdminEditId").value       = data.id;
+  document.getElementById("newsAdminTitle").value        = data.title;
+  document.getElementById("newsAdminBody").value         = data.body || "";
+  document.getElementById("newsAdminCategory").value     = data.category;
+  document.getElementById("newsAdminDate").value         = data.published_date;
+  document.getElementById("newsAdminLocation").value     = data.location || "";
+  document.getElementById("newsAdminPublished").checked  = data.is_published;
+  document.getElementById("newsAdminFormTitle").textContent  = "✏️ Edit Article";
+  document.getElementById("newsAdminSubmitBtn").textContent  = "Update Article";
+  // Scroll to form
+  document.getElementById("adminNewsForm")?.scrollIntoView({ behavior:"smooth", block:"start" });
+};
+
+window.deleteNewsItem = async function(id, title) {
+  if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  const { error } = await supabase.from("campus_news").delete().eq("id", id);
+  if (error) { showToast("Delete failed: " + error.message, "error"); return; }
+  showToast("Article deleted.", "success");
+  logAudit(`Deleted news: ${title}`, ADMIN?.username || "admin");
+  loadAdminNewsList();
+};
+
+// Auto-load when section becomes active
+document.querySelectorAll('.nav-link[data-section="campusnews"]').forEach(link => {
+  link.addEventListener("click", () => setTimeout(loadAdminNewsList, 50));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APPLICATION SETTINGS
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadAppSettings() {
+  const panel = document.getElementById("appSettingsPanel");
+  if (!panel) return;
+
+  const { data, error } = await supabase
+    .from("campus_settings")
+    .select("value")
+    .eq("key", "room_applications_open")
+    .single();
+
+  if (error) { panel.innerHTML = `<p style="color:var(--red)">Error: ${error.message}</p>`; return; }
+
+  const isOpen = data?.value === "true";
+  renderAppToggle(panel, isOpen);
+}
+
+function renderAppToggle(panel, isOpen) {
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div style="font-size:1.1rem;font-weight:700;color:${isOpen?"#065f46":"#991b1b"};margin-bottom:.3rem">
+          ${isOpen ? "✅ Applications are OPEN" : "🔒 Applications are CLOSED"}
+        </div>
+        <div style="font-size:13px;color:var(--gray-500)">
+          ${isOpen
+            ? "Students can currently submit accommodation applications."
+            : "Students cannot submit accommodation applications at this time."}
+        </div>
+      </div>
+      <button id="appToggleBtn"
+        style="padding:.75rem 2rem;border:none;border-radius:var(--radius);font-weight:700;
+               font-size:.9rem;cursor:pointer;transition:all .2s;
+               background:${isOpen?"#dc2626":"#059669"};color:#fff"
+        onclick="toggleAppStatus(${!isOpen})">
+        ${isOpen ? "⏸ Close Applications" : "▶ Open Applications"}
+      </button>
+    </div>
+    <div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--gray-200);
+                font-size:12px;color:var(--gray-400)">
+      Last updated: ${new Date().toLocaleDateString("en-GB", {day:"numeric",month:"long",year:"numeric"})}
+    </div>
+  `;
+}
+
+window.toggleAppStatus = async function(newValue) {
+  const btn = document.getElementById("appToggleBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "Updating…"; }
+
+  const { error } = await supabase
+    .from("campus_settings")
+    .update({ value: String(newValue), updated_at: new Date().toISOString() })
+    .eq("key", "room_applications_open");
+
+  if (error) {
+    showToast("Error: " + error.message, "error");
+    if (btn) { btn.disabled = false; }
+    return;
+  }
+
+  showToast(newValue ? "✅ Applications are now OPEN" : "🔒 Applications are now CLOSED",
+            newValue ? "success" : "info");
+  logAudit(`Room applications ${newValue?"opened":"closed"}`, ADMIN?.username || "admin");
+  loadAppSettings(); // re-render
+};
+
+// Auto-load when section becomes active
+document.querySelectorAll('.nav-link[data-section="appsettings"]').forEach(link => {
+  link.addEventListener("click", () => setTimeout(loadAppSettings, 50));
+});
+
+</script>
+
 </body>
 </html>
