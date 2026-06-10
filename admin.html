@@ -283,7 +283,7 @@
           <div class="table-wrap">
             <table class="beautiful-table">
               <thead>
-                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Level</th><th>Sex</th><th>Phone</th><th>Preferred Room</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+                <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Level</th><th>Sex</th><th>Phone</th><th>Email</th><th>Preferred Room</th><th>Status</th><th>Date</th><th>Actions</th></tr>
               </thead>
               <tbody id="publicAppsBody">
                 <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
@@ -845,6 +845,11 @@
             <label>Room Number (text, optional)</label>
             <input type="text" id="addRoom" placeholder="e.g. B3">
           </div>
+        </div>
+        <div class="form-group">
+          <label>Email Address (optional)</label>
+          <input type="email" id="addEmail" placeholder="e.g. student@gmail.com">
+          <small style="color:var(--gray-400)">Used to notify the student when a room is assigned.</small>
         </div>
         <button type="submit" class="btn btn-primary btn-full">Add Student</button>
       </form>
