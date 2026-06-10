@@ -1467,13 +1467,27 @@ window.toggleAppStatus = async function(newValue) {
   const btn = document.getElementById("appToggleBtn");
   if (btn) { btn.disabled = true; btn.textContent = "Updating…"; }
 
+  // upsert (not update) so the row is created if it doesn't exist yet
   const { error } = await supabase
     .from("campus_settings")
-    .update({ value: String(newValue), updated_at: new Date().toISOString() })
-    .eq("key", "room_applications_open");
+    .upsert({ key: "room_applications_open", value: String(newValue), updated_at: new Date().toISOString() },
+            { onConflict: "key" });
 
   if (error) {
     showToast("Error: " + error.message, "error");
+    if (btn) { btn.disabled = false; }
+    return;
+  }
+
+  // Verify the write actually landed
+  const { data: check } = await supabase
+    .from("campus_settings")
+    .select("value")
+    .eq("key", "room_applications_open")
+    .single();
+
+  if (!check || check.value !== String(newValue)) {
+    showToast("Saved, but could not confirm. Check Supabase RLS policy on campus_settings.", "error");
     if (btn) { btn.disabled = false; }
     return;
   }
