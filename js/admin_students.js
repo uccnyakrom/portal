@@ -13,7 +13,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { supabase, showToast, logAudit, generateStudentPassword } from "./supabaseClient.js";
+import { supabase, showToast, logAudit, generateStudentPassword, sendApplicationEmail } from "./supabaseClient.js";
 import { getSession } from "./auth.js";
 import { fetchAvailableRooms, assignRoom, removeRoomAssignment } from "./rooms.js";
 
@@ -197,6 +197,7 @@ export function initAddStudentModal() {
       level:      parseInt(document.getElementById("addLevel").value),
       sex:        document.getElementById("addSex").value,
       room:       document.getElementById("addRoom").value.trim() || null,
+      email:      document.getElementById("addEmail")?.value.trim() || null,
     };
 
     // Check reg_number doesn't already exist
@@ -403,6 +404,29 @@ export function initAssignRoomModal() {
       showToast("Room assigned successfully!", "success");
       document.getElementById("assignModal").classList.remove("open");
       loadStudents();
+
+      // ── Notify the student by email that a room has been assigned ──
+      try {
+        const [{ data: student }, { data: room }] = await Promise.all([
+          supabase.from("students").select("full_name, reg_number, email").eq("id", studentId).single(),
+          supabase.from("rooms").select("block, room_number").eq("id", roomId).single(),
+        ]);
+        if (student?.email) {
+          const roomLabel = room ? `Block ${room.block} – Room ${room.room_number}` : "your assigned room";
+          const r = await sendApplicationEmail({
+            to: student.email,
+            applicantName: student.full_name || "Student",
+            status: "approved",
+            roomNumber: roomLabel,
+            regNumber: student.reg_number || "",
+          });
+          if (r.success) showToast(`📧 Room notification emailed to ${student.email}`, "success");
+          else showToast(`Room assigned, but email failed: ${r.error}`, "warning");
+        } else {
+          showToast("Room assigned. No email on file for this student.", "info");
+        }
+      } catch (err) { console.error("Assign email error:", err); }
+
     } else {
       showToast(result.error, "error");
     }
