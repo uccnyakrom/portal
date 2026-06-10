@@ -1166,6 +1166,11 @@
           </div>
         </div>
         <div class="form-group">
+          <label>Email Address *</label>
+          <input type="email" id="pubEmail" placeholder="e.g. yourname@gmail.com" required>
+          <small style="color:var(--gray-400)">We will email you when your application is reviewed.</small>
+        </div>
+        <div class="form-group">
           <label>Preferred Room (optional)</label>
           <select id="pubRoom">
             <option value="">No preference</option>
@@ -1351,6 +1356,7 @@
       level:          parseInt(document.getElementById("pubLevel").value),
       sex:            document.getElementById("pubSex").value,
       phone:          document.getElementById("pubPhone").value.trim(),
+      email:          document.getElementById("pubEmail").value.trim(),
       preferred_room: document.getElementById("pubRoom").value,
       notes:          document.getElementById("pubNotes").value.trim(),
       status:         "pending",
