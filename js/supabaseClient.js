@@ -47,6 +47,50 @@ const { createClient } = window.supabase;
 // ── 4. Create and export the single shared client instance ───────────────────
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ── 4b. Send an application status email via the Edge Function ───────────────
+//   Calls the "send-application-email" Edge Function which sends through Resend.
+//   Also logs every attempt to the email_log table for your records.
+//   Never throws — email failure must not block enrolment.
+export async function sendApplicationEmail({ to, applicantName, status, roomNumber = "", regNumber = "" }) {
+  if (!to) {
+    console.warn("sendApplicationEmail: no recipient email, skipping.");
+    return { success: false, error: "No email address on file." };
+  }
+
+  try {
+    const url = `${SUPABASE_URL}/functions/v1/send-application-email`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ to, applicantName, status, roomNumber, regNumber }),
+    });
+
+    const result = await res.json().catch(() => ({}));
+
+    // Log the attempt (fire-and-forget)
+    supabase.from("email_log").insert([{
+      recipient:  to,
+      subject:    `Application ${status}`,
+      body:       roomNumber ? `Room: ${roomNumber}` : status,
+      status:     res.ok ? "sent" : "failed",
+      related_to: regNumber || null,
+    }]).then(() => {}).catch(() => {});
+
+    if (!res.ok) {
+      console.error("sendApplicationEmail failed:", result);
+      return { success: false, error: result.error || "Email send failed." };
+    }
+    return { success: true, id: result.id };
+
+  } catch (err) {
+    console.error("sendApplicationEmail exception:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 // ── 5. Helper: log an audit event to the audit_logs table ────────────────────
 export async function logAudit(action, user = "system") {
   try {
