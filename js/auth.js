@@ -128,7 +128,7 @@ export async function loginStudent(regNumber, password) {
     }
 
     saveSession({ ...student, ...user, username: reg }, "student");
-    await logAudit(`Student login: ${reg}`, reg);
+    logAudit(`Student login: ${reg}`, reg); // fire-and-forget
     return { success: true };
 
   } catch (err) {
@@ -165,7 +165,7 @@ export async function loginAdmin(username, password) {
     if (!valid) return { success: false, error: "Invalid username or password." };
 
     saveSession(user, "admin");
-    await logAudit(`Admin login: ${user.username} (${user.role})`, user.username);
+    logAudit(`Admin login: ${user.username} (${user.role})`, user.username); // fire-and-forget
     return { success: true, admin: user };
 
   } catch (err) {
