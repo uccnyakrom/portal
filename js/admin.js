@@ -3,7 +3,7 @@
  * PLACE THIS FILE AT: /js/admin.js
  */
 
-import { supabase, showToast, logAudit } from "./supabaseClient.js";
+import { supabase, showToast, logAudit, sendApplicationEmail } from "./supabaseClient.js";
 import { getPermissions, filterSidebarByRole, getRoleBadgeHTML } from "./roles.js";
 import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoomModal, bulkEnrolAll, initBulkUpload } from "./admin_students.js";
 import { requireAuth, getSession, logout, hashPassword, initChangePasswordModal } from "./auth.js";
@@ -119,19 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initBookingModal();
   initMaintenanceModal();
 
-  // Assign room modal (local)
-  document.getElementById("assignForm")?.addEventListener("submit", async e => {
-    e.preventDefault();
-    const studentId = document.getElementById("assignStudentId").value;
-    const roomId    = document.getElementById("assignRoomSelect").value;
-    if (!roomId) { showToast("Select a room.", "warning"); return; }
-    const result = await assignRoom(studentId, roomId, ADMIN.username);
-    if (result.success) {
-      showToast("Room assigned!", "success");
-      document.getElementById("assignModal").classList.remove("open");
-      loadStudents();
-    } else showToast(result.error, "error");
-  });
+  // Assign room modal — handler lives in admin_students.js (initAssignRoomModal),
+  // which also sends the room-assignment email. Do not bind a second handler here.
   document.getElementById("assignModalClose")?.addEventListener("click", () => {
     document.getElementById("assignModal").classList.remove("open");
   });
@@ -555,6 +544,7 @@ async function loadPublicApps() {
       <td>Level ${a.level}</td>
       <td>${a.sex==="M"?"♂ Male":"♀ Female"}</td>
       <td>${a.phone||"—"}</td>
+      <td style="font-size:11px">${a.email||"—"}</td>
       <td>
         ${a.preferred_room
           ? `<span class="room-cell assigned" style="font-size:11px">🏠 ${a.preferred_room}</span>`
@@ -566,10 +556,10 @@ async function loadPublicApps() {
         <div class="table-actions">
           ${a.status === "pending" ? `
             <button class="btn-sm btn-success"
-              onclick="enrollPublicApplicant('${a.id}','${escHtml(a.full_name)}','${a.reg_number}','${escHtml(a.program||"")}',${a.level||100},'${a.sex||"M"}','${escHtml(a.preferred_room||"")}')">
+              onclick="enrollPublicApplicant('${a.id}','${escHtml(a.full_name)}','${a.reg_number}','${escHtml(a.program||"")}',${a.level||100},'${a.sex||"M"}','${escHtml(a.preferred_room||"")}','${a.email||""}')">
               ✓ Enrol
             </button>
-            <button class="btn-sm btn-danger" onclick="rejectPublicApp('${a.id}')">✕ Reject</button>
+            <button class="btn-sm btn-danger" onclick="rejectPublicApp('${a.id}','${escHtml(a.full_name)}','${a.email||""}')">✕ Reject</button>
           ` : ""}
           ${isEnrolled && a.preferred_room ? `
             <button class="btn-sm btn-primary"
@@ -583,7 +573,7 @@ async function loadPublicApps() {
   }).join("");
 }
 
-window.enrollPublicApplicant = async (appId, name, regNumber, program, level, sex, preferredRoom="") => {
+window.enrollPublicApplicant = async (appId, name, regNumber, program, level, sex, preferredRoom="", email="") => {
   if (!confirm(`Enrol ${name} (${regNumber}) as a student?`)) return;
 
   // Check not already enrolled
@@ -606,7 +596,8 @@ window.enrollPublicApplicant = async (appId, name, regNumber, program, level, se
     reg_number: regNumber,
     program:    program || "BSc Nursing",
     level:      lvl,
-    sex:        s
+    sex:        s,
+    email:      email || null
   }]);
 
   if (sErr) {
@@ -624,15 +615,27 @@ window.enrollPublicApplicant = async (appId, name, regNumber, program, level, se
   // Update application status
   await supabase.from("public_applications").update({ status: "enrolled" }).eq("id", appId);
   await logAudit(`Enrolled public applicant: ${regNumber}`, ADMIN.username);
+
   showToast(`${name} enrolled successfully! Find them in All Students to assign a room.`, "success");
   loadPublicApps();
   // Also refresh students cache so they appear immediately in All Students
   window._allStudents = null;
 };
 
-window.rejectPublicApp = async (appId) => {
+window.rejectPublicApp = async (appId, name="", email="") => {
   if (!confirm("Reject this application?")) return;
   await supabase.from("public_applications").update({ status: "rejected" }).eq("id", appId);
+
+  // Send rejection email (applicant was not approved for a room)
+  if (email) {
+    sendApplicationEmail({
+      to: email, applicantName: name || "Applicant", status: "rejected"
+    }).then(r => {
+      if (r.success) showToast(`Notification email sent to ${email}`, "info");
+      else showToast(`Rejected, but email failed: ${r.error}`, "warning");
+    });
+  }
+
   showToast("Application rejected.", "info");
   loadPublicApps();
 };
@@ -1017,6 +1020,40 @@ window.notifyStudent = async (regNumber, status) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // ASSIGN PREFERRED ROOM to enrolled public applicant
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SEND ROOM-ASSIGNMENT EMAIL
+// Called after any successful room assignment. Looks up the student's email
+// and the room label, then emails them that a room has been assigned/approved.
+// ─────────────────────────────────────────────────────────────────────────────
+async function emailRoomAssigned(studentId, roomId) {
+  try {
+    const [{ data: student }, { data: room }] = await Promise.all([
+      supabase.from("students").select("full_name, reg_number, email").eq("id", studentId).single(),
+      supabase.from("rooms").select("block, room_number").eq("id", roomId).single(),
+    ]);
+
+    if (!student?.email) {
+      showToast("Room assigned. No email on file for this student, so no notification sent.", "info");
+      return;
+    }
+
+    const roomLabel = room ? `Block ${room.block} – Room ${room.room_number}` : "your assigned room";
+
+    const r = await sendApplicationEmail({
+      to: student.email,
+      applicantName: student.full_name || "Student",
+      status: "approved",
+      roomNumber: roomLabel,
+      regNumber: student.reg_number || "",
+    });
+
+    if (r.success) showToast(`📧 Room notification emailed to ${student.email}`, "success");
+    else showToast(`Room assigned, but email failed: ${r.error}`, "warning");
+  } catch (err) {
+    console.error("emailRoomAssigned error:", err);
+  }
+}
+
 window.assignPreferredRoom = async (regNumber, preferredRoom, studentName) => {
   // Find student by reg number
   const { data: students } = await supabase
@@ -1062,6 +1099,7 @@ window.assignPreferredRoom = async (regNumber, preferredRoom, studentName) => {
       if (result.success) {
         showToast(`${studentName} assigned to ${room.block}-${room.room_number}!`, "success");
         loadPublicApps();
+        emailRoomAssigned(studentId, room.id); // notify student by email
       } else {
         showToast(result.error, "error");
       }
