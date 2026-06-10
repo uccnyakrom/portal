@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
   <title>UCC Nyakrom — Smart Campus Portal</title>
-  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
-  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+  <meta name="sb-url" content="https://rgjaceihgcvhvqrisxew.supabase.co">
+  <meta name="sb-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
@@ -1227,6 +1227,19 @@
   import { fetchRooms, renderRoomGrid } from "./js/rooms.js";
 
   initLoginModal();
+
+  // ── Auto-unlock admin features if already logged in ──────────────────────
+  // Admin always gets redirected to admin.html after login. When they navigate
+  // back to the landing page the session is still in sessionStorage — so we
+  // check on load and fire the event immediately if they are already an admin.
+  (function checkExistingAdminSession() {
+    try {
+      const session = JSON.parse(sessionStorage.getItem('portalUser') || 'null');
+      if (session && session.type === 'admin') {
+        window.dispatchEvent(new Event('ucc:adminLoggedIn'));
+      }
+    } catch(e) {}
+  })();
 
   // Wire ALL sign in buttons
   ["signInBtn", "signInBtnHero"].forEach(id => {
