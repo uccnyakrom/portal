@@ -1228,21 +1228,6 @@
 
   initLoginModal();
 
-  // ── Auto-unlock admin features if already logged in ──────────────────────
-  // Admin always gets redirected to admin.html after login. When they navigate
-  // back to the landing page the session is still in sessionStorage.
-  // We defer the dispatch slightly so all three module scripts have time to
-  // register their ucc:adminLoggedIn listeners before the event fires.
-  setTimeout(() => {
-    try {
-      const session = JSON.parse(sessionStorage.getItem('portalUser') || 'null');
-      // Fire for any admin-type user regardless of specific role
-      if (session && session.type === 'admin') {
-        window.dispatchEvent(new Event('ucc:adminLoggedIn'));
-      }
-    } catch(e) {}
-  }, 300);
-
   // Wire ALL sign in buttons
   ["signInBtn", "signInBtnHero"].forEach(id => {
     document.getElementById(id)?.addEventListener("click", () => {
@@ -1741,5 +1726,20 @@
   loadAppStatus();
 </script>
 
+<!-- ── Admin session auto-detect — plain script, always runs regardless of module errors ── -->
+<script>
+  // Wait for all module scripts to load and register their event listeners,
+  // then check if an admin session already exists and unlock features.
+  window.addEventListener("load", function() {
+    setTimeout(function() {
+      try {
+        var session = JSON.parse(sessionStorage.getItem("portalUser") || "null");
+        if (session && session.type === "admin") {
+          window.dispatchEvent(new Event("ucc:adminLoggedIn"));
+        }
+      } catch(e) {}
+    }, 400);
+  });
+</script>
 </body>
 </html>
