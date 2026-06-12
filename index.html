@@ -1268,8 +1268,12 @@
   import { supabase }       from "./js/supabaseClient.js";
   import { initLoginModal } from "./js/auth.js";
   import { fetchRooms, renderRoomGrid } from "./js/rooms.js";
+  import { populateProgramSelect } from "./js/programmes.js";
 
   initLoginModal();
+
+  // Populate the public application programme dropdown from the managed list
+  populateProgramSelect(document.getElementById("pubProgram"), { includeBlank: true, blankLabel: "Select programme" });
 
   // Wire ALL sign in buttons
   ["signInBtn", "signInBtnHero"].forEach(id => {
