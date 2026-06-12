@@ -4,6 +4,7 @@
  */
 
 import { supabase, showToast, logAudit, sendApplicationEmail } from "./supabaseClient.js";
+import { fetchActiveProgrammes, fetchAllProgrammes, clearProgrammeCache, populateProgramSelect, programmePillHTML } from "./programmes.js";
 import { getPermissions, filterSidebarByRole, getRoleBadgeHTML } from "./roles.js";
 import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoomModal, bulkEnrolAll, initBulkUpload } from "./admin_students.js";
 import { requireAuth, getSession, logout, hashPassword, initChangePasswordModal } from "./auth.js";
@@ -266,6 +267,7 @@ function navigateTo(section) {
     academicyear: loadAcademicYearSection,
     history:      () => {},
     statistics:   loadStatistics,
+    programmes:   loadProgrammesList,
   };
   if (loaders[section]) loaders[section]();
 }
@@ -297,7 +299,7 @@ async function loadOverview() {
   setCard("statOccRate",   totalBeds > 0 ? Math.round((occupiedBeds/totalBeds)*100)+"%" : "0%");
 
   drawBlockChart(rooms);
-  drawProgramChart(students);
+  await drawProgramChart(students);
   drawSexChart(students);
 }
 
@@ -317,12 +319,26 @@ function drawBlockChart(rooms) {
     "Occupancy by Block");
 }
 
-function drawProgramChart(students) {
+async function drawProgramChart(students) {
   const canvas = document.getElementById("programChart");
   if (!canvas) return;
-  const nursing = students.filter(s=>(s.program||"").toLowerCase().includes("nurs")).length;
-  const nutrition = students.filter(s=>(s.program||"").toLowerCase().includes("nutr")).length;
-  drawPieChart(canvas.getContext("2d"), canvas, [`Nursing (${nursing})`,`Nutrition (${nutrition})`], [nursing,nutrition], ["#1e3a5f","#c9a84c"]);
+
+  const programmes = await fetchActiveProgrammes();
+  const counts = {};
+  students.forEach(s => {
+    const name = (s.program || "Unspecified").trim();
+    counts[name] = (counts[name] || 0) + 1;
+  });
+
+  const labels = [], data = [], colors = [];
+  Object.keys(counts).sort((a, b) => counts[b] - counts[a]).forEach(name => {
+    const match = programmes.find(p => p.name === name);
+    labels.push(`${match?.short_label || name} (${counts[name]})`);
+    data.push(counts[name]);
+    colors.push(match?.color || "#9ca3af");
+  });
+
+  drawPieChart(canvas.getContext("2d"), canvas, labels, data, colors);
 }
 
 function drawSexChart(students) {
@@ -421,6 +437,7 @@ async function loadAllocations() {
     .not("room_id", "is", null)
     .order("full_name");
 
+  const programmes = await fetchActiveProgrammes();
   const tbody = document.getElementById("allocTableBody");
   const footer = document.getElementById("allocTableFooter");
   if (!tbody) return;
@@ -436,14 +453,13 @@ async function loadAllocations() {
     const name = s.full_name || "—";
     const initials = name.split(" ").map(w=>w[0]).join("").substring(0,2).toUpperCase();
     const isFemale = (s.sex||"").toUpperCase()==="F";
-    const isNursing = (s.program||"").toLowerCase().includes("nurs");
     const roomLabel = s.rooms ? `${s.rooms.block}-${s.rooms.room_number}` : "—";
     return `<tr>
       <td><div class="student-name-cell">
         <div class="student-avatar ${isFemale?"female":""}">${initials}</div>
         <div><div class="student-name-text">${name}</div><div class="student-reg-text">${s.reg_number}</div></div>
       </div></td>
-      <td><span class="prog-pill ${isNursing?"nursing":"nutrition"}">${isNursing?"🏥":"🥗"} ${s.program||"—"}</span></td>
+      <td>${programmePillHTML(s.program, programmes)}</td>
       <td><span class="level-badge">Level ${s.level||"—"}</span></td>
       <td><span class="sex-indicator ${isFemale?"female":"male"}">${isFemale?"♀ Female":"♂ Male"}</span></td>
       <td><span class="room-cell assigned">🏠 ${roomLabel}</span></td>
@@ -729,12 +745,145 @@ window.togglePin = async (id, pinned) => {
 // STATISTICS — residential / non-residential, by level, by programme
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Normalise a programme name to a short, consistent label for grouping
+// ─────────────────────────────────────────────────────────────────────────────
+// PROGRAMMES MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+window.loadProgrammesList = async function() {
+  const tbody = document.getElementById("programmesListBody");
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>`;
+
+  const programmes = await fetchAllProgrammes();
+
+  if (!programmes.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400)">No programmes yet. Add one using the form.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = programmes.map(p => `
+    <tr style="${p.is_active ? "" : "opacity:.5"}">
+      <td>${programmePillHTML(p.name, [p])}</td>
+      <td><strong>${escHtml(p.name)}</strong></td>
+      <td>${escHtml(p.short_label || "—")}</td>
+      <td>${p.sort_order}</td>
+      <td>
+        <span style="font-size:11px;font-weight:700;padding:.2rem .6rem;border-radius:999px;
+              background:${p.is_active ? "rgba(5,150,105,.12)" : "rgba(107,114,128,.12)"};
+              color:${p.is_active ? "#065f46" : "#6b7280"}">
+          ${p.is_active ? "Active" : "Inactive"}
+        </span>
+      </td>
+      <td>
+        <div class="table-actions">
+          <button class="btn-sm" style="background:var(--navy);color:#fff;border:none;padding:.3rem .7rem;border-radius:6px;cursor:pointer;font-size:.72rem"
+            onclick="editProgramme('${p.id}')">Edit</button>
+          <button class="btn-sm btn-secondary" style="padding:.3rem .7rem;font-size:.72rem"
+            onclick="toggleProgrammeActive('${p.id}', ${!p.is_active})">${p.is_active ? "Deactivate" : "Activate"}</button>
+          <button class="btn-sm btn-danger" style="padding:.3rem .7rem;font-size:.72rem"
+            onclick="deleteProgramme('${p.id}','${escHtml(p.name)}')">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+};
+
+document.getElementById("programmeForm")?.addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn    = document.getElementById("progSubmitBtn");
+  const msgEl  = document.getElementById("progFormMsg");
+  const editId = document.getElementById("progEditId").value;
+  btn.disabled = true; btn.textContent = "Saving…";
+
+  const payload = {
+    name:        document.getElementById("progName").value.trim(),
+    short_label: document.getElementById("progShortLabel").value.trim() || null,
+    icon:        document.getElementById("progIcon").value.trim() || "🎓",
+    color:       document.getElementById("progColor").value || "#6b7280",
+    sort_order:  parseInt(document.getElementById("progSortOrder").value) || 0,
+    is_active:   document.getElementById("progActive").checked,
+  };
+
+  let error;
+  if (editId) {
+    ({ error } = await supabase.from("programmes").update(payload).eq("id", editId));
+  } else {
+    ({ error } = await supabase.from("programmes").insert([payload]));
+  }
+
+  btn.disabled = false;
+  if (error) {
+    msgEl.style.display = "block";
+    msgEl.style.background = "#fee2e2"; msgEl.style.color = "#991b1b";
+    msgEl.textContent = "Error: " + error.message;
+    btn.textContent = editId ? "Update Programme" : "Add Programme";
+    return;
+  }
+
+  msgEl.style.display = "block";
+  msgEl.style.background = "#d1fae5"; msgEl.style.color = "#065f46";
+  msgEl.textContent = editId ? "Programme updated!" : "Programme added!";
+  btn.textContent = editId ? "Update Programme" : "Add Programme";
+
+  clearProgrammeCache();
+  logAudit(`${editId ? "Updated" : "Added"} programme: ${payload.name}`, ADMIN?.username || "admin");
+  resetProgrammeForm();
+  loadProgrammesList();
+  setTimeout(() => { msgEl.style.display = "none"; }, 3000);
+});
+
+window.resetProgrammeForm = function() {
+  document.getElementById("programmeForm")?.reset();
+  document.getElementById("progEditId").value = "";
+  document.getElementById("progFormTitle").textContent = "➕ Add Programme";
+  document.getElementById("progSubmitBtn").textContent = "Add Programme";
+  document.getElementById("progColor").value = "#6b7280";
+  document.getElementById("progSortOrder").value = "10";
+  document.getElementById("progActive").checked = true;
+  document.getElementById("progFormMsg").style.display = "none";
+};
+
+window.editProgramme = async function(id) {
+  const programmes = await fetchAllProgrammes();
+  const p = programmes.find(x => x.id === id);
+  if (!p) { showToast("Could not find programme.", "error"); return; }
+
+  document.getElementById("progEditId").value      = p.id;
+  document.getElementById("progName").value        = p.name;
+  document.getElementById("progShortLabel").value  = p.short_label || "";
+  document.getElementById("progIcon").value        = p.icon || "🎓";
+  document.getElementById("progColor").value       = p.color || "#6b7280";
+  document.getElementById("progSortOrder").value   = p.sort_order ?? 10;
+  document.getElementById("progActive").checked    = !!p.is_active;
+  document.getElementById("progFormTitle").textContent = "✏️ Edit Programme";
+  document.getElementById("progSubmitBtn").textContent = "Update Programme";
+  document.getElementById("programmeForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+window.toggleProgrammeActive = async function(id, newActive) {
+  const { error } = await supabase.from("programmes").update({ is_active: newActive }).eq("id", id);
+  if (error) { showToast("Error: " + error.message, "error"); return; }
+  clearProgrammeCache();
+  showToast(newActive ? "Programme activated." : "Programme deactivated.", "success");
+  loadProgrammesList();
+};
+
+window.deleteProgramme = async function(id, name) {
+  if (!confirm(`Delete "${name}"? This only removes it from the programmes list — any students already recorded under this programme name are unaffected, but it will stop appearing as a coloured pill (shown in grey instead). Consider deactivating instead if you might need it again.`)) return;
+  const { error } = await supabase.from("programmes").delete().eq("id", id);
+  if (error) { showToast("Delete failed: " + error.message, "error"); return; }
+  clearProgrammeCache();
+  logAudit(`Deleted programme: ${name}`, ADMIN?.username || "admin");
+  showToast("Programme deleted.", "success");
+  loadProgrammesList();
+};
+
+// Normalise a programme name for grouping: trim whitespace, use the exact
+// value as stored on the student record (programmes are now a managed list,
+// so values are consistent — no more hardcoded "and Dietetics" guessing).
 function normaliseProgramme(program) {
-  const p = (program || "").toLowerCase();
-  if (p.includes("nurs"))  return "BSc Nursing";
-  if (p.includes("nutr"))  return "BSc Nutrition and Dietetics";
-  return program || "Unspecified";
+  const p = (program || "").trim();
+  return p || "Unspecified";
 }
 
 // Cache of the most recently computed stats, used by exportStatistics()
@@ -751,6 +900,7 @@ window.loadStatistics = async function() {
   }
 
   const students = data || [];
+  const programmes = await fetchActiveProgrammes();
   const total           = students.length;
   const residential     = students.filter(s => s.room_id).length;
   const nonResidential  = total - residential;
@@ -809,9 +959,8 @@ window.loadStatistics = async function() {
   progBody.innerHTML = progKeys.map(prog => {
     const row = progMap[prog];
     const rowTotal = row.res + row.non;
-    const isNursing = prog.toLowerCase().includes("nurs");
     return `<tr>
-      <td><span class="prog-pill ${isNursing ? "nursing" : "nutrition"}">${isNursing ? "🏥" : "🥗"} ${prog}</span></td>
+      <td>${programmePillHTML(prog, programmes)}</td>
       <td>${row.res}</td>
       <td>${row.non}</td>
       <td><strong>${rowTotal}</strong></td>
@@ -846,9 +995,8 @@ window.loadStatistics = async function() {
   const combinedBody = document.getElementById("statsCombinedBody");
   combinedBody.innerHTML = combinedRows.map(row => {
     const rowTotal = row.res + row.non;
-    const isNursing = row.prog.toLowerCase().includes("nurs");
     return `<tr>
-      <td><span class="prog-pill ${isNursing ? "nursing" : "nutrition"}">${isNursing ? "🏥" : "🥗"} ${row.prog}</span></td>
+      <td>${programmePillHTML(row.prog, programmes)}</td>
       <td><span class="level-badge">Level ${row.lvl}</span></td>
       <td>${row.res}</td>
       <td>${row.non}</td>
