@@ -529,6 +529,18 @@ window.updateApp = async (appId, status) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC APPLICATIONS
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Currently selected status tab — defaults to "pending"
+window._publicAppsTab = window._publicAppsTab || "pending";
+
+window.setPublicAppsTab = function(status) {
+  window._publicAppsTab = status;
+  document.querySelectorAll("#publicAppsTabs .papp-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.status === status);
+  });
+  loadPublicApps();
+};
+
 async function loadPublicApps() {
   const { data } = await supabase
     .from("public_applications")
@@ -539,13 +551,33 @@ async function loadPublicApps() {
   const footer = document.getElementById("publicAppsFooter");
   if (!tbody) return;
 
-  const list = data || [];
+  const allList = data || [];
+
+  // Update tab counts
+  const counts = { pending: 0, enrolled: 0, rejected: 0, all: allList.length };
+  allList.forEach(a => { if (counts[a.status] !== undefined) counts[a.status]++; });
+  const setCount = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+  setCount("paCountPending",  counts.pending);
+  setCount("paCountEnrolled", counts.enrolled);
+  setCount("paCountRejected", counts.rejected);
+  setCount("paCountAll",      counts.all);
+
+  // Filter by active tab
+  const activeTab = window._publicAppsTab || "pending";
+  const list = activeTab === "all" ? allList : allList.filter(a => a.status === activeTab);
+
   if (footer) footer.textContent = `${list.length} application${list.length!==1?"s":""}`;
 
   if (list.length === 0) {
+    const emptyMessages = {
+      pending:  "No pending applications — all caught up!",
+      enrolled: "No enrolled applications yet.",
+      rejected: "No rejected applications.",
+      all:      "No public applications yet.",
+    };
     tbody.innerHTML = `<tr><td colspan="11"><div class="table-empty">
       <div class="table-empty-icon">📩</div>
-      <h4>No public applications yet</h4>
+      <h4>${emptyMessages[activeTab] || "No applications"}</h4>
     </div></td></tr>`;
     return;
   }
