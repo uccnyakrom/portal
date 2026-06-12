@@ -13,7 +13,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { supabase, showToast, logAudit, generateStudentPassword, sendApplicationEmail } from "./supabaseClient.js";
+import { supabase, showToast, logAudit, generateStudentPassword, sendApplicationEmail, callEdgeFunction } from "./supabaseClient.js";
 import { populateProgramSelect, programmePillHTML, fetchActiveProgrammes } from "./programmes.js";
 import { getSession } from "./auth.js";
 import { fetchAvailableRooms, assignRoom, removeRoomAssignment } from "./rooms.js";
@@ -112,12 +112,12 @@ function renderStudentTable(students) {
 
 async function checkEnrolmentStatus(students) {
   const regNumbers = students.map(s => s.reg_number);
-  const { data: users } = await supabase
-    .from("users")
-    .select("username")
-    .in("username", regNumbers);
+  const result = await callEdgeFunction("account-manager", {
+    action: "list_enrolled_usernames",
+    regNumbers,
+  });
 
-  const enrolledSet = new Set((users || []).map(u => u.username));
+  const enrolledSet = new Set(result.usernames || []);
 
   students.forEach(s => {
     const el = document.getElementById(`enrol-${s.id}`);
@@ -322,24 +322,15 @@ window.enrolStudent = async (studentId, regNumber, name) => {
     showToast("You do not have permission to enrol students. Please contact the Administrator.", "error");
     return;
   }
-  // Check if already enrolled
-  const { data: existing } = await supabase
-    .from("users").select("id").eq("username", regNumber).limit(1);
 
-  if (existing?.length > 0) {
-    showToast(`${name} is already enrolled.`, "warning");
-    return;
-  }
+  const result = await callEdgeFunction("account-manager", {
+    action: "enrol_student",
+    token: ADMIN?.token,
+    regNumber,
+  });
 
-  const { error } = await supabase.from("users").insert([{
-    username: regNumber,
-    password: "auto",
-    role:     "student"
-  }]);
+  if (!result.success) { showToast(result.error || "Enrolment failed.", "error"); return; }
 
-  if (error) { showToast("Error: " + error.message, "error"); return; }
-
-  await logAudit(`Enrolled student: ${regNumber}`, ADMIN?.username);
   showToast(`${name} enrolled successfully! They can now log in.`, "success");
   loadStudents(); // Refresh to update enrolment status
 };
@@ -351,28 +342,19 @@ window.enrolStudent = async (studentId, regNumber, name) => {
 export async function bulkEnrolAll() {
   if (!confirm("This will enrol ALL students who are not yet enrolled. Continue?")) return;
 
-  const { data: students } = await supabase.from("students").select("id, reg_number, full_name");
-  const { data: users }    = await supabase.from("users").select("username").eq("role","student");
+  const result = await callEdgeFunction("account-manager", {
+    action: "bulk_enrol",
+    token: ADMIN?.token,
+  });
 
-  const enrolledSet = new Set((users || []).map(u => u.username));
-  const toEnrol = (students || []).filter(s => !enrolledSet.has(s.reg_number));
+  if (!result.success) { showToast(result.error || "Bulk enrolment failed.", "error"); return; }
 
-  if (toEnrol.length === 0) {
+  if (result.count === 0) {
     showToast("All students are already enrolled!", "info");
     return;
   }
 
-  const inserts = toEnrol.map(s => ({
-    username: s.reg_number,
-    password: "auto",
-    role:     "student"
-  }));
-
-  const { error } = await supabase.from("users").insert(inserts);
-  if (error) { showToast("Error: " + error.message, "error"); return; }
-
-  await logAudit(`Bulk enrolled ${toEnrol.length} students`, ADMIN?.username);
-  showToast(`${toEnrol.length} students enrolled successfully!`, "success");
+  showToast(`${result.count} students enrolled successfully!`, "success");
   loadStudents();
 }
 
