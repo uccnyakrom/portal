@@ -13,6 +13,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
   <title>Admin Dashboard — UCC Accommodation Portal</title>
 
+  <!-- ── PWA: Manifest + icons + theme colour ───────────────────────────── -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d1b3e">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UCC Nyakrom">
+
+  
   <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
   <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
 
@@ -72,6 +82,9 @@
       <div class="nav-group-label">Analytics</div>
       <a href="#" class="nav-link" data-section="reports">
         <span class="nav-icon">📈</span> Reports
+      </a>
+      <a href="#" class="nav-link" data-section="statistics">
+        <span class="nav-icon">📊</span> Statistics
       </a>
 
       <div class="nav-group-label">Administration</div>
@@ -424,7 +437,100 @@
         </div>
       </section>
 
-      <!-- ── USER MANAGEMENT ────────────────────────────────────────────────── -->
+      <!-- ── STATISTICS ─────────────────────────────────────────────────────── -->
+      <section id="section-statistics" class="dash-section hidden">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem">
+          <p style="color:var(--gray-600);margin:0">
+            Live breakdown of the current student population by residency, level, and programme.
+          </p>
+          <div style="display:flex;gap:.6rem">
+            <button class="btn-sm btn-secondary" onclick="loadStatistics()">↻ Refresh</button>
+            <button class="btn-sm btn-primary" onclick="exportStatistics('csv')">⬇ Export CSV</button>
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem">
+          <div class="stat-card">
+            <div class="stat-card-label">Total Students</div>
+            <div class="stat-card-value" id="statTotal">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">🏠 Residential</div>
+            <div class="stat-card-value" id="statResidential">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">🏡 Non-Residential</div>
+            <div class="stat-card-value" id="statNonResidential">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">% Residential</div>
+            <div class="stat-card-value" id="statPctResidential">—</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
+
+          <!-- By Level -->
+          <div class="table-card">
+            <div class="table-card-header">
+              <span class="table-card-title">By Level of Study</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Level</th><th>Residential</th><th>Non-Residential</th><th>Total</th></tr>
+                </thead>
+                <tbody id="statsLevelBody">
+                  <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- By Programme -->
+          <div class="table-card">
+            <div class="table-card-header">
+              <span class="table-card-title">By Programme</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Programme</th><th>Residential</th><th>Non-Residential</th><th>Total</th></tr>
+                </thead>
+                <tbody id="statsProgramBody">
+                  <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- By Programme & Level combined -->
+        <div class="table-card" style="margin-top:1.5rem">
+          <div class="table-card-header">
+            <span class="table-card-title">By Programme and Level (Residential vs Non-Residential)</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Programme</th><th>Level</th>
+                  <th>Residential</th><th>Non-Residential</th><th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="statsCombinedBody">
+                <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;font-size:12px;color:var(--gray-400)" id="statsUpdatedAt"></div>
+      </section>
+
       <section id="section-users" class="dash-section hidden">
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
@@ -1510,5 +1616,16 @@ document.querySelectorAll('.nav-link[data-section="appsettings"]').forEach(link 
 
 </script>
 
+
+<!-- ── PWA: Register service worker ──────────────────────────────────── -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('Service worker registered:', reg.scope))
+        .catch(err => console.warn('Service worker registration failed:', err));
+    });
+  }
+</script>
 </body>
 </html>
