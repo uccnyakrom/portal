@@ -254,6 +254,7 @@ window.openEditStudentModal = async (studentId) => {
   document.getElementById("editLevel").value            = s.level || "";
   document.getElementById("editSex").value              = s.sex || "";
   document.getElementById("editRoom").value             = s.room || "";
+  document.getElementById("editEmail").value            = s.email || "";
 
   // Show auto-generated password
   const pwd = generateStudentPassword(s.reg_number, s.full_name || s.name || "");
@@ -276,6 +277,7 @@ export function initEditStudentModal() {
       level:      parseInt(document.getElementById("editLevel").value),
       sex:        document.getElementById("editSex").value,
       room:       document.getElementById("editRoom").value.trim() || null,
+      email:      document.getElementById("editEmail").value.trim() || null,
     };
 
     const { error } = await supabase.from("students").update(payload).eq("id", id);
