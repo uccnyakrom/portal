@@ -265,6 +265,7 @@ function navigateTo(section) {
     waiting:      loadWaitingListSection,
     academicyear: loadAcademicYearSection,
     history:      () => {},
+    statistics:   loadStatistics,
   };
   if (loaders[section]) loaders[section]();
 }
@@ -725,8 +726,176 @@ window.togglePin = async (id, pinned) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EXPORT
+// STATISTICS — residential / non-residential, by level, by programme
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Normalise a programme name to a short, consistent label for grouping
+function normaliseProgramme(program) {
+  const p = (program || "").toLowerCase();
+  if (p.includes("nurs"))  return "BSc Nursing";
+  if (p.includes("nutr"))  return "BSc Nutrition and Dietetics";
+  return program || "Unspecified";
+}
+
+// Cache of the most recently computed stats, used by exportStatistics()
+window._lastStats = null;
+
+window.loadStatistics = async function() {
+  const { data, error } = await supabase
+    .from("students")
+    .select("id, program, level, room_id");
+
+  if (error) {
+    showToast("Error loading statistics: " + error.message, "error");
+    return;
+  }
+
+  const students = data || [];
+  const total           = students.length;
+  const residential     = students.filter(s => s.room_id).length;
+  const nonResidential  = total - residential;
+  const pct             = total > 0 ? Math.round((residential / total) * 100) : 0;
+
+  // ── Summary cards ──────────────────────────────────────────────────────
+  document.getElementById("statTotalStudents").textContent  = total;
+  document.getElementById("statResidential").textContent     = residential;
+  document.getElementById("statNonResidential").textContent  = nonResidential;
+  document.getElementById("statPctResidential").textContent  = `${pct}%`;
+
+  // ── By Level ────────────────────────────────────────────────────────────
+  const levelMap = {};
+  students.forEach(s => {
+    const lvl = s.level || "Unspecified";
+    if (!levelMap[lvl]) levelMap[lvl] = { res: 0, non: 0 };
+    s.room_id ? levelMap[lvl].res++ : levelMap[lvl].non++;
+  });
+  const levelKeys = Object.keys(levelMap).sort((a, b) => {
+    const na = Number(a), nb = Number(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return String(a).localeCompare(String(b));
+  });
+
+  const levelBody = document.getElementById("statsLevelBody");
+  levelBody.innerHTML = levelKeys.map(lvl => {
+    const row = levelMap[lvl];
+    const rowTotal = row.res + row.non;
+    return `<tr>
+      <td><span class="level-badge">Level ${lvl}</span></td>
+      <td>${row.res}</td>
+      <td>${row.non}</td>
+      <td><strong>${rowTotal}</strong></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--gray-400)">No data</td></tr>`;
+
+  // ── By Programme ────────────────────────────────────────────────────────
+  const progMap = {};
+  students.forEach(s => {
+    const prog = normaliseProgramme(s.program);
+    if (!progMap[prog]) progMap[prog] = { res: 0, non: 0 };
+    s.room_id ? progMap[prog].res++ : progMap[prog].non++;
+  });
+  const progKeys = Object.keys(progMap).sort();
+
+  const progBody = document.getElementById("statsProgramBody");
+  progBody.innerHTML = progKeys.map(prog => {
+    const row = progMap[prog];
+    const rowTotal = row.res + row.non;
+    const isNursing = prog.toLowerCase().includes("nurs");
+    return `<tr>
+      <td><span class="prog-pill ${isNursing ? "nursing" : "nutrition"}">${isNursing ? "🏥" : "🥗"} ${prog}</span></td>
+      <td>${row.res}</td>
+      <td>${row.non}</td>
+      <td><strong>${rowTotal}</strong></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--gray-400)">No data</td></tr>`;
+
+  // ── By Programme & Level combined ──────────────────────────────────────
+  const combinedMap = {};
+  students.forEach(s => {
+    const prog = normaliseProgramme(s.program);
+    const lvl  = s.level || "Unspecified";
+    const key  = `${prog}|||${lvl}`;
+    if (!combinedMap[key]) combinedMap[key] = { prog, lvl, res: 0, non: 0 };
+    s.room_id ? combinedMap[key].res++ : combinedMap[key].non++;
+  });
+  const combinedRows = Object.values(combinedMap).sort((a, b) => {
+    if (a.prog !== b.prog) return a.prog.localeCompare(b.prog);
+    const na = Number(a.lvl), nb = Number(b.lvl);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return String(a.lvl).localeCompare(String(b.lvl));
+  });
+
+  const combinedBody = document.getElementById("statsCombinedBody");
+  combinedBody.innerHTML = combinedRows.map(row => {
+    const rowTotal = row.res + row.non;
+    const isNursing = row.prog.toLowerCase().includes("nurs");
+    return `<tr>
+      <td><span class="prog-pill ${isNursing ? "nursing" : "nutrition"}">${isNursing ? "🏥" : "🥗"} ${row.prog}</span></td>
+      <td><span class="level-badge">Level ${row.lvl}</span></td>
+      <td>${row.res}</td>
+      <td>${row.non}</td>
+      <td><strong>${rowTotal}</strong></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--gray-400)">No data</td></tr>`;
+
+  // Timestamp
+  document.getElementById("statsUpdatedAt").textContent =
+    `Last updated: ${new Date().toLocaleString()}`;
+
+  // Cache for export
+  window._lastStats = {
+    total, residential, nonResidential, pct,
+    byLevel: levelKeys.map(lvl => ({ level: lvl, residential: levelMap[lvl].res, nonResidential: levelMap[lvl].non, total: levelMap[lvl].res + levelMap[lvl].non })),
+    byProgramme: progKeys.map(prog => ({ programme: prog, residential: progMap[prog].res, nonResidential: progMap[prog].non, total: progMap[prog].res + progMap[prog].non })),
+    combined: combinedRows.map(r => ({ programme: r.prog, level: r.lvl, residential: r.res, nonResidential: r.non, total: r.res + r.non })),
+  };
+};
+
+// Export the cached statistics to CSV (multiple tables in one file)
+window.exportStatistics = function(format = "csv") {
+  if (!window._lastStats) {
+    showToast("Load the Statistics section first.", "warning");
+    return;
+  }
+  const s = window._lastStats;
+  const lines = [];
+
+  lines.push("UCC Nyakrom Smart Campus Portal — Student Statistics");
+  lines.push(`Generated,${new Date().toLocaleString()}`);
+  lines.push("");
+  lines.push("SUMMARY");
+  lines.push("Metric,Value");
+  lines.push(`Total Students,${s.total}`);
+  lines.push(`Residential,${s.residential}`);
+  lines.push(`Non-Residential,${s.nonResidential}`);
+  lines.push(`Percent Residential,${s.pct}%`);
+  lines.push("");
+
+  lines.push("BY LEVEL");
+  lines.push("Level,Residential,Non-Residential,Total");
+  s.byLevel.forEach(r => lines.push(`${r.level},${r.residential},${r.nonResidential},${r.total}`));
+  lines.push("");
+
+  lines.push("BY PROGRAMME");
+  lines.push("Programme,Residential,Non-Residential,Total");
+  s.byProgramme.forEach(r => lines.push(`"${r.programme}",${r.residential},${r.nonResidential},${r.total}`));
+  lines.push("");
+
+  lines.push("BY PROGRAMME AND LEVEL");
+  lines.push("Programme,Level,Residential,Non-Residential,Total");
+  s.combined.forEach(r => lines.push(`"${r.programme}",${r.level},${r.residential},${r.nonResidential},${r.total}`));
+
+  const csv = lines.join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = `student_statistics_${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+
+  logAudit("Exported student statistics (CSV)", ADMIN?.username || "admin");
+  showToast("Statistics exported as CSV.", "success");
+};
+
+
 window.exportData = async (type, format) => {
   const confirmPass = prompt("Enter your admin password to confirm export:");
   if (!confirmPass) return;
