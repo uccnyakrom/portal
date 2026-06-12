@@ -281,18 +281,55 @@
 
       <!-- ── PUBLIC APPLICATIONS ───────────────────────────────────────────── -->
       <section id="section-publicapps" class="dash-section hidden">
+        <style>
+          .papp-tab {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .5rem 1rem; border-radius: 999px; border: 1px solid var(--gray-200);
+            background: var(--gray-50); color: var(--gray-600); font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all .15s;
+          }
+          .papp-tab:hover { background: var(--gray-100); }
+          .papp-tab.active {
+            background: var(--navy); color: #fff; border-color: var(--navy);
+          }
+          .papp-tab-count {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 22px; height: 20px; padding: 0 .4rem; border-radius: 999px;
+            background: rgba(255,255,255,.25); font-size: 11px; font-weight: 700;
+          }
+          .papp-tab:not(.active) .papp-tab-count {
+            background: var(--gray-200); color: var(--gray-700);
+          }
+        </style>
         <div class="table-card">
           <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
             <span class="table-card-title">📩 Public Applications</span>
             <span style="font-size:12px;color:rgba(255,255,255,.6)">From unregistered students</span>
           </div>
+
+          <!-- Status filter tabs -->
+          <div id="publicAppsTabs" style="display:flex;gap:.5rem;padding:.9rem 1.2rem;border-bottom:1px solid var(--gray-200);flex-wrap:wrap">
+            <button class="papp-tab active" data-status="pending"  onclick="setPublicAppsTab('pending')">
+              ⏳ Pending <span class="papp-tab-count" id="paCountPending">0</span>
+            </button>
+            <button class="papp-tab" data-status="enrolled" onclick="setPublicAppsTab('enrolled')">
+              ✅ Enrolled <span class="papp-tab-count" id="paCountEnrolled">0</span>
+            </button>
+            <button class="papp-tab" data-status="rejected" onclick="setPublicAppsTab('rejected')">
+              ✕ Rejected <span class="papp-tab-count" id="paCountRejected">0</span>
+            </button>
+            <button class="papp-tab" data-status="all" onclick="setPublicAppsTab('all')">
+              📋 All <span class="papp-tab-count" id="paCountAll">0</span>
+            </button>
+          </div>
+
           <div class="table-wrap">
             <table class="beautiful-table">
               <thead>
                 <tr><th>Name</th><th>Reg. Number</th><th>Programme</th><th>Level</th><th>Sex</th><th>Phone</th><th>Email</th><th>Preferred Room</th><th>Status</th><th>Date</th><th>Actions</th></tr>
               </thead>
               <tbody id="publicAppsBody">
-                <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+                <tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
               </tbody>
             </table>
           </div>
