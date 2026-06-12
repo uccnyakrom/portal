@@ -4,29 +4,23 @@
  * Features: SHA-256 password hashing, session management, login/logout
  */
 
-import { supabase, showToast, logAudit, generateStudentPassword } from "./supabaseClient.js";
+import { showToast, generateStudentPassword, callEdgeFunction } from "./supabaseClient.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PASSWORD HASHING — SHA-256 via Web Crypto API
+// PASSWORD HASHING
 // ─────────────────────────────────────────────────────────────────────────────
+// NOTE: As of the security hardening update, password verification and
+// hashing happen SERVER-SIDE inside the user-login and account-manager Edge
+// Functions — the browser never reads password fields from the `users` table.
+// hashPassword() is kept here ONLY because generateStudentPassword() (used to
+// show students their default password hint) is unaffected and still runs
+// client-side.
 export async function hashPassword(plain) {
   const encoder = new TextEncoder();
   const data = encoder.encode(plain.trim());
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function verifyPassword(plain, stored) {
-  if (!stored) return false;
-  if (stored === "auto") return true;
-  // If stored looks like SHA-256 hash (64 hex chars) — use hash comparison
-  if (/^[a-f0-9]{64}$/i.test(stored)) {
-    const hashed = await hashPassword(plain);
-    return hashed === stored;
-  }
-  // Plain text comparison (legacy passwords)
-  return plain.trim() === stored.trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,57 +72,17 @@ export async function loginStudent(regNumber, password) {
   try {
     const reg = regNumber.trim().toUpperCase();
 
-    // Get student record
-    const { data: student, error: sErr } = await supabase
-      .from("students")
-      .select("id, full_name, reg_number, program, level, sex, room, room_id")
-      .eq("reg_number", reg)
-      .single();
+    const result = await callEdgeFunction("user-login", {
+      username: reg,
+      password,
+      loginType: "student",
+    });
 
-    if (sErr || !student) {
-      return { success: false, error: "Student not found. Please contact the General Office." };
+    if (!result.success) {
+      return { success: false, error: result.error || "Login failed. Please try again." };
     }
 
-    // Get user record
-    const { data: userRows, error: uErr } = await supabase
-      .from("users")
-      .select("id, role, password, password_hash")
-      .eq("username", reg)
-      .limit(1);
-
-    if (uErr || !userRows?.length) {
-      return { success: false, error: "Your account has not been enrolled yet. Please contact the General Office." };
-    }
-
-    const user = userRows[0];
-    if (user.role !== "student") {
-      return { success: false, error: "Please use the Admin tab to log in." };
-    }
-
-    // Generate expected auto password
-    const autoPwd = generateStudentPassword(student.reg_number, student.full_name || "");
-
-    // Verify password
-    let valid = false;
-    if (user.password_hash) {
-      // Has hashed password — verify against hash
-      valid = await verifyPassword(password, user.password_hash);
-      // Also allow auto password if no custom password set
-      if (!valid && user.password === "auto") {
-        valid = password.trim() === autoPwd;
-      }
-    } else if (user.password === "auto") {
-      valid = password.trim() === autoPwd;
-    } else {
-      valid = await verifyPassword(password, user.password);
-    }
-
-    if (!valid) {
-      return { success: false, error: `Incorrect password. Your default password is your reg number initials. Contact the General Office if you need help.` };
-    }
-
-    saveSession({ ...student, ...user, username: reg }, "student");
-    logAudit(`Student login: ${reg}`, reg); // fire-and-forget
+    saveSession(result.user, "student");
     return { success: true };
 
   } catch (err) {
@@ -142,31 +96,19 @@ export async function loginStudent(regNumber, password) {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function loginAdmin(username, password) {
   try {
-    const { data: users, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("username", username.trim())
-      .not("role", "eq", "student")
-      .limit(1);
+    const result = await callEdgeFunction("user-login", {
+      username: username.trim(),
+      password,
+      loginType: "admin",
+    });
 
-    if (error) throw error;
-    if (!users?.length) return { success: false, error: "Invalid username or password." };
-
-    const user = users[0];
-
-    // Verify password (hashed or plain)
-    let valid = false;
-    if (user.password_hash) {
-      valid = await verifyPassword(password, user.password_hash);
-    } else {
-      valid = await verifyPassword(password, user.password);
+    if (!result.success) {
+      return { success: false, error: result.error || "Invalid username or password." };
     }
 
-    if (!valid) return { success: false, error: "Invalid username or password." };
-
-    saveSession(user, "admin");
-    logAudit(`Admin login: ${user.username} (${user.role})`, user.username); // fire-and-forget
-    return { success: true, admin: user };
+    // result.user = { id, username, role }; result.token = staff session token
+    saveSession({ ...result.user, token: result.token }, "admin");
+    return { success: true, admin: result.user };
 
   } catch (err) {
     console.error("loginAdmin error:", err);
@@ -284,40 +226,18 @@ export function initChangePasswordModal() {
     try {
       const username = role === "student" ? session.reg_number : session.username;
 
-      const { data: userRows } = await supabase
-        .from("users").select("id, password, password_hash").eq("username", username).limit(1);
+      const result = await callEdgeFunction("account-manager", {
+        action: "change_password",
+        username,
+        currentPassword: currentPwd,
+        newPassword: newPwd,
+      });
 
-      if (!userRows?.length) { showToast("Could not verify account.", "error"); return; }
-
-      const user = userRows[0];
-      const autoPwd = role === "student"
-        ? generateStudentPassword(session.reg_number, session.full_name || "")
-        : null;
-
-      // Verify current password
-      let valid = false;
-      if (user.password_hash) {
-        valid = await verifyPassword(currentPwd, user.password_hash);
-      }
-      if (!valid && user.password) {
-        valid = await verifyPassword(currentPwd, user.password);
-      }
-      if (!valid && autoPwd) {
-        valid = currentPwd === autoPwd || user.password === "auto";
+      if (!result.success) {
+        showToast(result.error || "Current password is incorrect.", "error");
+        return;
       }
 
-      if (!valid) { showToast("Current password is incorrect.", "error"); return; }
-
-      // Hash new password and save
-      const newHash = await hashPassword(newPwd);
-      const { error } = await supabase
-        .from("users")
-        .update({ password_hash: newHash, password: newPwd })
-        .eq("username", username);
-
-      if (error) { showToast("Error: " + error.message, "error"); return; }
-
-      await logAudit(`Password changed for: ${username}`, username);
       showToast("Password updated successfully!", "success");
       document.getElementById("changePasswordModal")?.classList.remove("open");
       document.getElementById("changePasswordForm")?.reset();
