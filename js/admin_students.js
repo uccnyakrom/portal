@@ -14,6 +14,7 @@
  */
 
 import { supabase, showToast, logAudit, generateStudentPassword, sendApplicationEmail } from "./supabaseClient.js";
+import { populateProgramSelect, programmePillHTML, fetchActiveProgrammes } from "./programmes.js";
 import { getSession } from "./auth.js";
 import { fetchAvailableRooms, assignRoom, removeRoomAssignment } from "./rooms.js";
 
@@ -23,6 +24,8 @@ const ADMIN = getSession();
 // LOAD STUDENTS TABLE
 // ─────────────────────────────────────────────────────────────────────────────
 
+let _programmesForPills = [];
+
 export async function loadStudents() {
   const { data, error } = await supabase
     .from("students")
@@ -31,6 +34,10 @@ export async function loadStudents() {
 
   if (error) { showToast("Error loading students: " + error.message, "error"); return; }
 
+  _programmesForPills = await fetchActiveProgrammes();
+  const filterProgEl = document.getElementById("filterProgram");
+  const currentFilterProg = filterProgEl?.value || "";
+  populateProgramSelect(filterProgEl, { includeBlank: true, blankLabel: "All Programmes", selectedValue: currentFilterProg });
   window._allStudents = data || [];
   renderStudentTable(window._allStudents);
   bindStudentFilters();
@@ -58,9 +65,6 @@ function renderStudentTable(students) {
     const name     = s.full_name || s.name || "—";
     const initials = name.split(" ").map(w => w[0]).join("").substring(0,2).toUpperCase();
     const isFemale = (s.sex || "").toUpperCase() === "F";
-    const prog      = (s.program || "").toLowerCase();
-    const isNursing = prog.includes("nurs");
-    const isCobes   = prog.includes("mbchb") || prog.includes("cobes");
     const roomAssigned = s.rooms ? `${s.rooms.block}-${s.rooms.room_number}` : null;
 
     return `
@@ -74,11 +78,7 @@ function renderStudentTable(students) {
           </div>
         </div>
       </td>
-      <td>
-        <span class="prog-pill ${isNursing ? "nursing" : "nutrition"}">
-          ${isNursing ? "🏥" : "🥗"} ${s.program || "—"}
-        </span>
-      </td>
+      <td>${programmePillHTML(s.program, _programmesForPills)}</td>
       <td><span class="level-badge">Level ${s.level || "—"}</span></td>
       <td>
         <span class="sex-indicator ${isFemale ? "female" : "male"}">
@@ -233,6 +233,7 @@ export function initAddStudentModal() {
   });
 
   document.getElementById("openAddStudentBtn")?.addEventListener("click", () => {
+    populateProgramSelect(document.getElementById("addProgram"), { includeBlank: true, blankLabel: "Select…" });
     document.getElementById("addStudentModal").classList.add("open");
   });
 }
@@ -249,7 +250,7 @@ window.openEditStudentModal = async (studentId) => {
   document.getElementById("editStudentId").value        = s.id;
   document.getElementById("editName").value             = s.full_name || s.name || "";
   document.getElementById("editReg").value              = s.reg_number;
-  document.getElementById("editProgram").value          = s.program || "";
+  await populateProgramSelect(document.getElementById("editProgram"), { selectedValue: s.program || "" });
   document.getElementById("editLevel").value            = s.level || "";
   document.getElementById("editSex").value              = s.sex || "";
   document.getElementById("editRoom").value             = s.room || "";
