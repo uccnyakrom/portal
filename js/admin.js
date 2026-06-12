@@ -3,11 +3,11 @@
  * PLACE THIS FILE AT: /js/admin.js
  */
 
-import { supabase, showToast, logAudit, sendApplicationEmail } from "./supabaseClient.js";
+import { supabase, showToast, logAudit, sendApplicationEmail, callEdgeFunction } from "./supabaseClient.js";
 import { fetchActiveProgrammes, fetchAllProgrammes, clearProgrammeCache, populateProgramSelect, programmePillHTML } from "./programmes.js";
 import { getPermissions, filterSidebarByRole, getRoleBadgeHTML } from "./roles.js";
 import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoomModal, bulkEnrolAll, initBulkUpload } from "./admin_students.js";
-import { requireAuth, getSession, logout, hashPassword, initChangePasswordModal } from "./auth.js";
+import { requireAuth, getSession, logout, initChangePasswordModal } from "./auth.js";
 import { fetchRooms, fetchAvailableRooms, fetchRoomWithOccupants, assignRoom, removeRoomAssignment, renderRoomGrid, changeRoomType } from "./rooms.js";
 import { loadFacilitiesList, loadBookings, loadMaintenance, initFacStatusModal, initBookingModal, initMaintenanceModal } from "./facilities.js";
 
@@ -24,37 +24,23 @@ async function recordRoomHistory() {}
 async function loadRoomHistory() { return []; }
 async function sendSMS(phone, message) {
   if (!phone) return;
-  // Format Ghana number
-  let num = phone.replace(/\D/g,"");
-  if (num.startsWith("0")) num = "233" + num.slice(1);
-  if (!num.startsWith("233")) num = "233" + num;
 
-  // Store in notifications log regardless
-  await supabase.from("notifications").insert([{
-    recipient: phone, type: "sms", message,
-    status: "pending", created_at: new Date().toISOString()
-  }]);
+  const result = await callEdgeFunction("account-manager", {
+    action: "send_sms",
+    token: ADMIN?.token,
+    phone,
+    message,
+  });
 
-  // Arkesel API — configure your key in Supabase
-  try {
-    const { data: config } = await supabase
-      .from("users").select("password").eq("username","_arkesel_key").limit(1);
-    const apiKey = config?.[0]?.password;
-    if (!apiKey) {
-      console.log("SMS pending (Arkesel not configured):", message);
-      showToast("SMS logged. Configure Arkesel API to send real SMS.", "info");
-      return;
-    }
-    await fetch("https://sms.arkesel.com/api/v2/sms/send", {
-      method: "POST",
-      headers: { "api-key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ sender: "UCCNyakrom", message, recipients: [num] })
-    });
-    await supabase.from("notifications").update({ status:"sent", sent_at: new Date().toISOString() })
-      .eq("recipient", phone).eq("status","pending");
+  if (!result.success) {
+    showToast(result.error || "Failed to send SMS.", "error");
+    return;
+  }
+  if (result.sent) {
     showToast("SMS sent!", "success");
-  } catch(err) {
-    console.error("SMS error:", err);
+  } else {
+    console.log("SMS pending (Arkesel not configured):", message);
+    showToast(result.note || "SMS logged. Configure Arkesel API to send real SMS.", "info");
   }
 }
 
@@ -152,9 +138,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const username = document.getElementById("newAdminUser").value.trim();
     const password = document.getElementById("newAdminPass").value.trim();
     const role     = document.getElementById("newAdminRole")?.value || "admin";
-    const { error } = await supabase.from("users").insert([{ username, password, role }]);
-    if (error) { showToast("Error: " + error.message, "error"); return; }
-    await logAudit(`Created user: ${username} (${role})`, ADMIN.username);
+    const result = await callEdgeFunction("account-manager", {
+      action: "create_staff_user",
+      token: ADMIN?.token,
+      username, password, role,
+    });
+    if (!result.success) { showToast(result.error || "Could not create user.", "error"); return; }
     showToast(`User "${username}" created as ${role}.`, "success");
     e.target.reset();
     loadUserManagement();
@@ -164,13 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("enrolStudentForm")?.addEventListener("submit", async e => {
     e.preventDefault();
     const regNumber = document.getElementById("enrolReg").value.trim().toUpperCase();
-    const { data: students } = await supabase.from("students").select("id, full_name").eq("reg_number", regNumber).limit(1);
-    if (!students?.length) { showToast("Student not found.", "error"); return; }
-    const { data: existing } = await supabase.from("users").select("id").eq("username", regNumber).limit(1);
-    if (existing?.length) { showToast("Student already enrolled.", "warning"); return; }
-    const { error } = await supabase.from("users").insert([{ username: regNumber, password: "auto", role: "student" }]);
-    if (error) { showToast("Error: " + error.message, "error"); return; }
-    await logAudit(`Enrolled student: ${regNumber}`, ADMIN.username);
+    const result = await callEdgeFunction("account-manager", {
+      action: "enrol_student",
+      token: ADMIN?.token,
+      regNumber,
+    });
+    if (!result.success) { showToast(result.error || "Enrolment failed.", "error"); return; }
     showToast(`Student ${regNumber} enrolled successfully.`, "success");
     e.target.reset();
     loadUserManagement();
@@ -656,10 +644,12 @@ window.enrollPublicApplicant = async (appId, name, regNumber, program, level, se
   }
 
   // Create portal account
-  const { error: uErr } = await supabase.from("users").insert([{
-    username: regNumber, password: "auto", role: "student"
-  }]);
-  if (uErr) console.warn("User account error:", uErr.message);
+  const userResult = await callEdgeFunction("account-manager", {
+    action: "enrol_student",
+    token: ADMIN?.token,
+    regNumber,
+  });
+  if (!userResult.success) console.warn("User account error:", userResult.error);
 
   // Update application status
   await supabase.from("public_applications").update({ status: "enrolled" }).eq("id", appId);
@@ -713,21 +703,32 @@ async function loadReports() {
 // USER MANAGEMENT
 // ─────────────────────────────────────────────────────────────────────────────
 async function loadUserManagement() {
-  const { data: users } = await supabase.from("users").select("id, username, role").order("role");
+  const result = await callEdgeFunction("account-manager", {
+    action: "list_staff_users",
+    token: ADMIN?.token,
+  });
   const tbody = document.getElementById("usersTableBody");
-  if (tbody) {
-    tbody.innerHTML = (users||[]).map(u => `<tr>
-      <td>${u.username}</td>
-      <td>${getRoleBadgeHTML(u.role)}</td>
-      <td>${u.id!==ADMIN.id?`<button class="btn-sm btn-danger" onclick="deleteUser('${u.id}','${escHtml(u.username)}')">Delete</button>`:"—"}</td>
-    </tr>`).join("");
+  if (!tbody) return;
+  if (!result.success) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--gray-400)">${escHtml(result.error || "Could not load users.")}</td></tr>`;
+    return;
   }
+  const users = result.users || [];
+  tbody.innerHTML = users.map(u => `<tr>
+    <td>${u.username}</td>
+    <td>${getRoleBadgeHTML(u.role)}</td>
+    <td>${u.id!==ADMIN.id?`<button class="btn-sm btn-danger" onclick="deleteUser('${u.id}','${escHtml(u.username)}')">Delete</button>`:"—"}</td>
+  </tr>`).join("");
 }
 
 window.deleteUser = async (userId, username) => {
   if (!confirm(`Delete user "${username}"?`)) return;
-  await supabase.from("users").delete().eq("id", userId);
-  await logAudit(`Deleted user: ${username}`, ADMIN.username);
+  const result = await callEdgeFunction("account-manager", {
+    action: "delete_staff_user",
+    token: ADMIN?.token,
+    userId,
+  });
+  if (!result.success) { showToast(result.error || "Could not delete user.", "error"); return; }
   showToast("User deleted.", "success");
   loadUserManagement();
 };
@@ -1106,9 +1107,12 @@ window.exportStatistics = function(format = "csv") {
 window.exportData = async (type, format) => {
   const confirmPass = prompt("Enter your admin password to confirm export:");
   if (!confirmPass) return;
-  const { data: check } = await supabase.from("users")
-    .select("id").eq("username", ADMIN.username).eq("password", confirmPass).limit(1);
-  if (!check?.length) { showToast("Invalid password.", "error"); return; }
+  const check = await callEdgeFunction("account-manager", {
+    action: "verify_staff_password",
+    username: ADMIN.username,
+    password: confirmPass,
+  });
+  if (!check.success) { showToast("Invalid password.", "error"); return; }
   let data, filename;
   if (type==="students")     { const r=await supabase.from("students").select("*");     data=r.data; filename="students"; }
   if (type==="rooms")        { const r=await supabase.from("rooms").select("*");        data=r.data; filename="rooms"; }
