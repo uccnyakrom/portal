@@ -91,6 +91,34 @@ export async function sendApplicationEmail({ to, applicantName, status, roomNumb
   }
 }
 
+// ── 4c. Generic helper: call any Edge Function with a JSON payload ───────────
+//   Used for the security-hardened account/auth flows (user-login,
+//   account-manager). Always returns a JSON object — never throws.
+export async function callEdgeFunction(name, payload = {}) {
+  try {
+    const url = `${SUPABASE_URL}/functions/v1/${name}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json().catch(() => ({}));
+
+    if (!res.ok && result.success === undefined) {
+      return { success: false, error: result.error || `Request failed (${res.status}).` };
+    }
+    return result;
+
+  } catch (err) {
+    console.error(`callEdgeFunction(${name}) error:`, err);
+    return { success: false, error: "Network error. Please try again." };
+  }
+}
+
 // ── 5. Helper: log an audit event to the audit_logs table ────────────────────
 export async function logAudit(action, user = "system") {
   try {
