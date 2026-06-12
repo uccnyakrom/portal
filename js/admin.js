@@ -787,6 +787,15 @@ window.loadStatistics = async function() {
     </tr>`;
   }).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--gray-400)">No data</td></tr>`;
 
+  // Totals row — By Level
+  {
+    const totalRes = levelKeys.reduce((sum, lvl) => sum + levelMap[lvl].res, 0);
+    const totalNon = levelKeys.reduce((sum, lvl) => sum + levelMap[lvl].non, 0);
+    document.getElementById("statsLevelTotalRes").textContent = totalRes;
+    document.getElementById("statsLevelTotalNon").textContent = totalNon;
+    document.getElementById("statsLevelTotalAll").textContent = totalRes + totalNon;
+  }
+
   // ── By Programme ────────────────────────────────────────────────────────
   const progMap = {};
   students.forEach(s => {
@@ -808,6 +817,15 @@ window.loadStatistics = async function() {
       <td><strong>${rowTotal}</strong></td>
     </tr>`;
   }).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--gray-400)">No data</td></tr>`;
+
+  // Totals row — By Programme
+  {
+    const totalRes = progKeys.reduce((sum, prog) => sum + progMap[prog].res, 0);
+    const totalNon = progKeys.reduce((sum, prog) => sum + progMap[prog].non, 0);
+    document.getElementById("statsProgramTotalRes").textContent = totalRes;
+    document.getElementById("statsProgramTotalNon").textContent = totalNon;
+    document.getElementById("statsProgramTotalAll").textContent = totalRes + totalNon;
+  }
 
   // ── By Programme & Level combined ──────────────────────────────────────
   const combinedMap = {};
@@ -837,6 +855,15 @@ window.loadStatistics = async function() {
       <td><strong>${rowTotal}</strong></td>
     </tr>`;
   }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--gray-400)">No data</td></tr>`;
+
+  // Totals row — By Programme & Level
+  {
+    const totalRes = combinedRows.reduce((sum, r) => sum + r.res, 0);
+    const totalNon = combinedRows.reduce((sum, r) => sum + r.non, 0);
+    document.getElementById("statsCombinedTotalRes").textContent = totalRes;
+    document.getElementById("statsCombinedTotalNon").textContent = totalNon;
+    document.getElementById("statsCombinedTotalAll").textContent = totalRes + totalNon;
+  }
 
   // Timestamp
   document.getElementById("statsUpdatedAt").textContent =
