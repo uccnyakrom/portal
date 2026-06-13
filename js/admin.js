@@ -273,16 +273,22 @@ async function loadOverview() {
   ]);
 
   const rooms = roomsRes.data || [], apps = appsRes.data || [], students = studentsRes.data || [];
-  const totalStudents = totalRes.count || 0, housed = housedRes.count || 0;
-  const totalBeds = rooms.reduce((a,r)=>a+r.capacity,0);
-  const occupiedBeds = rooms.reduce((a,r)=>a+r.occupancy_count,0);
+  const totalStudents = totalRes.count || 0, residential = housedRes.count || 0;
+
+  // Non-student rooms (staff/NSP/suite) are excluded from bed/vacancy/occupancy
+  // calculations — they're not part of the pool available to students.
+  const NON_STUDENT_TYPES = ["staff", "NSP", "suite"];
+  const studentRooms = rooms.filter(r => !NON_STUDENT_TYPES.includes(r.type));
+
+  const totalBeds    = studentRooms.reduce((a,r)=>a+r.capacity,0);
+  const occupiedBeds = studentRooms.reduce((a,r)=>a+r.occupancy_count,0);
 
   setCard("statTotal",     totalStudents);
-  setCard("statResidents", housed);
-  setCard("statHoused",    housed);
-  setCard("statUnhoused",  totalStudents - housed);
-  setCard("statBeds",      totalBeds - occupiedBeds);
-  setCard("statVacant",    rooms.filter(r=>r.type==="vacant").length + rooms.filter(r=>r.type==="partial").length);
+  setCard("statResidents", residential);
+  setCard("statHoused",    totalStudents - residential);          // Non-Residential Students
+  setCard("statUnhoused",  studentRooms.length);                  // Student Rooms (total)
+  setCard("statBeds",      totalBeds - occupiedBeds);             // Available Beds
+  setCard("statVacant",    studentRooms.filter(r=>r.occupancy_count===0).length); // Vacant Rooms
   setCard("statPending",   apps.filter(a=>a.status==="pending").length);
   setCard("statOccRate",   totalBeds > 0 ? Math.round((occupiedBeds/totalBeds)*100)+"%" : "0%");
 
