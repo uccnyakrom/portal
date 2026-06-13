@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /student.html
+
+Sitemap: https://uccnyakromhub.org/sitemap.xml
