@@ -3,7 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
-  <title>UCC Nyakrom — Smart Campus Portal</title>
+  <title>UCC Nyakrom — Smart Campus Portal | University of Cape Coast, Agona Nyakrom Campus</title>
+
+  <!-- SEO -->
+  <meta name="description" content="The official Smart Campus Portal for the University of Cape Coast (UCC) Agona Nyakrom Campus — student accommodation, room applications, academic timetables, and campus services for BSc Nursing and BSc Nutrition students.">
+  <meta name="keywords" content="UCC Nyakrom, UCC Agona Nyakrom, University of Cape Coast Nyakrom Campus, Agona Nyakrom Campus, UCC Nyakrom Portal, UCC accommodation, BSc Nursing UCC, BSc Nutrition UCC, Nyakrom Smart Campus Portal">
+  <meta name="author" content="University of Cape Coast — Agona Nyakrom Campus">
+  <link rel="canonical" href="https://uccnyakromhub.org/">
+
+  <!-- Open Graph / Social previews -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="UCC Nyakrom Smart Campus Portal">
+  <meta property="og:title" content="UCC Nyakrom — Smart Campus Portal">
+  <meta property="og:description" content="Student accommodation, room applications, timetables, and campus services for the University of Cape Coast Agona Nyakrom Campus.">
+  <meta property="og:url" content="https://uccnyakromhub.org/">
+  <meta property="og:image" content="https://uccnyakromhub.org/og-image.png">
+
+  <!-- Twitter card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="UCC Nyakrom — Smart Campus Portal">
+  <meta name="twitter:description" content="Student accommodation, room applications, timetables, and campus services for the University of Cape Coast Agona Nyakrom Campus.">
+  <meta name="twitter:image" content="https://uccnyakromhub.org/og-image.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
+
+  <!-- Structured data for search engines -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollegeOrUniversity",
+    "name": "University of Cape Coast — Agona Nyakrom Campus",
+    "alternateName": "UCC Nyakrom",
+    "url": "https://uccnyakromhub.org/",
+    "logo": "https://uccnyakromhub.org/favicon-512.png",
+    "description": "A fully residential health sciences campus of the University of Cape Coast in Agona Nyakrom, Central Region, Ghana, offering BSc Nursing and BSc Nutrition programmes.",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Agona Nyakrom",
+      "addressRegion": "Central Region",
+      "addressCountry": "GH"
+    },
+    "parentOrganization": {
+      "@type": "CollegeOrUniversity",
+      "name": "University of Cape Coast",
+      "url": "https://ucc.edu.gh"
+    }
+  }
+  </script>
+
   <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
   <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
 
@@ -473,11 +523,11 @@
 
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num">505+</div>
+        <div class="hero-stat-num" id="heroStatStudents">505+</div>
         <div class="hero-stat-lbl">Students</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-num">2</div>
+        <div class="hero-stat-num" id="heroStatProgrammes">2</div>
         <div class="hero-stat-lbl">Programmes</div>
       </div>
       <div class="hero-stat">
@@ -601,12 +651,12 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
 
         <div style="background:var(--off-white);border-radius:8px;padding:1rem 1.1rem;border-top:2px solid var(--gold)">
-          <div style="font-size:1.5rem;font-weight:900;color:var(--navy);font-family:var(--font-serif);line-height:1">505+</div>
+          <div style="font-size:1.5rem;font-weight:900;color:var(--navy);font-family:var(--font-serif);line-height:1" id="factStatStudents">505+</div>
           <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--gray-500);margin-top:0.25rem">Residential Students</div>
         </div>
 
         <div style="background:var(--off-white);border-radius:8px;padding:1rem 1.1rem;border-top:2px solid var(--gold)">
-          <div style="font-size:1.5rem;font-weight:900;color:var(--navy);font-family:var(--font-serif);line-height:1">2</div>
+          <div style="font-size:1.5rem;font-weight:900;color:var(--navy);font-family:var(--font-serif);line-height:1" id="factStatProgrammes">2</div>
           <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--gray-500);margin-top:0.25rem">Academic Programmes</div>
         </div>
 
@@ -1268,9 +1318,38 @@
   import { supabase }       from "./js/supabaseClient.js";
   import { initLoginModal } from "./js/auth.js";
   import { fetchRooms, renderRoomGrid } from "./js/rooms.js";
-  import { populateProgramSelect } from "./js/programmes.js";
+  import { populateProgramSelect, fetchActiveProgrammes } from "./js/programmes.js";
 
   initLoginModal();
+
+  // ── Live landing-page stats (replaces hardcoded placeholder numbers) ───────
+  (async function loadLandingStats() {
+    try {
+      const [{ count: totalStudents }, { count: residentialStudents }, programmes] = await Promise.all([
+        supabase.from("students").select("id", { count: "exact", head: true }),
+        supabase.from("students").select("id", { count: "exact", head: true }).not("room_id", "is", null),
+        fetchActiveProgrammes(),
+      ]);
+
+      const total = totalStudents ?? 0;
+      const residential = residentialStudents ?? 0;
+      const progCount = programmes?.length ?? 0;
+
+      const heroStudents = document.getElementById("heroStatStudents");
+      if (heroStudents) heroStudents.textContent = total.toLocaleString();
+
+      const heroProg = document.getElementById("heroStatProgrammes");
+      if (heroProg) heroProg.textContent = progCount;
+
+      const factStudents = document.getElementById("factStatStudents");
+      if (factStudents) factStudents.textContent = residential.toLocaleString();
+
+      const factProg = document.getElementById("factStatProgrammes");
+      if (factProg) factProg.textContent = progCount;
+    } catch (err) {
+      console.warn("loadLandingStats failed, keeping placeholder values:", err);
+    }
+  })();
 
   // Populate the public application programme dropdown from the managed list
   populateProgramSelect(document.getElementById("pubProgram"), { includeBlank: true, blankLabel: "Select programme" });
