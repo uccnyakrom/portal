@@ -1316,11 +1316,12 @@
 
 <script type="module">
   import { supabase }       from "./js/supabaseClient.js";
-  import { initLoginModal } from "./js/auth.js";
+  import { initLoginModal, checkIdleRedirect } from "./js/auth.js";
   import { fetchRooms, renderRoomGrid } from "./js/rooms.js";
   import { populateProgramSelect, fetchActiveProgrammes } from "./js/programmes.js";
 
   initLoginModal();
+  checkIdleRedirect(); // Show message if redirected here after idle timeout
 
   // ── Live landing-page stats (replaces hardcoded placeholder numbers) ───────
   (async function loadLandingStats() {
