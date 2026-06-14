@@ -7,7 +7,7 @@ import { supabase, showToast, logAudit, sendApplicationEmail, callEdgeFunction }
 import { fetchActiveProgrammes, fetchAllProgrammes, clearProgrammeCache, populateProgramSelect, programmePillHTML } from "./programmes.js";
 import { getPermissions, filterSidebarByRole, getRoleBadgeHTML } from "./roles.js";
 import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoomModal, bulkEnrolAll, initBulkUpload } from "./admin_students.js";
-import { requireAuth, getSession, logout, initChangePasswordModal } from "./auth.js";
+import { requireAuth, getSession, logout, initChangePasswordModal, initIdleTimeout } from "./auth.js";
 import { fetchRooms, fetchAvailableRooms, fetchRoomWithOccupants, assignRoom, removeRoomAssignment, renderRoomGrid, changeRoomType } from "./rooms.js";
 import { loadFacilitiesList, loadBookings, loadMaintenance, initFacStatusModal, initBookingModal, initMaintenanceModal } from "./facilities.js";
 
@@ -105,6 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initFacStatusModal();
   initBookingModal();
   initMaintenanceModal();
+  initIdleTimeout(); // Auto-logout after 10 minutes of inactivity
 
   // Assign room modal — handler lives in admin_students.js (initAssignRoomModal),
   // which also sends the room-assignment email. Do not bind a second handler here.
