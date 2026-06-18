@@ -468,7 +468,7 @@
   <ul class="nav-links">
     <li><a href="#features">Portal Features</a></li>
     <li><a href="#news">News</a></li>
-    <li><a href="#apply">Apply</a></li>
+    <li><a href="#" onclick="event.preventDefault();openApplyModal()">Apply</a></li>
   </ul>
   <button id="signInBtn" onclick="document.getElementById('loginModal').classList.add('open')">Sign In →</button>
 </nav>
@@ -603,6 +603,11 @@
       </div>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
         <div id="appStatusBadgeStrip" style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.4rem 0.9rem;border-radius:999px"></div>
+        <button id="applyStripBtn" onclick="openApplyModal()"
+          style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);padding:.75rem 1.8rem;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;transition:all 0.2s"
+          onmouseover="this.style.borderColor='rgba(255,255,255,0.8)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.4)'">
+          Apply for Room →
+        </button>
         <button onclick="document.getElementById('loginModal').classList.add('open')"
           style="background:var(--gold);color:var(--navy);border:none;padding:.75rem 1.8rem;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;transition:background 0.2s"
           onmouseover="this.style.background='#e2c05a'" onmouseout="this.style.background='#c9a030'">
@@ -1807,6 +1812,7 @@
 
   function applyAppStatus(isOpen) {
     const applyBtn        = document.getElementById('applyPublicBtn');
+    const applyStripBtn   = document.getElementById('applyStripBtn');
     const closedBadge     = document.getElementById('appClosedBadge');
     const stripBadge      = document.getElementById('appStatusBadgeStrip');
     const toggleBtn       = document.getElementById('toggleAppBtn');
@@ -1821,6 +1827,8 @@
         applyBtn.textContent    = 'Apply for Room →';
         applyBtn.setAttribute('onclick', 'openApplyModal()');
       }
+      // Strip apply button — show
+      if (applyStripBtn) applyStripBtn.style.display = '';
       if (closedBadge) closedBadge.style.display = 'none';
 
       // Modal content — show form, hide notice
@@ -1845,6 +1853,8 @@
     } else {
       // Hero button — hide
       if (applyBtn) applyBtn.style.display = 'none';
+      // Strip apply button — hide
+      if (applyStripBtn) applyStripBtn.style.display = 'none';
       if (closedBadge) closedBadge.style.display = 'inline-flex';
 
       // Apply section — hide form, show notice
