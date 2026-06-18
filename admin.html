@@ -1464,9 +1464,34 @@ const ADMIN = getSession();
 
 // ── Image upload to Supabase Storage ─────────────────────────────────────────
 
-// Converts any image file (including HEIC) to a JPEG Blob via Canvas.
-// Works entirely in the browser — no external library needed.
+// Lazily loads the heic2any library (only when a HEIC file is selected)
+let _heic2any = null;
+async function loadHeic2Any() {
+  if (_heic2any) return _heic2any;
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js";
+    script.onload  = () => { _heic2any = window.heic2any; resolve(_heic2any); };
+    script.onerror = () => reject(new Error("Could not load HEIC converter"));
+    document.head.appendChild(script);
+  });
+}
+
+// Converts any image file to JPEG.
+// For HEIC/HEIF files it uses heic2any (handles Chrome which can't decode HEIC natively).
+// For all other formats it uses the Canvas API.
 async function convertToJpeg(file) {
+  const isHeic = /\.(heic|heif)$/i.test(file.name) ||
+                 ["image/heic","image/heif"].includes(file.type);
+
+  if (isHeic) {
+    const heic2any = await loadHeic2Any();
+    const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.88 });
+    // heic2any may return an array (for multi-image HEICs) or a single Blob
+    return Array.isArray(blob) ? blob[0] : blob;
+  }
+
+  // Canvas path for JPEG / PNG / WEBP / BMP etc.
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -1475,7 +1500,6 @@ async function convertToJpeg(file) {
       canvas.width  = img.naturalWidth;
       canvas.height = img.naturalHeight;
       const ctx = canvas.getContext("2d");
-      // Fill white background (handles transparent PNGs gracefully)
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
@@ -1507,21 +1531,21 @@ document.getElementById("newsAdminImageFile")?.addEventListener("change", async 
     return;
   }
 
-  // Convert to JPEG (handles HEIC, PNG, WEBP, BMP, etc.)
+  // Convert to JPEG
   let uploadFile;
   try {
-    status.textContent = "Converting photo…";
     const jpegBlob = await convertToJpeg(file);
     uploadFile = new File([jpegBlob], "photo.jpg", { type: "image/jpeg" });
   } catch (err) {
-    // Fallback: use original file if conversion fails
-    console.warn("JPEG conversion failed, using original:", err);
-    uploadFile = file;
+    status.style.color = "var(--red)";
+    status.textContent = "Could not process photo: " + err.message;
+    this.value = "";
+    return;
   }
 
   status.textContent = "Uploading photo…";
 
-  // Unique filename — always .jpg after conversion
+  // Always upload as .jpg
   const fileName = `news_${Date.now()}_${Math.random().toString(36).slice(2,8)}.jpg`;
 
   const { data, error } = await supabase.storage
