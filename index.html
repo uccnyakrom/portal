@@ -1092,18 +1092,176 @@
 
 <!-- ══ ORIGINAL FUNCTIONAL SECTIONS (PRESERVED) ════════════════════════ -->
 <!-- ── Public Application Section ─────────────────────────────────────────── -->
-<section style="background:var(--gray-50);padding:4rem 2rem;border-top:1px solid var(--gray-200)" id="apply">
-  <div style="max-width:680px;margin:0 auto">
-    <h2 class="section-title" style="text-align:center">Apply for Accommodation</h2>
-    <p class="section-subtitle" style="text-align:center;margin-bottom:2rem">
-      Not yet in the system? Submit your accommodation request below and the General Office will process it.
-    </p>
+<section style="display:none" id="apply"><!-- content moved to modal below --></section>
 
-    <!-- Applications Closed Notice — shown when admin closes applications -->
-    <div id="appClosedNotice" style="display:none;position:relative;overflow:hidden;text-align:center;
-         padding:3rem 2rem;border-radius:20px;margin-bottom:1.5rem;
-         background:linear-gradient(135deg,#1e1b4b 0%,#4c1d95 45%,#831843 100%);
-         box-shadow:0 20px 50px rgba(76,29,149,0.35),0 0 0 1px rgba(255,255,255,0.08) inset">
+<!-- ── Application Modal ───────────────────────────────────────────────────── -->
+<div id="applyModal" style="display:none;position:fixed;inset:0;z-index:9999;
+     background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);
+     overflow-y:auto;padding:2rem 1rem">
+  <div style="max-width:680px;margin:0 auto;position:relative">
+
+    <!-- Close button -->
+    <button onclick="closeApplyModal()" aria-label="Close"
+      style="position:absolute;top:-0.5rem;right:0;width:36px;height:36px;border-radius:50%;
+             border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:1.3rem;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             line-height:1;z-index:1">×</button>
+
+    <div style="background:var(--white);border-radius:var(--radius-lg);
+                box-shadow:0 24px 64px rgba(0,0,0,0.35);overflow:hidden">
+
+      <!-- Modal header -->
+      <div style="background:var(--navy);padding:1.4rem 2rem;display:flex;align-items:center;gap:.8rem">
+        <span style="font-size:1.5rem">🏠</span>
+        <div>
+          <div style="color:#fff;font-weight:700;font-size:1.1rem;font-family:var(--font-serif)">Apply for Accommodation</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:2px">
+            Not yet in the system? Submit your request below and the General Office will process it.
+          </div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:1.8rem 2rem">
+
+        <!-- Applications Closed Notice -->
+        <div id="appClosedNotice" style="display:none;position:relative;overflow:hidden;text-align:center;
+             padding:3rem 2rem;border-radius:16px;margin-bottom:1rem;
+             background:linear-gradient(135deg,#1e1b4b 0%,#4c1d95 45%,#831843 100%);
+             box-shadow:0 20px 50px rgba(76,29,149,0.35)">
+          <div style="position:absolute;top:-60px;right:-40px;width:200px;height:200px;border-radius:50%;
+               background:radial-gradient(circle,rgba(251,191,36,0.25),transparent 70%);pointer-events:none"></div>
+          <div style="position:absolute;bottom:-70px;left:-50px;width:240px;height:240px;border-radius:50%;
+               background:radial-gradient(circle,rgba(236,72,153,0.22),transparent 70%);pointer-events:none"></div>
+          <div style="position:relative;z-index:1">
+            <div style="display:inline-flex;align-items:center;justify-content:center;width:84px;height:84px;
+                 border-radius:50%;margin-bottom:1.2rem;font-size:2.4rem;
+                 background:linear-gradient(135deg,#fbbf24,#f59e0b);
+                 box-shadow:0 8px 24px rgba(251,191,36,0.45);
+                 animation:lockPulse 2.4s ease-in-out infinite">🔒</div>
+            <h3 style="color:#fff;font-family:var(--font-serif);font-size:1.5rem;font-weight:800;margin-bottom:.6rem">
+              Applications Closed
+            </h3>
+            <div style="display:inline-block;background:rgba(251,191,36,0.18);color:#fcd34d;
+                font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+                padding:.35rem 1rem;border-radius:999px;margin-bottom:1.1rem;
+                border:1px solid rgba(251,191,36,0.35)">Currently Not Accepting Applications</div>
+            <p style="color:rgba(255,255,255,0.78);font-size:.9rem;line-height:1.75;max-width:420px;margin:0 auto 1.4rem">
+              Accommodation applications are closed at this time. Please check back later,
+              or contact the General Office for assistance.
+            </p>
+            <a href="mailto:eaidoo@ucc.edu.gh"
+               style="display:inline-flex;align-items:center;gap:.6rem;font-size:.85rem;font-weight:700;
+                      color:#1e1b4b;text-decoration:none;background:linear-gradient(135deg,#fbbf24,#f59e0b);
+                      padding:.8rem 1.8rem;border-radius:999px;
+                      box-shadow:0 4px 16px rgba(251,191,36,0.4)">
+              📧 Contact General Office
+            </a>
+          </div>
+          <style>
+            @keyframes lockPulse {
+              0%,100% { transform:scale(1);   box-shadow:0 8px 24px rgba(251,191,36,0.45); }
+              50%      { transform:scale(1.08); box-shadow:0 12px 32px rgba(251,191,36,0.6); }
+            }
+          </style>
+        </div>
+
+        <!-- Form section -->
+        <div id="applyFormSection">
+          <div id="existingStudentAlert" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;
+               border-radius:var(--radius);padding:1.2rem 1.5rem;margin-bottom:1.5rem;text-align:center">
+            <div style="font-size:1.8rem;margin-bottom:.5rem">⚠️</div>
+            <h3 style="color:#92400e;margin-bottom:.4rem">You are already in our system!</h3>
+            <p style="color:#78350f;font-size:14px;margin-bottom:.8rem">A student with this registration number already exists. Please log in to your student portal instead.</p>
+            <a href="student.html" class="btn" style="background:var(--gold);color:#fff;font-size:13px;padding:.5rem 1.5rem;text-decoration:none;border-radius:6px">Sign In to Student Portal →</a>
+          </div>
+
+          <form id="publicApplyForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" id="pubName" placeholder="Your full name" required>
+              </div>
+              <div class="form-group">
+                <label>Registration Number *</label>
+                <input type="text" id="pubReg" placeholder="e.g. SN/NSU/25/001" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Programme *</label>
+                <select id="pubProgram" required>
+                  <option value="">Select Programme</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Level *</label>
+                <select id="pubLevel" required>
+                  <option value="">Select Level</option>
+                  <option value="100">Level 100</option>
+                  <option value="200">Level 200</option>
+                  <option value="300">Level 300</option>
+                  <option value="400">Level 400</option>
+                  <option value="500">Level 500</option>
+                  <option value="600">Level 600</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Sex *</label>
+                <select id="pubSex" required>
+                  <option value="">Select</option>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="pubPhone" placeholder="e.g. 024XXXXXXX">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email Address *</label>
+              <input type="email" id="pubEmail" placeholder="e.g. yourname@gmail.com" required>
+              <small style="color:var(--gray-400)">We will email you when your application is reviewed.</small>
+            </div>
+            <div class="form-group">
+              <label>Preferred Room (optional)</label>
+              <select id="pubRoom">
+                <option value="">No preference</option>
+              </select>
+              <small style="color:var(--gray-400)">Subject to availability and admin approval.</small>
+            </div>
+            <div class="form-group">
+              <label>Any special requests or notes (optional)</label>
+              <textarea id="pubNotes" rows="3" placeholder="e.g. medical needs, disability requirements…"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="pubSubmitBtn" style="font-size:15px;padding:.8rem">Submit Application</button>
+          </form>
+
+          <div id="publicApplyResult" style="display:none;text-align:center;padding:2rem 1rem">
+            <div style="font-size:3rem">✅</div>
+            <h3 style="color:var(--navy);margin:.5rem 0">Application Submitted!</h3>
+            <p style="color:var(--gray-600)">Your application has been received. The General Office will contact you shortly.</p>
+            <p style="color:var(--gray-400);font-size:13px;margin-top:.5rem">Reference: <strong id="appRefNum"></strong></p>
+            <button onclick="closeApplyModal()" class="btn btn-outline" style="margin-top:1.2rem">Close</button>
+          </div>
+        </div><!-- /applyFormSection -->
+
+      </div><!-- /body -->
+    </div>
+  </div>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────────────────── -->
+<footer class="landing-footer">
+  <p>
+    &copy; 2025 <strong>University of Cape Coast</strong> · Nyakrom Campus · All rights reserved.
+  </p>
+  <p style="margin-top:.4rem;font-size:12px;color:rgba(255,255,255,.35)">
+    Developed by <strong style="color:var(--gold)">Mr Emmanuel Aidoo</strong> · Senior Assistant Registrar · UCC Nyakrom Campus
+
 
       <!-- Decorative glow blobs -->
       <div style="position:absolute;top:-60px;right:-40px;width:200px;height:200px;border-radius:50%;
@@ -1151,98 +1309,7 @@
       </div>
     </div>
 
-    <style>
-      @keyframes lockPulse {
-        0%, 100% { transform: scale(1); box-shadow:0 8px 24px rgba(251,191,36,0.45); }
-        50%      { transform: scale(1.08); box-shadow:0 12px 32px rgba(251,191,36,0.6); }
-      }
-    </style>
 
-    <!-- Wrap the actual form so we can show/hide it as a unit -->
-    <div id="applyFormSection">
-    <div id="existingStudentAlert" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:var(--radius);padding:1.2rem 1.5rem;margin-bottom:1.5rem;text-align:center">
-      <div style="font-size:1.8rem;margin-bottom:.5rem">⚠️</div>
-      <h3 style="color:#92400e;margin-bottom:.4rem">You are already in our system!</h3>
-      <p style="color:#78350f;font-size:14px;margin-bottom:.8rem">A student with this registration number already exists. Please log in to your student portal instead.</p>
-      <a href="student.html" class="btn" style="background:var(--gold);color:#fff;font-size:13px;padding:.5rem 1.5rem;text-decoration:none;border-radius:6px">Sign In to Student Portal →</a>
-    </div>
-    <div style="background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:2rem;border-top:4px solid var(--gold)">
-      <form id="publicApplyForm">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Full Name *</label>
-            <input type="text" id="pubName" placeholder="Your full name" required>
-          </div>
-          <div class="form-group">
-            <label>Registration Number *</label>
-            <input type="text" id="pubReg" placeholder="e.g. SN/NSU/25/001" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Programme *</label>
-            <select id="pubProgram" required>
-              <option value="">Select Programme</option>
-              <option value="BSc Nursing">BSc Nursing</option>
-              <option value="BSc Nutrition">BSc Nutrition</option>
-              <option value="MBChB-COBES">MBChB-COBES</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Level *</label>
-            <select id="pubLevel" required>
-              <option value="">Select Level</option>
-              <option value="100">Level 100</option>
-              <option value="200">Level 200</option>
-              <option value="300">Level 300</option>
-              <option value="400">Level 400</option>
-              <option value="500">Level 500</option>
-              <option value="600">Level 600</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Sex *</label>
-            <select id="pubSex" required>
-              <option value="">Select</option>
-              <option value="M">Male</option>
-              <option value="F">Female</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Phone Number</label>
-            <input type="tel" id="pubPhone" placeholder="e.g. 024XXXXXXX">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Email Address *</label>
-          <input type="email" id="pubEmail" placeholder="e.g. yourname@gmail.com" required>
-          <small style="color:var(--gray-400)">We will email you when your application is reviewed.</small>
-        </div>
-        <div class="form-group">
-          <label>Preferred Room (optional)</label>
-          <select id="pubRoom">
-            <option value="">No preference</option>
-          </select>
-          <small style="color:var(--gray-400)">Subject to availability and admin approval.</small>
-        </div>
-        <div class="form-group">
-          <label>Any special requests or notes (optional)</label>
-          <textarea id="pubNotes" rows="3" placeholder="e.g. medical needs, disability requirements…"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-full" id="pubSubmitBtn" style="font-size:15px;padding:.8rem">Submit Application</button>
-      </form>
-      <div id="publicApplyResult" style="display:none;text-align:center;padding:1.5rem">
-        <div style="font-size:3rem">✅</div>
-        <h3 style="color:var(--navy);margin:.5rem 0">Application Submitted!</h3>
-        <p style="color:var(--gray-600)">Your application has been received. The General Office will contact you shortly.</p>
-        <p style="color:var(--gray-400);font-size:13px;margin-top:.5rem">Reference: <strong id="appRefNum"></strong></p>
-      </div>
-    </div>
-    </div><!-- /applyFormSection -->
-  </div>
-</section>
 
 <!-- ── Footer ──────────────────────────────────────────────────────────────── -->
 <footer class="landing-footer">
@@ -1362,22 +1429,32 @@
     });
   });
 
-  // Apply for Room button — smooth scroll to form
+  // ── Apply modal open / close ─────────────────────────────────────────────
+  window.openApplyModal = function() {
+    document.getElementById("applyModal").style.display = "block";
+    document.body.style.overflow = "hidden";
+    // Reset form state each time
+    document.getElementById("publicApplyForm").style.display = "";
+    document.getElementById("publicApplyResult").style.display = "none";
+    document.getElementById("existingStudentAlert").style.display = "none";
+  };
+
+  window.closeApplyModal = function() {
+    document.getElementById("applyModal").style.display = "none";
+    document.body.style.overflow = "";
+  };
+
+  // Close on backdrop click
+  document.getElementById("applyModal")?.addEventListener("click", function(e) {
+    if (e.target === this) closeApplyModal();
+  });
+
+  // Close on Escape key
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeApplyModal(); });
+
+  // Apply for Room button — open modal
   document.getElementById("applyPublicBtn")?.addEventListener("click", () => {
-    const applySection = document.getElementById("apply");
-    if (applySection) {
-      applySection.scrollIntoView({ behavior: "smooth", block: "start" });
-      // Highlight the form briefly
-      setTimeout(() => {
-        const form = applySection.querySelector("form");
-        if (form) {
-          form.style.boxShadow = "0 0 0 3px var(--gold)";
-          form.style.borderRadius = "var(--radius-lg)";
-          form.style.transition = "box-shadow 0.3s";
-          setTimeout(() => { form.style.boxShadow = ""; }, 2000);
-        }
-      }, 600);
-    }
+    openApplyModal();
   });
 
 
@@ -1737,15 +1814,16 @@
     const appClosedNotice = document.getElementById('appClosedNotice');
 
     if (isOpen) {
-      // Hero button — restore
+      // Hero button — restore, opens modal
       if (applyBtn) {
         applyBtn.style.display  = '';
         applyBtn.disabled       = false;
         applyBtn.textContent    = 'Apply for Room →';
+        applyBtn.onclick        = openApplyModal;
       }
       if (closedBadge) closedBadge.style.display = 'none';
 
-      // Apply section — show form, hide notice
+      // Modal content — show form, hide notice
       if (applyFormSec)    applyFormSec.style.display    = '';
       if (appClosedNotice) appClosedNotice.style.display = 'none';
 
