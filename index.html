@@ -1819,7 +1819,7 @@
         applyBtn.style.display  = '';
         applyBtn.disabled       = false;
         applyBtn.textContent    = 'Apply for Room →';
-        applyBtn.onclick        = openApplyModal;
+        applyBtn.setAttribute('onclick', 'openApplyModal()');
       }
       if (closedBadge) closedBadge.style.display = 'none';
 
