@@ -1432,27 +1432,41 @@
     const fallback = document.getElementById('heroCrestFallback');
     if (!panel) return;
 
-    // Fetch up to 10 news items that have an image
-    const { data } = await supabase
-      .from('campus_news')
-      .select('title, image_url, category')
-      .not('image_url', 'is', null)
-      .order('published_date', { ascending: false })
-      .limit(10);
+    // Fetch standalone hero photos + recent news photos in parallel
+    const [heroRes, newsRes] = await Promise.all([
+      supabase
+        .from('hero_photos')
+        .select('image_url, caption')
+        .eq('active', true)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('campus_news')
+        .select('title, image_url')
+        .not('image_url', 'is', null)
+        .order('published_date', { ascending: false })
+        .limit(8)
+    ]);
 
-    const photos = (data || []).filter(n => n.image_url);
-    if (!photos.length) return; // leave fallback crest visible
+    // Hero photos first, then news photos (deduplicated by URL)
+    const heroPhotos = (heroRes.data || []).map(p => ({ image_url: p.image_url, caption: p.caption || '' }));
+    const newsPhotos = (newsRes.data || [])
+      .filter(n => n.image_url)
+      .map(n => ({ image_url: n.image_url, caption: n.title || '' }));
 
-    fallback.style.display = 'none'; // hide crest, show photos
+    const seenUrls = new Set(heroPhotos.map(p => p.image_url));
+    const combined = [...heroPhotos, ...newsPhotos.filter(p => !seenUrls.has(p.image_url))].slice(0, 12);
+
+    if (!combined.length) return; // leave fallback crest visible
+    fallback.style.display = 'none';
 
     let current = 0;
 
     // Build slide elements
-    photos.forEach((p, i) => {
+    combined.forEach((p, i) => {
       const div = document.createElement('div');
       div.style.cssText = `position:absolute;inset:0;background:url('${p.image_url}') center/cover no-repeat;
         transition:opacity 1s ease;opacity:${i === 0 ? 1 : 0};`;
-      div.dataset.idx = i;
       panel.appendChild(div);
 
       // Dot indicator
@@ -1464,8 +1478,8 @@
     });
 
     // Show caption for first slide
-    if (photos[0].title) {
-      capText.textContent = photos[0].title;
+    if (combined[0].caption) {
+      capText.textContent = combined[0].caption;
       caption.style.display = 'block';
     }
 
@@ -1477,16 +1491,12 @@
       current = idx;
       slides[current].style.opacity = '1';
       dots[current].style.background = '#c9a030';
-      if (photos[current].title) {
-        capText.textContent = photos[current].title;
-        caption.style.display = 'block';
-      } else {
-        caption.style.display = 'none';
-      }
+      capText.textContent = combined[current].caption || '';
+      caption.style.display = combined[current].caption ? 'block' : 'none';
     }
 
     // Auto-advance every 4 seconds
-    setInterval(() => goTo((current + 1) % photos.length), 4000);
+    setInterval(() => goTo((current + 1) % combined.length), 4000);
   })();
 
   // ── Live landing-page stats (replaces hardcoded placeholder numbers) ───────
