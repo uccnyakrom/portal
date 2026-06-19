@@ -331,6 +331,14 @@ document.addEventListener("DOMContentLoaded", () => {
 <!-- ── UCC Nyakrom Campus Chatbot (Botpress v3.6) ───────────────────────────── -->
 <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2024/11/20/05/20241120055244-AQF92GEH.js" defer></script>
+<script>
+  // Auto-open the chatbot after 6 seconds (students are already engaged)
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (window.botpress) window.botpress.open();
+    }, 6000);
+  });
+</script>
 
 </body>
 </html>
