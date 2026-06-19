@@ -7,7 +7,7 @@
 export const ROLE_PERMISSIONS = {
   "superadmin": {
     label: "Super Admin",
-    sections: ["overview","rooms","reports","statistics","export","facilities","maintenance","notices","campusnews","appsettings"],
+    sections: ["overview","rooms","reports","statistics","export","facilities","maintenance","notices","campusnews","herophotos","appsettings"],
     canExport: true,
     canManageUsers: false,
     canEditStudents: false,
@@ -19,7 +19,7 @@ export const ROLE_PERMISSIONS = {
   "admin": {
     label: "Administrator",
     sections: ["overview","students","rooms","allocations","applications","publicapps",
-               "managerooms","programmes","reports","statistics","users","notices","campusnews","appsettings",
+               "managerooms","programmes","reports","statistics","users","notices","campusnews","herophotos","appsettings",
                "export","audit","facilities","bookings","maintenance"],
     canExport: true,
     canManageUsers: true,
@@ -32,7 +32,7 @@ export const ROLE_PERMISSIONS = {
   "accommodation": {
     label: "Accommodation Officer",
     sections: ["overview","students","rooms","allocations","applications","statistics",
-               "notices","campusnews","appsettings","facilities","maintenance"],
+               "notices","campusnews","herophotos","appsettings","facilities","maintenance"],
     canExport: false,
     canManageUsers: false,
     canEditStudents: true,
