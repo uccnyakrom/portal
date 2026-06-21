@@ -330,15 +330,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <!-- ── UCC Nyakrom Campus Chatbot (Botpress v3.6) ───────────────────────────── -->
 <style>
-  /* ── Botpress: mobile sizing fix ──────────────────────────────────────────── */
-  @media (max-width: 768px) {
+  /* ── Botpress: portrait phone sizing fix ──────────────────────────────────── */
+  @media (max-width: 768px) and (orientation: portrait) {
     iframe[src*="botpress"],
     iframe[src*="bpcontent"],
     [id*="bp-web"] iframe,
     [class*="bpw"] iframe {
       width:      min(92vw, 400px) !important;
-      height:     62vh             !important;
-      max-height: 520px            !important;
+      height:     55vh             !important;
+      max-height: 480px            !important;
       min-height: 260px            !important;
     }
     [id*="bp-web"],
@@ -355,31 +355,39 @@ document.addEventListener("DOMContentLoaded", () => {
 <script src="https://files.bpcontent.cloud/2024/11/20/05/20241120055244-AQF92GEH.js" defer></script>
 <script>
 (function () {
-  var isMobile = window.innerWidth <= 768;
+  // ── Portrait phone fix: MutationObserver catches elements after Botpress injects them
+  function isPortraitPhone() {
+    return window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
+  }
 
-  // ── Mobile fix: MutationObserver catches elements after Botpress injects them
-  if (isMobile) {
-    var _bp_observer = new MutationObserver(function () {
-      document.querySelectorAll('iframe').forEach(function (frame) {
-        var parent = frame.parentElement;
-        if (!parent) return;
-        var ps = window.getComputedStyle(parent);
-        if (ps.position === 'fixed') {
-          frame.style.setProperty('width',      'min(92vw, 400px)', 'important');
-          frame.style.setProperty('height',     '62vh',             'important');
-          frame.style.setProperty('max-height', '520px',            'important');
-          parent.style.setProperty('width',     'min(92vw, 400px)', 'important');
-          parent.style.setProperty('max-height','520px',            'important');
-          parent.style.setProperty('bottom',    '72px',             'important');
-          parent.style.setProperty('right',     '8px',              'important');
-        }
-      });
-    });
-    _bp_observer.observe(document.body, {
-      childList: true, subtree: true,
-      attributes: true, attributeFilter: ['style','class']
+  function clampBotpress() {
+    if (!isPortraitPhone()) return;
+    document.querySelectorAll('iframe').forEach(function (frame) {
+      var parent = frame.parentElement;
+      if (!parent) return;
+      var ps = window.getComputedStyle(parent);
+      if (ps.position === 'fixed') {
+        frame.style.setProperty('width',      'min(92vw, 400px)', 'important');
+        frame.style.setProperty('height',     '55vh',             'important');
+        frame.style.setProperty('max-height', '480px',            'important');
+        parent.style.setProperty('width',     'min(92vw, 400px)', 'important');
+        parent.style.setProperty('max-height','480px',            'important');
+        parent.style.setProperty('bottom',    '72px',             'important');
+        parent.style.setProperty('right',     '8px',              'important');
+      }
     });
   }
+
+  var _bp_observer = new MutationObserver(clampBotpress);
+  _bp_observer.observe(document.body, {
+    childList: true, subtree: true,
+    attributes: true, attributeFilter: ['style','class']
+  });
+
+  // Re-apply on orientation change
+  window.addEventListener('orientationchange', function () {
+    setTimeout(clampBotpress, 300);
+  });
 
   // ── Auto-open on all devices after sizing fix has had time to apply
   window.addEventListener('load', function () {
