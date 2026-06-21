@@ -2050,15 +2050,68 @@
 </script>
 
 <!-- ── UCC Nyakrom Campus Chatbot (Botpress v3.6) ───────────────────────────── -->
+<style>
+  /* ── Botpress: mobile sizing fix ──────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    /* Clamp the chat panel iframe so it never fills the whole screen */
+    iframe[src*="botpress"],
+    iframe[src*="bpcontent"],
+    [id*="bp-web"] iframe,
+    [class*="bpw"] iframe {
+      width:      min(92vw, 400px) !important;
+      height:     62vh             !important;
+      max-height: 520px            !important;
+      min-height: 260px            !important;
+    }
+    /* Clamp the outer wrapper too */
+    [id*="bp-web"],
+    [class*="bpWidget"],
+    [class*="bpw-layout"] {
+      width:  min(92vw, 400px) !important;
+      bottom: 72px             !important;
+      right:  8px              !important;
+    }
+  }
+</style>
+
 <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2024/11/20/05/20241120055244-AQF92GEH.js" defer></script>
 <script>
-  // Auto-open the chatbot after 4 seconds
+(function () {
+  var isMobile = window.innerWidth <= 768;
+
+  // ── Mobile fix: MutationObserver catches elements after Botpress injects them
+  if (isMobile) {
+    var _bp_observer = new MutationObserver(function () {
+      document.querySelectorAll('iframe').forEach(function (frame) {
+        var parent = frame.parentElement;
+        if (!parent) return;
+        var ps = window.getComputedStyle(parent);
+        // Only target fixed-positioned wrappers (Botpress chat panel)
+        if (ps.position === 'fixed') {
+          frame.style.setProperty('width',      'min(92vw, 400px)', 'important');
+          frame.style.setProperty('height',     '62vh',             'important');
+          frame.style.setProperty('max-height', '520px',            'important');
+          parent.style.setProperty('width',     'min(92vw, 400px)', 'important');
+          parent.style.setProperty('max-height','520px',            'important');
+          parent.style.setProperty('bottom',    '72px',             'important');
+          parent.style.setProperty('right',     '8px',              'important');
+        }
+      });
+    });
+    _bp_observer.observe(document.body, {
+      childList: true, subtree: true,
+      attributes: true, attributeFilter: ['style','class']
+    });
+  }
+
+  // ── Auto-open on all devices after sizing fix has had time to apply
   window.addEventListener('load', function () {
     setTimeout(function () {
       if (window.botpress) window.botpress.open();
     }, 4000);
   });
+})();
 </script>
 
 </body>
