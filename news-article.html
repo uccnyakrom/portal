@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<!--
+  news-article.html — UCC Nyakrom Campus Portal
+  Standalone news article page. URL: /news-article.html?id=<uuid>
+  Shareable link for individual news posts.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Campus News — UCC Nyakrom Smart Campus Portal</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
+
+  <meta name="sb-url" content="https://zzunkfzpkgrtkiivbsqr.supabase.co">
+  <meta name="sb-key" content="sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --navy:       #0D1B3E;
+      --navy-mid:   #162650;
+      --gold:       #C9A030;
+      --gold-light: #E8C84A;
+      --off-white:  #F8F7F4;
+      --white:      #FFFFFF;
+      --gray-100:   #F1EFE9;
+      --gray-300:   #D0CCBF;
+      --gray-500:   #8A8275;
+      --gray-700:   #3D3A35;
+      --font:       'Inter', system-ui, sans-serif;
+      --font-serif: 'Lora', Georgia, serif;
+      --radius:     8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font); background: var(--off-white); color: var(--gray-700); overflow-x: clip; }
+
+    /* ── NAV ── */
+    .landing-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 64px;
+      background: var(--navy);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2.5rem;
+      border-bottom: 1px solid rgba(201,160,48,0.25);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+    .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .nav-brand-name { font-size: 0.82rem; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
+    .nav-brand-sub  { font-size: 0.62rem; color: rgba(255,255,255,0.55); letter-spacing: 0.06em; text-transform: uppercase; }
+    .nav-back {
+      font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.75);
+      text-decoration: none; letter-spacing: 0.04em;
+      display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--gold); }
+
+    /* ── PAGE LAYOUT ── */
+    .page-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 100px 1.5rem 4rem;
+    }
+
+    /* ── ARTICLE HEADER ── */
+    .article-back {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.78rem; font-weight: 600; color: var(--gray-500);
+      text-decoration: none; margin-bottom: 1.6rem;
+      transition: color 0.2s;
+    }
+    .article-back:hover { color: var(--navy); }
+
+    .article-tag {
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase;
+      padding: 0.28rem 0.7rem; border-radius: 999px;
+      display: inline-block; margin-bottom: 1rem;
+    }
+    .tag-academic { background: #e8f0fe; color: #1a56a0; }
+    .tag-admin    { background: #fef3c7; color: #92400e; }
+    .tag-event    { background: #d1fae5; color: #065f46; }
+    .tag-notice   { background: #fee2e2; color: #991b1b; }
+    .tag-featured { background: rgba(201,160,48,0.15); color: #92710a; }
+
+    .article-title {
+      font-family: var(--font-serif);
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700; line-height: 1.25;
+      color: var(--navy);
+      margin-bottom: 0.8rem;
+    }
+
+    .article-meta {
+      font-size: 0.78rem; color: var(--gray-500);
+      display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+      margin-bottom: 1.8rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .article-meta-dot { color: var(--gray-300); }
+
+    .article-cover {
+      width: 100%; max-height: 420px; object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      display: block;
+    }
+
+    .article-body {
+      font-size: 1rem; line-height: 1.85;
+      color: var(--gray-700);
+      white-space: pre-wrap;
+    }
+    .article-body p + p { margin-top: 1.2em; }
+
+    /* ── SHARE ROW ── */
+    .article-share {
+      margin-top: 2.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--gray-100);
+      display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+    }
+    .share-label { font-size: 0.78rem; font-weight: 600; color: var(--gray-500); }
+    .share-btn {
+      font-size: 0.75rem; font-weight: 600; padding: 0.45rem 1rem;
+      border-radius: 999px; border: 1.5px solid var(--gray-300);
+      background: #fff; color: var(--gray-700);
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    .share-btn:hover { border-color: var(--navy); color: var(--navy); }
+    .share-btn.copied { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    /* ── MORE NEWS ── */
+    .more-section { margin-top: 3.5rem; }
+    .more-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 1.2rem;
+    }
+    .more-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .more-card {
+      background: var(--white); border-radius: 10px;
+      border: 1px solid var(--gray-100);
+      overflow: hidden; text-decoration: none;
+      transition: box-shadow 0.2s;
+    }
+    .more-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .more-card-img { width: 100%; height: 110px; object-fit: cover; display: block; }
+    .more-card-body { padding: 0.8rem 1rem 1rem; }
+    .more-card-title {
+      font-size: 0.85rem; font-weight: 700; color: var(--navy);
+      line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .more-card-date { font-size: 0.68rem; color: var(--gray-500); margin-top: 0.35rem; }
+
+    /* ── SKELETON ── */
+    .skeleton { background: linear-gradient(90deg, #e8e5de 25%, #f0ede6 50%, #e8e5de 75%); background-size: 200%; animation: sk 1.4s infinite; border-radius: 6px; }
+    @keyframes sk { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+
+    /* ── NOT FOUND ── */
+    .not-found {
+      text-align: center; padding: 5rem 1rem;
+    }
+    .not-found h2 { font-family: var(--font-serif); color: var(--navy); margin-bottom: 0.8rem; font-size: 1.6rem; }
+    .not-found p  { color: var(--gray-500); margin-bottom: 1.5rem; }
+    .not-found a  { background: var(--gold); color: var(--navy); padding: 0.7rem 1.8rem; border-radius: var(--radius); text-decoration: none; font-weight: 700; font-size: 0.85rem; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .landing-nav { padding: 0 1.2rem; }
+      .page-wrap { padding: 88px 1rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="landing-nav">
+  <a href="index.html" class="nav-brand">
+    <img src="favicon-32.png" alt="UCC Crest" style="height:36px;width:auto;object-fit:contain;flex-shrink:0">
+    <div class="nav-brand-text">
+      <span class="nav-brand-name">UCC Nyakrom Campus</span>
+      <span class="nav-brand-sub">Smart Campus Portal</span>
+    </div>
+  </a>
+  <a href="index.html#news" class="nav-back">← Back to News</a>
+</nav>
+
+<!-- ── ARTICLE ── -->
+<div class="page-wrap">
+  <div id="articleContent">
+    <!-- skeleton while loading -->
+    <div class="skeleton" style="height:14px;width:80px;margin-bottom:1.6rem"></div>
+    <div class="skeleton" style="height:10px;width:60px;margin-bottom:1rem"></div>
+    <div class="skeleton" style="height:40px;width:90%;margin-bottom:0.6rem"></div>
+    <div class="skeleton" style="height:40px;width:70%;margin-bottom:1rem"></div>
+    <div class="skeleton" style="height:10px;width:50%;margin-bottom:2rem"></div>
+    <div class="skeleton" style="height:320px;border-radius:12px;margin-bottom:2rem"></div>
+    <div class="skeleton" style="height:12px;width:100%;margin-bottom:0.6rem"></div>
+    <div class="skeleton" style="height:12px;width:95%;margin-bottom:0.6rem"></div>
+    <div class="skeleton" style="height:12px;width:88%;margin-bottom:0.6rem"></div>
+    <div class="skeleton" style="height:12px;width:92%;margin-bottom:0.6rem"></div>
+    <div class="skeleton" style="height:12px;width:75%"></div>
+  </div>
+</div>
+
+<script>
+  const TAG = {
+    featured: { cls: 'tag-featured', label: '⭐ Featured'       },
+    academic:  { cls: 'tag-academic', label: '📘 Academic'       },
+    event:     { cls: 'tag-event',    label: '🟢 Event'          },
+    admin:     { cls: 'tag-admin',    label: '🟡 Administration'  },
+    notice:    { cls: 'tag-notice',   label: '🔴 Notice'         },
+  };
+
+  function fmtDate(d) {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  async function loadArticle() {
+    const params = new URLSearchParams(window.location.search);
+    const id     = params.get('id');
+    const wrap   = document.getElementById('articleContent');
+
+    if (!id) {
+      wrap.innerHTML = notFoundHTML('No article specified.');
+      return;
+    }
+
+    // Init Supabase
+    const sbUrl = document.querySelector('meta[name="sb-url"]').content;
+    const sbKey = document.querySelector('meta[name="sb-key"]').content;
+    const sb    = supabase.createClient(sbUrl, sbKey);
+
+    const { data, error } = await sb
+      .from('campus_news')
+      .select('*')
+      .eq('id', id)
+      .eq('is_published', true)
+      .single();
+
+    if (error || !data) {
+      wrap.innerHTML = notFoundHTML('This article could not be found or is no longer available.');
+      return;
+    }
+
+    // Update page title & meta
+    document.title = `${data.title} — UCC Nyakrom Campus`;
+
+    const tag = TAG[data.category] || TAG.featured;
+    const bodyParagraphs = data.body
+      ? data.body.split(/\n\n+/).map(p => `<p>${escapeHtml(p.trim())}</p>`).join('\n')
+      : '';
+
+    wrap.innerHTML = `
+      <a href="index.html#news" class="article-back">← All News</a>
+
+      <span class="article-tag ${tag.cls}">${tag.label}</span>
+
+      <h1 class="article-title">${escapeHtml(data.title)}</h1>
+
+      <div class="article-meta">
+        <span>${fmtDate(data.published_date)}</span>
+        ${data.location ? `<span class="article-meta-dot">·</span><span>${escapeHtml(data.location)}</span>` : ''}
+      </div>
+
+      ${data.image_url ? `<img class="article-cover" src="${escapeHtml(data.image_url)}" alt="${escapeHtml(data.title)}">` : ''}
+
+      <div class="article-body">${bodyParagraphs || '<p style="color:var(--gray-500);font-style:italic">No further details provided.</p>'}</div>
+
+      <div class="article-share">
+        <span class="share-label">Share:</span>
+        <button class="share-btn" onclick="copyLink(this)">🔗 Copy link</button>
+        <a class="share-btn" href="https://wa.me/?text=${encodeURIComponent(data.title + ' — ' + window.location.href)}" target="_blank" rel="noopener">💬 WhatsApp</a>
+      </div>
+
+      <div class="more-section" id="moreSection"></div>
+    `;
+
+    // Load more articles
+    loadMore(sb, id);
+  }
+
+  async function loadMore(sb, currentId) {
+    const { data } = await sb
+      .from('campus_news')
+      .select('id, title, image_url, published_date, category')
+      .eq('is_published', true)
+      .neq('id', currentId)
+      .order('published_date', { ascending: false })
+      .limit(3);
+
+    if (!data || data.length === 0) return;
+
+    const section = document.getElementById('moreSection');
+    if (!section) return;
+
+    const cards = data.map(item => {
+      const t = TAG[item.category] || TAG.academic;
+      return `
+        <a href="news-article.html?id=${item.id}" class="more-card">
+          ${item.image_url ? `<img class="more-card-img" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}">` : ''}
+          <div class="more-card-body">
+            <span class="article-tag ${t.cls}" style="font-size:0.52rem;padding:0.2rem 0.5rem;margin-bottom:0.4rem">${t.label}</span>
+            <div class="more-card-title">${escapeHtml(item.title)}</div>
+            <div class="more-card-date">${fmtDate(item.published_date)}</div>
+          </div>
+        </a>`;
+    }).join('');
+
+    section.innerHTML = `<div class="more-label">More from Campus</div><div class="more-grid">${cards}</div>`;
+  }
+
+  function copyLink(btn) {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '🔗 Copy link'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  function notFoundHTML(msg) {
+    return `<div class="not-found">
+      <h2>Article Not Found</h2>
+      <p>${msg}</p>
+      <a href="index.html#news">← Back to Campus News</a>
+    </div>`;
+  }
+
+  loadArticle();
+</script>
+
+<!-- ── Botpress Chatbot ── -->
+<script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
+<script src="https://files.bpcontent.cloud/2024/11/20/05/20241120055244-AQF92GEH.js" defer></script>
+
+</body>
+</html>
