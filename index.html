@@ -2050,69 +2050,52 @@
 </script>
 
 <!-- ── UCC Nyakrom Campus Chatbot (Botpress v3.6) ───────────────────────────── -->
-<style>
-  /* ── Botpress: portrait phone sizing fix ──────────────────────────────────── */
-  @media (max-width: 768px) and (orientation: portrait) {
-    /* Clamp the chat panel iframe so it never fills the whole screen */
-    iframe[src*="botpress"],
-    iframe[src*="bpcontent"],
-    [id*="bp-web"] iframe,
-    [class*="bpw"] iframe {
-      width:      min(92vw, 400px) !important;
-      height:     55vh             !important;
-      max-height: 480px            !important;
-      min-height: 260px            !important;
-    }
-    /* Clamp the outer wrapper too */
-    [id*="bp-web"],
-    [class*="bpWidget"],
-    [class*="bpw-layout"] {
-      width:  min(92vw, 400px) !important;
-      bottom: 72px             !important;
-      right:  8px              !important;
-    }
-  }
-</style>
-
 <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2024/11/20/05/20241120055244-AQF92GEH.js" defer></script>
 <script>
 (function () {
-  // ── Portrait phone fix: MutationObserver catches elements after Botpress injects them
   function isPortraitPhone() {
     return window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
   }
 
+  // Botpress sets top:0;left:0;right:0;bottom:0 on mobile (full-screen takeover).
+  // We find its high-z-index fixed container and override those values.
   function clampBotpress() {
     if (!isPortraitPhone()) return;
-    document.querySelectorAll('iframe').forEach(function (frame) {
-      var parent = frame.parentElement;
-      if (!parent) return;
-      var ps = window.getComputedStyle(parent);
-      if (ps.position === 'fixed') {
-        frame.style.setProperty('width',      'min(92vw, 400px)', 'important');
-        frame.style.setProperty('height',     '55vh',             'important');
-        frame.style.setProperty('max-height', '480px',            'important');
-        parent.style.setProperty('width',     'min(92vw, 400px)', 'important');
-        parent.style.setProperty('max-height','480px',            'important');
-        parent.style.setProperty('bottom',    '72px',             'important');
-        parent.style.setProperty('right',     '8px',              'important');
-      }
+    Array.from(document.body.children).forEach(function (el) {
+      if (el.tagName !== 'DIV') return;
+      var cs = window.getComputedStyle(el);
+      if (cs.position !== 'fixed') return;
+      if (parseInt(cs.zIndex || '0', 10) < 1000) return;
+      el.style.setProperty('top',        'auto',             'important');
+      el.style.setProperty('left',       'auto',             'important');
+      el.style.setProperty('right',      '8px',              'important');
+      el.style.setProperty('bottom',     '72px',             'important');
+      el.style.setProperty('width',      'min(92vw, 380px)', 'important');
+      el.style.setProperty('height',     '55vh',             'important');
+      el.style.setProperty('max-height', '480px',            'important');
+      el.style.setProperty('overflow',   'hidden',           'important');
+      el.querySelectorAll('iframe').forEach(function (f) {
+        f.style.setProperty('width',  '100%', 'important');
+        f.style.setProperty('height', '100%', 'important');
+      });
     });
   }
 
-  var _bp_observer = new MutationObserver(clampBotpress);
-  _bp_observer.observe(document.body, {
-    childList: true, subtree: true,
-    attributes: true, attributeFilter: ['style','class']
-  });
+  // Poll every 250 ms for 20 s to keep clamping as Botpress renders/re-renders
+  var _poll = setInterval(clampBotpress, 250);
+  setTimeout(function () { clearInterval(_poll); }, 20000);
 
-  // Re-apply on orientation change
+  // Restart on orientation change
   window.addEventListener('orientationchange', function () {
-    setTimeout(clampBotpress, 300);
+    clearInterval(_poll);
+    setTimeout(function () {
+      _poll = setInterval(clampBotpress, 250);
+      setTimeout(function () { clearInterval(_poll); }, 20000);
+    }, 400);
   });
 
-  // ── Auto-open on all devices after sizing fix has had time to apply
+  // Auto-open on all devices
   window.addEventListener('load', function () {
     setTimeout(function () {
       if (window.botpress) window.botpress.open();
