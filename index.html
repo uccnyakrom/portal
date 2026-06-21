@@ -84,8 +84,8 @@
       --shadow-lg:  0 8px 32px rgba(0,0,0,0.14);
     }
     *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-    html { scroll-behavior: smooth; }
-    body { font-family: var(--font); background: var(--off-white); color: var(--gray-700); overflow-x: hidden; }
+    html { scroll-behavior: smooth; overflow-y: auto; }
+    body { font-family: var(--font); background: var(--off-white); color: var(--gray-700); overflow-x: clip; }
 
     /* ── NAV ───────────────────────────────────────────────────────────── */
     .landing-nav {
@@ -452,6 +452,74 @@
       .hero-motto { position:relative !important; }
       .landing-nav { padding: 0 1.2rem !important; }
       .nav-links { display:none !important; }
+    }
+
+    /* ── PORTRAIT PHONE FIXES ───────────────────────────────────────────── */
+    @media (max-width: 768px) and (orientation: portrait) {
+      /* Ensure the page is scrollable — critical on iOS Safari */
+      html, body {
+        overflow-x: clip !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        height: auto !important;
+        min-height: 100% !important;
+      }
+
+      /* Hero must not trap the full viewport height on portrait phones */
+      .hero {
+        min-height: 0 !important;
+        height: auto !important;
+      }
+
+      /* Feature cards: single column, no min-width that can cause overflow */
+      .features-grid {
+        grid-template-columns: 1fr !important;
+        min-width: 0 !important;
+      }
+      .feature-card {
+        min-width: 0 !important;
+      }
+
+      /* Access strip: stack vertically, full-width buttons */
+      .access-strip {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 1rem !important;
+      }
+      .access-strip > div:last-child {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        width: 100% !important;
+      }
+      .access-strip button {
+        width: 100% !important;
+        text-align: center !important;
+      }
+
+      /* About section: single column */
+      #about > div:first-child {
+        grid-template-columns: 1fr !important;
+        min-height: auto !important;
+      }
+      #about > div:first-child > div:first-child {
+        min-height: 220px !important;
+      }
+
+      /* Prevent any section from creating horizontal overflow */
+      .features-section,
+      .news-section,
+      #about,
+      #events {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      /* News grid already 1 col but make sure */
+      .news-grid {
+        grid-template-columns: 1fr !important;
+        min-width: 0 !important;
+      }
     }
   </style>
 </head>
@@ -2058,35 +2126,39 @@
     return window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
   }
 
-  // Botpress sets top:0;left:0;right:0;bottom:0 on mobile (full-screen takeover).
-  // We find its high-z-index fixed container and override those values.
   function clampBotpress() {
     if (!isPortraitPhone()) return;
-    Array.from(document.body.children).forEach(function (el) {
-      if (el.tagName !== 'DIV') return;
-      var cs = window.getComputedStyle(el);
-      if (cs.position !== 'fixed') return;
-      if (parseInt(cs.zIndex || '0', 10) < 1000) return;
-      el.style.setProperty('top',        'auto',             'important');
-      el.style.setProperty('left',       'auto',             'important');
-      el.style.setProperty('right',      '8px',              'important');
-      el.style.setProperty('bottom',     '72px',             'important');
-      el.style.setProperty('width',      'min(92vw, 380px)', 'important');
-      el.style.setProperty('height',     '55vh',             'important');
-      el.style.setProperty('max-height', '480px',            'important');
-      el.style.setProperty('overflow',   'hidden',           'important');
-      el.querySelectorAll('iframe').forEach(function (f) {
-        f.style.setProperty('width',  '100%', 'important');
-        f.style.setProperty('height', '100%', 'important');
-      });
+
+    // Find every iframe on the page and walk up to its outermost fixed ancestor.
+    // This catches Botpress regardless of how deeply it nests its chat panel.
+    document.querySelectorAll('iframe').forEach(function (iframe) {
+      var el = iframe;
+      var fixedRoot = null;
+      while (el && el !== document.body) {
+        if (window.getComputedStyle(el).position === 'fixed') {
+          fixedRoot = el; // keep walking up — we want the outermost one
+        }
+        el = el.parentElement;
+      }
+      if (!fixedRoot) return;
+
+      // Prevent the full-screen takeover
+      fixedRoot.style.setProperty('top',        'auto',             'important');
+      fixedRoot.style.setProperty('left',       'auto',             'important');
+      fixedRoot.style.setProperty('right',      '8px',              'important');
+      fixedRoot.style.setProperty('bottom',     '72px',             'important');
+      fixedRoot.style.setProperty('width',      'min(92vw, 380px)', 'important');
+      fixedRoot.style.setProperty('height',     '55vh',             'important');
+      fixedRoot.style.setProperty('max-height', '480px',            'important');
+      fixedRoot.style.setProperty('overflow',   'hidden',           'important');
     });
   }
 
-  // Poll every 250 ms for 20 s to keep clamping as Botpress renders/re-renders
+  // Poll every 250 ms for 20 s — covers initial open and any Botpress re-render
   var _poll = setInterval(clampBotpress, 250);
   setTimeout(function () { clearInterval(_poll); }, 20000);
 
-  // Restart on orientation change
+  // Restart poll whenever the user rotates the device
   window.addEventListener('orientationchange', function () {
     clearInterval(_poll);
     setTimeout(function () {
