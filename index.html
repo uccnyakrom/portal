@@ -113,6 +113,50 @@
     .nav-links a { font-size:0.76rem; font-weight:600; color:rgba(255,255,255,0.70); text-decoration:none; letter-spacing:0.04em; text-transform:uppercase; transition:color 0.2s; }
     .nav-links a:hover { color:#fff; }
 
+    /* Mobile hamburger button */
+    .nav-hamburger {
+      display: none;
+      flex-direction: column; justify-content: center; align-items: center;
+      gap: 5px; width: 36px; height: 36px; background: none; border: none;
+      cursor: pointer; padding: 4px; border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .nav-hamburger:hover { background: rgba(255,255,255,0.1); }
+    .nav-hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: rgba(255,255,255,0.85); border-radius: 2px;
+      transition: all 0.25s;
+    }
+    .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-hamburger.open span:nth-child(2) { opacity: 0; }
+    .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* Mobile nav dropdown */
+    .nav-mobile-menu {
+      display: none;
+      position: fixed; top: 64px; left: 0; right: 0; z-index: 199;
+      background: var(--navy);
+      border-bottom: 2px solid rgba(201,160,48,0.35);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      padding: 0.5rem 0 1rem;
+    }
+    .nav-mobile-menu.open { display: block; }
+    .nav-mobile-menu a {
+      display: block; padding: 0.85rem 1.8rem;
+      font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.80);
+      text-decoration: none; letter-spacing: 0.04em; text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-mobile-menu a:hover { color: var(--gold); background: rgba(255,255,255,0.05); }
+    .nav-mobile-menu .nav-mobile-signin {
+      display: block; margin: 0.8rem 1.8rem 0;
+      padding: 0.75rem 1.4rem; text-align: center;
+      background: var(--gold); color: var(--navy) !important;
+      border-radius: var(--radius); font-weight: 700; border: none;
+    }
+    .nav-mobile-menu .nav-mobile-signin:hover { background: var(--gold-light) !important; }
+
     #signInBtn {
       font-family: var(--font); font-size:0.76rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
       background: var(--gold); color: var(--navy); border:none; cursor:pointer;
@@ -452,6 +496,8 @@
       .hero-motto { position:relative !important; }
       .landing-nav { padding: 0 1.2rem !important; }
       .nav-links { display:none !important; }
+      .nav-hamburger { display:flex !important; }
+      #signInBtn { display:none !important; }
     }
 
     /* ── PORTRAIT PHONE FIXES ───────────────────────────────────────────── */
@@ -540,7 +586,20 @@
     <li><a href="#" onclick="event.preventDefault();openApplyModal()">Apply</a></li>
   </ul>
   <button id="signInBtn" onclick="document.getElementById('loginModal').classList.add('open')">Sign In →</button>
+
+  <!-- Mobile hamburger (hidden on desktop) -->
+  <button class="nav-hamburger" id="navHamburger" aria-label="Menu" onclick="toggleLandingNav()">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+
+<!-- Mobile nav dropdown (hidden on desktop) -->
+<div class="nav-mobile-menu" id="navMobileMenu">
+  <a href="#features" onclick="closeLandingNav()">Portal Features</a>
+  <a href="#news" onclick="closeLandingNav()">News</a>
+  <a href="#" onclick="event.preventDefault();closeLandingNav();openApplyModal()">Apply for Room</a>
+  <a class="nav-mobile-signin" href="#" onclick="event.preventDefault();closeLandingNav();document.getElementById('loginModal').classList.add('open')">Sign In →</a>
+</div>
 
 <!-- ══ NEWS TICKER ═══════════════════════════════════════════════════════ -->
 <div class="ticker-strip">
@@ -2115,6 +2174,34 @@
       } catch(e) {}
     }, 400);
   });
+</script>
+
+<!-- ── Landing page mobile nav ───────────────────────────────────────────────── -->
+<script>
+function toggleLandingNav() {
+  var btn  = document.getElementById('navHamburger');
+  var menu = document.getElementById('navMobileMenu');
+  var open = menu.classList.contains('open');
+  if (open) {
+    menu.classList.remove('open');
+    btn.classList.remove('open');
+  } else {
+    menu.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+function closeLandingNav() {
+  document.getElementById('navMobileMenu').classList.remove('open');
+  document.getElementById('navHamburger').classList.remove('open');
+}
+// Close mobile nav when clicking outside
+document.addEventListener('click', function(e) {
+  var menu = document.getElementById('navMobileMenu');
+  var btn  = document.getElementById('navHamburger');
+  if (menu && menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) {
+    closeLandingNav();
+  }
+});
 </script>
 
 <!-- ── UCC Nyakrom Campus Chatbot (Botpress v3.6) ───────────────────────────── -->
