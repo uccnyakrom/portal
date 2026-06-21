@@ -401,49 +401,74 @@
     }
     .news-grid {
       display: grid;
-      grid-template-columns: 1.4fr 1fr 1fr;
-      gap: 1.5rem;
+      grid-template-columns: 1.55fr 1fr;
+      gap: 1.2rem;
       margin-top: 2rem;
+      align-items: start;
     }
+    /* Featured card — image as full background, text pinned to bottom */
     .news-card-featured {
       background: var(--navy);
-      border-radius: 10px;
-      padding: 2rem;
-      display:flex; flex-direction:column; justify-content:flex-end;
-      min-height: 280px;
-      position:relative; overflow:hidden;
+      border-radius: 12px;
+      padding: 1.6rem;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      min-height: 340px;
+      position: relative; overflow: hidden;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
+    .news-card-featured:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,0.22); }
+    /* Gradient: transparent at top → dark at bottom for text legibility */
     .news-card-featured::before {
-      content:'';
-      position:absolute; inset:0;
-      background: linear-gradient(160deg, rgba(13,27,62,0.5), rgba(13,27,62,0.95));
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.15) 40%, rgba(13,27,62,0.92) 100%);
+      z-index: 1;
     }
-    .news-card-featured * { position:relative; z-index:1; }
+    .news-card-featured > * { position: relative; z-index: 2; }
+
+    /* Side column: stack of small cards */
+    .news-side-col {
+      display: flex; flex-direction: column; gap: 1rem;
+    }
     .news-card {
       background: var(--white);
       border-radius: 10px;
       border: 1px solid var(--gray-100);
-      padding: 1.4rem;
-      display:flex; flex-direction:column; justify-content:space-between;
-      transition: box-shadow 0.2s;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      text-decoration: none;
+      transition: box-shadow 0.2s, transform 0.2s;
     }
-    .news-card:hover { box-shadow: var(--shadow-md); }
+    .news-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.10); transform: translateY(-1px); }
+    .news-card-body { padding: 1rem 1.1rem; flex: 1; display: flex; flex-direction: column; }
+    .news-card-foot { padding: 0.5rem 1.1rem 0.9rem; }
+
     .news-tag {
-      font-size:0.58rem; font-weight:800; letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.28rem 0.65rem; border-radius:999px;
-      display:inline-block; margin-bottom:0.7rem; width:fit-content;
+      font-size: 0.56rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 0.22rem 0.6rem; border-radius: 999px;
+      display: inline-block; margin-bottom: 0.5rem; width: fit-content;
     }
-    .tag-academic { background:#e8f0fe; color:#1a56a0; }
-    .tag-admin    { background:#fef3c7; color:#92400e; }
-    .tag-event    { background:#d1fae5; color:#065f46; }
-    .tag-notice   { background:#fee2e2; color:#991b1b; }
-    .tag-featured { background:rgba(201,160,48,0.2); color:var(--gold-light); }
+    .tag-academic { background: #e8f0fe; color: #1a56a0; }
+    .tag-admin    { background: #fef3c7; color: #92400e; }
+    .tag-event    { background: #d1fae5; color: #065f46; }
+    .tag-notice   { background: #fee2e2; color: #991b1b; }
+    .tag-featured { background: rgba(201,160,48,0.25); color: #b8860b; }
     .news-title-featured {
-      font-family: var(--font-serif); font-size:1.3rem; font-weight:700; color:#fff; line-height:1.3; margin-bottom:0.5rem;
+      font-family: var(--font-serif);
+      font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+      font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 0.45rem;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
     }
-    .news-title { font-size:0.9rem; font-weight:700; color:var(--navy); line-height:1.4; margin-bottom:0.5rem; }
-    .news-meta  { font-size:0.68rem; color:var(--gray-500); margin-top:0.6rem; display:flex; align-items:center; gap:0.4rem; }
-    .news-meta::before { content:''; width:18px; height:1px; background:var(--gray-300); }
+    .news-title {
+      font-size: 0.88rem; font-weight: 700; color: var(--navy);
+      line-height: 1.45; margin-bottom: 0.35rem;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .news-meta {
+      font-size: 0.66rem; color: var(--gray-500);
+      display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+    }
 
     /* ── PHOTO FLASH ───────────────────────────────────────────────────── */
     .photoflash-section {
@@ -493,6 +518,8 @@
       .hero-panel-left  { padding: 2.5rem 1.5rem !important; }
       .hero-stats { gap:1rem !important; }
       .news-grid { grid-template-columns: 1fr !important; }
+      .news-side-col { gap: 0.8rem !important; }
+      .news-card-featured { min-height: 260px !important; }
       .hero-motto { position:relative !important; }
       .landing-nav { padding: 0 1.2rem !important; }
       .nav-links { display:none !important; }
@@ -1823,43 +1850,48 @@
     const [featured, ...rest] = items;
     const tag = TAG[featured.category] || TAG.featured;
 
-    // Featured card — image as CSS background, text overlay at bottom
+    // Featured card — image as CSS background, gradient overlay, text at bottom
+    const safeUrl = featured.image_url ? featured.image_url.replace(/['"]/g, '') : '';
     let html = `
-      <a href="news-article.html?id=${featured.id}" class="news-card-featured" style="text-decoration:none;cursor:pointer">
-        ${featured.image_url
-          ? `<div style="position:absolute;inset:0;background:url('${featured.image_url.replace(/'/g,"\\'")}') center/cover no-repeat;border-radius:10px"></div>`
-          : ''}
+      <a href="news-article.html?id=${featured.id}" class="news-card-featured">
+        ${safeUrl ? `<div style="position:absolute;inset:0;background:url('${safeUrl}') center/cover no-repeat"></div>` : ''}
         <span class="news-tag ${tag.cls}">${tag.label}</span>
         <div class="news-title-featured">${featured.title}</div>
-        ${featured.body ? `<p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.6;margin-top:0.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${featured.body}</p>` : ''}
-        <div class="news-meta" style="color:rgba(255,255,255,0.5);margin-top:0.8rem">
-          ${fmtDate(featured.published_date)}${featured.location ? ' &nbsp;·&nbsp; ' + featured.location : ''}
-          <span style="margin-left:auto;color:var(--gold);font-weight:600">Read more →</span>
+        ${featured.body ? `<p style="font-size:0.8rem;color:rgba(255,255,255,0.78);line-height:1.6;margin-top:0.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${featured.body}</p>` : ''}
+        <div class="news-meta" style="color:rgba(255,255,255,0.55);margin-top:0.9rem">
+          <span>${fmtDate(featured.published_date)}</span>
+          ${featured.location ? `<span style="color:rgba(255,255,255,0.3)">·</span><span>${featured.location}</span>` : ''}
+          <span style="margin-left:auto;color:var(--gold);font-weight:700;font-size:0.72rem;letter-spacing:0.04em">Read more →</span>
         </div>
       </a>`;
 
-    // Small cards — image bleeds to card edge, body clamped to 3 lines
-    rest.slice(0, 4).forEach(item => {
+    // Side column of small cards
+    const sideItems = rest.slice(0, 3);
+    let sideHtml = sideItems.map(item => {
       const t = TAG[item.category] || TAG.academic;
-      html += `
-        <a href="news-article.html?id=${item.id}" class="news-card" style="text-decoration:none;padding:0;overflow:hidden">
-          ${item.image_url
-            ? `<img src="${item.image_url.replace(/'/g,"\\'")}'" alt="${item.title}" style="width:100%;height:150px;object-fit:cover;display:block">`
-            : ''}
-          <div style="padding:1rem 1.2rem;flex:1;display:flex;flex-direction:column;justify-content:space-between">
+      const imgUrl = item.image_url ? item.image_url.replace(/['"]/g, '') : '';
+      const excerpt = item.body ? item.body.replace(/<[^>]*>/g, '').trim() : '';
+      return `
+        <a href="news-article.html?id=${item.id}" class="news-card">
+          ${imgUrl ? `<img src="${imgUrl}" alt="" style="width:100%;height:140px;object-fit:cover;display:block">` : ''}
+          <div class="news-card-body">
             <div>
               <span class="news-tag ${t.cls}">${t.label}</span>
               <div class="news-title">${item.title}</div>
-              ${item.body ? `<p style="font-size:0.78rem;color:var(--gray-500);line-height:1.6;margin-top:0.35rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${item.body}</p>` : ''}
+              ${excerpt ? `<p style="font-size:0.75rem;color:var(--gray-500);line-height:1.6;margin-top:0.25rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${excerpt}</p>` : ''}
             </div>
-            <div class="news-meta" style="margin-top:0.6rem">
-              ${fmtDate(item.published_date)}${item.location ? ' &nbsp;·&nbsp; ' + item.location : ''}
-              <span style="margin-left:auto;color:var(--navy);font-weight:700;font-size:0.7rem">Read →</span>
+          </div>
+          <div class="news-card-foot">
+            <div class="news-meta">
+              <span>${fmtDate(item.published_date)}</span>
+              ${item.location ? `<span style="color:var(--gray-300)">·</span><span>${item.location}</span>` : ''}
+              <span style="margin-left:auto;color:var(--navy);font-weight:700;font-size:0.68rem">Read →</span>
             </div>
           </div>
         </a>`;
-    });
+    }).join('');
 
+    html += `<div class="news-side-col">${sideHtml}</div>`;
     grid.innerHTML = html;
   }
 
