@@ -177,6 +177,20 @@ function escH(str) {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// ── Floor helpers: friendly labels + physical ordering ───────────────────────
+const FLOOR_ORDER = { ground: 0, first: 1, second: 2, third: 3, fourth: 4, fifth: 5 };
+
+function floorLabel(f) {
+  if (f === "" || f === null || f === undefined) return "Unspecified floor";
+  return /^\d+$/.test(String(f)) ? `Floor ${f}` : `${f} Floor`;
+}
+
+function floorSort(a, b) {
+  const ra = FLOOR_ORDER[String(a).toLowerCase()] ?? (/^\d+$/.test(String(a)) ? Number(a) : 99);
+  const rb = FLOOR_ORDER[String(b).toLowerCase()] ?? (/^\d+$/.test(String(b)) ? Number(b) : 99);
+  return ra - rb || String(a).localeCompare(String(b));
+}
+
 /**
  * renderRoomGrid(containerId, rooms, onClickCallback, opts)
  *   opts.occupantsByRoom  { roomId: [{full_name, reg_number, sex, ...}] }
@@ -215,7 +229,7 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts 
   let toolbar = null;
   if (showFilters) {
     const blocks = [...new Set(rooms.map(r => r.block))].sort();
-    const floors = [...new Set(rooms.map(r => r.floor).filter(f => f !== null && f !== undefined && f !== ""))].sort();
+    const floors = [...new Set(rooms.map(r => r.floor).filter(f => f !== null && f !== undefined && f !== ""))].sort(floorSort);
 
     toolbar = document.createElement("div");
     toolbar.className = "table-filter-bar room-filter-bar";
@@ -225,7 +239,7 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts 
         ${blocks.map(b => `<option value="${escH(b)}">Block ${escH(b)}</option>`).join("")}
       </select>
       ${floors.length ? `<select id="rmFloor"><option value="">All Floors</option>
-        ${floors.map(f => `<option value="${escH(f)}">Floor ${escH(f)}</option>`).join("")}
+        ${floors.map(f => `<option value="${escH(f)}">${escH(floorLabel(f))}</option>`).join("")}
       </select>` : ""}
       <select id="rmStatus"><option value="">All Statuses</option>
         ${Object.entries(ROOM_COLORS).map(([t, { label }]) => `<option value="${t}">${label}</option>`).join("")}
@@ -397,11 +411,11 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts 
       const floors = [...new Set(blockRooms.map(r => r.floor ?? ""))];
       const groupByFloor = floors.length > 1 || (floors.length === 1 && floors[0] !== "");
 
-      const renderGroup = (groupRooms, floorLabel = null) => {
-        if (floorLabel !== null) {
+      const renderGroup = (groupRooms, floorValue = null) => {
+        if (floorValue !== null) {
           const fl = document.createElement("h4");
           fl.className = "floor-title";
-          fl.textContent = floorLabel === "" ? "Unspecified floor" : `Floor ${floorLabel}`;
+          fl.textContent = floorValue === "" ? "Unspecified floor" : floorLabel(floorValue);
           section.appendChild(fl);
         }
         const grid = document.createElement("div");
@@ -411,7 +425,7 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts 
       };
 
       if (groupByFloor) {
-        floors.sort().forEach(f => renderGroup(blockRooms.filter(r => (r.floor ?? "") === f), f));
+        floors.sort(floorSort).forEach(f => renderGroup(blockRooms.filter(r => (r.floor ?? "") === f), f));
       } else {
         renderGroup(blockRooms);
       }
