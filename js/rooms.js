@@ -143,6 +143,30 @@ function determineRoomType(room, count) {
   return "partial";
 }
 
+/**
+ * Recount actual occupants from the students table and repair the room's
+ * occupancy_count + type when the stored counter has drifted out of sync.
+ */
+export async function syncRoomOccupancy(roomId, actorName = "admin") {
+  const [{ count, error: cErr }, { data: room, error: rErr }] = await Promise.all([
+    supabase.from("students").select("id", { count: "exact", head: true }).eq("room_id", roomId),
+    supabase.from("rooms").select("*").eq("id", roomId).single(),
+  ]);
+  if (cErr)          return { success: false, error: cErr.message };
+  if (rErr || !room) return { success: false, error: "Room not found." };
+
+  const realCount = count ?? 0;
+  const newType   = determineRoomType(room, realCount);
+
+  const { error: uErr } = await supabase.from("rooms")
+    .update({ occupancy_count: realCount, type: newType })
+    .eq("id", roomId);
+  if (uErr) return { success: false, error: uErr.message };
+
+  await logAudit(`Synced occupancy for room ${room.block}-${room.room_number} (${room.occupancy_count} → ${realCount})`, actorName);
+  return { success: true, count: realCount, type: newType };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ROOM GRID RENDERER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -247,12 +271,19 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts 
     return true;
   }
 
+  const hasOccData = "occupantsByRoom" in opts;
+
   function buildCard(room) {
     const color = ROOM_COLORS[room.type] || ROOM_COLORS.vacant;
-    const pct   = room.capacity > 0 ? Math.round((room.occupancy_count / room.capacity) * 100) : 0;
     const occ   = occupantsByRoom[room.id] || [];
     const males   = occ.filter(o => (o.sex || "").toUpperCase() === "M").length;
     const females = occ.filter(o => (o.sex || "").toUpperCase() === "F").length;
+
+    // Real occupant list is the source of truth when we have it;
+    // the stored counter can drift out of sync.
+    const bedCount = hasOccData ? occ.length : (room.occupancy_count || 0);
+    const mismatch = hasOccData && occ.length !== (room.occupancy_count || 0);
+    const pct      = room.capacity > 0 ? Math.round((bedCount / room.capacity) * 100) : 0;
 
     const card = document.createElement("div");
     card.className = "room-card";
@@ -261,10 +292,14 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts 
         ${escH(room.block)}-${escH(room.room_number)}
       </div>
       <div class="room-card-body">
-        <div class="room-stat">🛏 ${room.occupancy_count}/${room.capacity}</div>
+        <div class="room-stat">🛏 ${bedCount}/${room.capacity}${
+          mismatch && showTypeSelect
+            ? ` <button class="room-sync-warn" title="Stored count is ${room.occupancy_count} but ${occ.length} student(s) actually assigned. Click to fix.">⚠</button>`
+            : ""
+        }</div>
         <div class="room-gender-mix">${
           occ.length === 0
-            ? `<span class="gm-empty">no occupants</span>`
+            ? `<span class="gm-empty">${hasOccData ? "no occupants" : "&nbsp;"}</span>`
             : `${males ? `<span class="gm-male">♂ ${males}</span>` : ""}${females ? `<span class="gm-female">♀ ${females}</span>` : ""}`
         }</div>
         <div class="room-type-label">${color.label}</div>
@@ -274,9 +309,9 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts 
         ${showTypeSelect ? `
         <div class="room-type-change">
           <select class="room-type-select" title="Change room type">
-            <option value="vacant"  ${room.type==="vacant" ?"selected":""}>Student (Vacant)</option>
-            <option value="partial" ${room.type==="partial"?"selected":""}>Student (Partial)</option>
-            <option value="full"    ${room.type==="full"   ?"selected":""}>Student (Full)</option>
+            <option value="vacant"  ${room.type==="vacant" ?"selected":""}>Vacant</option>
+            <option value="partial" ${room.type==="partial"?"selected":""}>Partial</option>
+            <option value="full"    ${room.type==="full"   ?"selected":""}>Full</option>
             <option value="staff"   ${room.type==="staff"  ?"selected":""}>Staff</option>
             <option value="NSP"     ${room.type==="NSP"    ?"selected":""}>NSP</option>
             <option value="suite"   ${room.type==="suite"  ?"selected":""}>Suite</option>
@@ -289,6 +324,29 @@ export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts 
       card.classList.add("clickable");
       card.querySelector(".room-card-header").addEventListener("click", () => onClickCallback(room));
     }
+
+    // One-click repair of a drifted occupancy counter
+    card.querySelector(".room-sync-warn")?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const btn = e.target;
+      btn.disabled = true; btn.textContent = "…";
+      const result = await syncRoomOccupancy(room.id);
+      if (result.success) {
+        room.occupancy_count = result.count;
+        room.type = result.type;
+        showToast(`${room.block}-${room.room_number} occupancy fixed (${result.count}/${room.capacity}).`, "success");
+        const c = ROOM_COLORS[room.type] || ROOM_COLORS.vacant;
+        card.querySelector(".room-card-header").style.background = c.bg;
+        card.querySelector(".room-type-label").textContent = c.label;
+        card.querySelector(".room-bar").style.background = c.bg;
+        const sel = card.querySelector(".room-type-select");
+        if (sel) sel.value = room.type;
+        btn.remove();
+      } else {
+        showToast("Sync failed: " + result.error, "error");
+        btn.disabled = false; btn.textContent = "⚠";
+      }
+    });
 
     card.querySelector(".room-type-select")?.addEventListener("change", async (e) => {
       e.stopPropagation();
