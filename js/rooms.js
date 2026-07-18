@@ -147,122 +147,243 @@ function determineRoomType(room, count) {
 // ROOM GRID RENDERER
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function renderRoomGrid(containerId, rooms, onClickCallback = null) {
+function escH(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * renderRoomGrid(containerId, rooms, onClickCallback, opts)
+ *   opts.occupantsByRoom  { roomId: [{full_name, reg_number, sex, ...}] }
+ *   opts.showTypeSelect   render the type-change dropdown on each card (admin)
+ *   opts.showFilters      render the filter/search toolbar (admin)
+ */
+export function renderRoomGrid(containerId, rooms, onClickCallback = null, opts = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // Group by block
-  const blocks = {};
-  rooms.forEach(r => {
-    if (!blocks[r.block]) blocks[r.block] = [];
-    blocks[r.block].push(r);
-  });
+  const occupantsByRoom = opts.occupantsByRoom || {};
+  const showTypeSelect  = !!opts.showTypeSelect;
+  const showFilters     = !!opts.showFilters;
+
+  // ── Filter state ──
+  const state = { search: "", block: "", floor: "", status: "", gender: "" };
 
   container.innerHTML = "";
 
-  // Summary counts
-  const total   = rooms.length;
-  const vacant  = rooms.filter(r => r.type === "vacant").length;
-  const partial = rooms.filter(r => r.type === "partial").length;
-  const full    = rooms.filter(r => r.type === "full").length;
-  const staff   = rooms.filter(r => r.type === "staff").length;
-  const nsp     = rooms.filter(r => r.type === "NSP").length;
-  const suite   = rooms.filter(r => r.type === "suite").length;
+  // ── Summary strip: clickable status chips (double as the legend) ──
+  const counts = {};
+  Object.keys(ROOM_COLORS).forEach(t => counts[t] = rooms.filter(r => r.type === t).length);
 
-  // Summary strip
   const summary = document.createElement("div");
   summary.className = "room-summary-strip";
-  summary.innerHTML = `
-    <div class="room-sum-item"><span style="color:#22c55e">●</span> Vacant: <strong>${vacant}</strong></div>
-    <div class="room-sum-item"><span style="color:#f59e0b">●</span> Partial: <strong>${partial}</strong></div>
-    <div class="room-sum-item"><span style="color:#ef4444">●</span> Full: <strong>${full}</strong></div>
-    <div class="room-sum-item"><span style="color:#3b82f6">●</span> Staff: <strong>${staff}</strong></div>
-    <div class="room-sum-item"><span style="color:#a855f7">●</span> NSP: <strong>${nsp}</strong></div>
-    <div class="room-sum-item"><span style="color:#6366f1">●</span> Suite: <strong>${suite}</strong></div>
-    <div class="room-sum-item">Total: <strong>${total}</strong></div>
-  `;
+  summary.innerHTML =
+    Object.entries(ROOM_COLORS).map(([type, { bg, label }]) => `
+      <button class="room-sum-chip" data-status="${type}" title="Click to filter">
+        <span class="legend-dot" style="background:${bg}"></span>
+        ${label}: <strong>${counts[type]}</strong>
+      </button>`).join("") +
+    `<div class="room-sum-item room-sum-total">Total: <strong>${rooms.length}</strong></div>`;
   container.appendChild(summary);
 
-  // Legend
-  const legend = document.createElement("div");
-  legend.className = "room-legend";
-  Object.entries(ROOM_COLORS).forEach(([type, { bg, label }]) => {
-    legend.innerHTML += `
-      <span class="legend-dot" style="background:${bg}"></span>
-      <span class="legend-label">${label}</span>
+  // ── Filter toolbar ──
+  let toolbar = null;
+  if (showFilters) {
+    const blocks = [...new Set(rooms.map(r => r.block))].sort();
+    const floors = [...new Set(rooms.map(r => r.floor).filter(f => f !== null && f !== undefined && f !== ""))].sort();
+
+    toolbar = document.createElement("div");
+    toolbar.className = "table-filter-bar room-filter-bar";
+    toolbar.innerHTML = `
+      <input id="rmSearch" type="text" placeholder="🔍 Room no. or student name…" style="min-width:200px">
+      <select id="rmBlock"><option value="">All Blocks</option>
+        ${blocks.map(b => `<option value="${escH(b)}">Block ${escH(b)}</option>`).join("")}
+      </select>
+      ${floors.length ? `<select id="rmFloor"><option value="">All Floors</option>
+        ${floors.map(f => `<option value="${escH(f)}">Floor ${escH(f)}</option>`).join("")}
+      </select>` : ""}
+      <select id="rmStatus"><option value="">All Statuses</option>
+        ${Object.entries(ROOM_COLORS).map(([t, { label }]) => `<option value="${t}">${label}</option>`).join("")}
+      </select>
+      <select id="rmGender"><option value="">Any Occupants</option>
+        <option value="M">Male occupants</option>
+        <option value="F">Female occupants</option>
+        <option value="empty">Empty rooms</option>
+      </select>
+      <button class="btn-sm btn-secondary" id="rmClear">Clear</button>
+      <span class="room-filter-count" id="rmCount"></span>
     `;
+    container.appendChild(toolbar);
+  }
+
+  // ── Grid host (re-rendered on every filter change) ──
+  const gridHost = document.createElement("div");
+  container.appendChild(gridHost);
+
+  const occSearchText = {};
+  rooms.forEach(r => {
+    occSearchText[r.id] = (occupantsByRoom[r.id] || [])
+      .map(o => `${o.full_name || ""} ${o.reg_number || ""}`).join(" ").toLowerCase();
   });
-  container.appendChild(legend);
 
-  // Blocks
-  Object.entries(blocks).forEach(([blockName, blockRooms]) => {
-    const section = document.createElement("div");
-    section.className = "block-section";
-    section.innerHTML = `<h3 class="block-title">Block ${blockName}</h3>`;
+  function matches(room) {
+    if (state.block  && String(room.block) !== state.block) return false;
+    if (state.floor  && String(room.floor ?? "") !== state.floor) return false;
+    if (state.status && room.type !== state.status) return false;
+    if (state.gender) {
+      const occ = occupantsByRoom[room.id] || [];
+      if (state.gender === "empty") {
+        if (occ.length > 0 || room.occupancy_count > 0) return false;
+      } else if (!occ.some(o => (o.sex || "").toUpperCase() === state.gender)) return false;
+    }
+    if (state.search) {
+      const q = state.search.toLowerCase();
+      const code = `${room.block}-${room.room_number}`.toLowerCase();
+      if (!code.includes(q) &&
+          !String(room.room_number).toLowerCase().includes(q) &&
+          !occSearchText[room.id].includes(q)) return false;
+    }
+    return true;
+  }
 
-    const grid = document.createElement("div");
-    grid.className = "room-grid";
+  function buildCard(room) {
+    const color = ROOM_COLORS[room.type] || ROOM_COLORS.vacant;
+    const pct   = room.capacity > 0 ? Math.round((room.occupancy_count / room.capacity) * 100) : 0;
+    const occ   = occupantsByRoom[room.id] || [];
+    const males   = occ.filter(o => (o.sex || "").toUpperCase() === "M").length;
+    const females = occ.filter(o => (o.sex || "").toUpperCase() === "F").length;
 
-    blockRooms.forEach(room => {
-      const color = ROOM_COLORS[room.type] || ROOM_COLORS.vacant;
-      const pct   = room.capacity > 0
-        ? Math.round((room.occupancy_count / room.capacity) * 100)
-        : 0;
-
-      const card = document.createElement("div");
-      card.className = "room-card";
-      card.innerHTML = `
-        <div class="room-card-header" style="background:${color.bg}">
-          ${room.room_number}
+    const card = document.createElement("div");
+    card.className = "room-card";
+    card.innerHTML = `
+      <div class="room-card-header room-banner" style="background:${color.bg}" title="View room details">
+        ${escH(room.block)}-${escH(room.room_number)}
+      </div>
+      <div class="room-card-body">
+        <div class="room-stat">🛏 ${room.occupancy_count}/${room.capacity}</div>
+        <div class="room-gender-mix">${
+          occ.length === 0
+            ? `<span class="gm-empty">no occupants</span>`
+            : `${males ? `<span class="gm-male">♂ ${males}</span>` : ""}${females ? `<span class="gm-female">♀ ${females}</span>` : ""}`
+        }</div>
+        <div class="room-type-label">${color.label}</div>
+        <div class="room-bar-wrap">
+          <div class="room-bar" style="width:${pct}%; background:${color.bg}"></div>
         </div>
-        <div class="room-card-body">
-          <div class="room-stat">${room.occupancy_count}/${room.capacity}</div>
-          <div class="room-type-label">${color.label}</div>
-          <div class="room-bar-wrap">
-            <div class="room-bar" style="width:${pct}%; background:${color.bg}"></div>
-          </div>
-          <div class="room-type-change">
-            <select class="room-type-select" data-room-id="${room.id}" data-block="${room.block}" data-num="${room.room_number}" title="Change room type">
-              <option value="vacant"  ${room.type==="vacant" ?"selected":""}>Student (Vacant)</option>
-              <option value="partial" ${room.type==="partial"?"selected":""}>Student (Partial)</option>
-              <option value="full"    ${room.type==="full"   ?"selected":""}>Student (Full)</option>
-              <option value="staff"   ${room.type==="staff"  ?"selected":""}>Staff</option>
-              <option value="NSP"     ${room.type==="NSP"    ?"selected":""}>NSP</option>
-              <option value="suite"   ${room.type==="suite"  ?"selected":""}>Suite</option>
-            </select>
-          </div>
-        </div>
-      `;
+        ${showTypeSelect ? `
+        <div class="room-type-change">
+          <select class="room-type-select" title="Change room type">
+            <option value="vacant"  ${room.type==="vacant" ?"selected":""}>Student (Vacant)</option>
+            <option value="partial" ${room.type==="partial"?"selected":""}>Student (Partial)</option>
+            <option value="full"    ${room.type==="full"   ?"selected":""}>Student (Full)</option>
+            <option value="staff"   ${room.type==="staff"  ?"selected":""}>Staff</option>
+            <option value="NSP"     ${room.type==="NSP"    ?"selected":""}>NSP</option>
+            <option value="suite"   ${room.type==="suite"  ?"selected":""}>Suite</option>
+          </select>
+        </div>` : ""}
+      </div>
+    `;
 
-      if (onClickCallback) {
-        card.classList.add("clickable");
-        card.querySelector(".room-card-header").addEventListener("click", () => onClickCallback(room));
+    if (onClickCallback) {
+      card.classList.add("clickable");
+      card.querySelector(".room-card-header").addEventListener("click", () => onClickCallback(room));
+    }
+
+    card.querySelector(".room-type-select")?.addEventListener("change", async (e) => {
+      e.stopPropagation();
+      const newType = e.target.value;
+      const label   = `${room.block}-${room.room_number}`;
+      const result  = await changeRoomType(room.id, newType);
+      if (result.success) {
+        showToast(`${label} changed to ${ROOM_COLORS[newType]?.label || newType}`, "success");
+        room.type = newType;
+        const header = card.querySelector(".room-card-header");
+        header.style.background = ROOM_COLORS[newType]?.bg || "#9ca3af";
+        card.querySelector(".room-type-label").textContent = ROOM_COLORS[newType]?.label || newType;
+      } else {
+        showToast("Failed to update: " + result.error, "error");
+        e.target.value = room.type; // revert
       }
-
-      // Wire type change dropdown
-      card.querySelector(".room-type-select").addEventListener("change", async (e) => {
-        e.stopPropagation();
-        const newType  = e.target.value;
-        const roomId   = e.target.dataset.roomId;
-        const label    = `${e.target.dataset.block}-${e.target.dataset.num}`;
-        const result   = await changeRoomType(roomId, newType);
-        if (result.success) {
-          showToast(`${label} changed to ${ROOM_COLORS[newType]?.label || newType}`, "success");
-          // Update card header color immediately
-          const header = card.querySelector(".room-card-header");
-          const typeLabel = card.querySelector(".room-type-label");
-          header.style.background = ROOM_COLORS[newType]?.bg || "#9ca3af";
-          typeLabel.textContent   = ROOM_COLORS[newType]?.label || newType;
-        } else {
-          showToast("Failed to update: " + result.error, "error");
-          e.target.value = room.type; // revert
-        }
-      });
-
-      grid.appendChild(card);
     });
 
-    section.appendChild(grid);
-    container.appendChild(section);
+    return card;
+  }
+
+  function drawGrid() {
+    const visible = rooms.filter(matches);
+    gridHost.innerHTML = "";
+
+    const countEl = toolbar?.querySelector("#rmCount");
+    if (countEl) countEl.textContent = `Showing ${visible.length} of ${rooms.length} rooms`;
+
+    // Sync chip highlight with active status filter
+    summary.querySelectorAll(".room-sum-chip").forEach(chip => {
+      chip.classList.toggle("active", chip.dataset.status === state.status);
+    });
+
+    if (visible.length === 0) {
+      gridHost.innerHTML = `<div class="room-grid-empty">🔍 No rooms match your filters.</div>`;
+      return;
+    }
+
+    // Group by block, then by floor within block
+    const byBlock = {};
+    visible.forEach(r => (byBlock[r.block] ||= []).push(r));
+
+    Object.entries(byBlock).forEach(([blockName, blockRooms]) => {
+      const section = document.createElement("div");
+      section.className = "block-section";
+      section.innerHTML = `<h3 class="block-title">Block ${escH(blockName)}</h3>`;
+
+      const floors = [...new Set(blockRooms.map(r => r.floor ?? ""))];
+      const groupByFloor = floors.length > 1 || (floors.length === 1 && floors[0] !== "");
+
+      const renderGroup = (groupRooms, floorLabel = null) => {
+        if (floorLabel !== null) {
+          const fl = document.createElement("h4");
+          fl.className = "floor-title";
+          fl.textContent = floorLabel === "" ? "Unspecified floor" : `Floor ${floorLabel}`;
+          section.appendChild(fl);
+        }
+        const grid = document.createElement("div");
+        grid.className = "room-grid";
+        groupRooms.forEach(room => grid.appendChild(buildCard(room)));
+        section.appendChild(grid);
+      };
+
+      if (groupByFloor) {
+        floors.sort().forEach(f => renderGroup(blockRooms.filter(r => (r.floor ?? "") === f), f));
+      } else {
+        renderGroup(blockRooms);
+      }
+
+      gridHost.appendChild(section);
+    });
+  }
+
+  // ── Wire filters ──
+  summary.querySelectorAll(".room-sum-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      state.status = state.status === chip.dataset.status ? "" : chip.dataset.status;
+      const sel = toolbar?.querySelector("#rmStatus");
+      if (sel) sel.value = state.status;
+      drawGrid();
+    });
   });
+
+  if (toolbar) {
+    toolbar.querySelector("#rmSearch").addEventListener("input", e => { state.search = e.target.value.trim(); drawGrid(); });
+    toolbar.querySelector("#rmBlock").addEventListener("change", e => { state.block = e.target.value; drawGrid(); });
+    toolbar.querySelector("#rmFloor")?.addEventListener("change", e => { state.floor = e.target.value; drawGrid(); });
+    toolbar.querySelector("#rmStatus").addEventListener("change", e => { state.status = e.target.value; drawGrid(); });
+    toolbar.querySelector("#rmGender").addEventListener("change", e => { state.gender = e.target.value; drawGrid(); });
+    toolbar.querySelector("#rmClear").addEventListener("click", () => {
+      Object.assign(state, { search: "", block: "", floor: "", status: "", gender: "" });
+      toolbar.querySelectorAll("input, select").forEach(el => el.value = "");
+      drawGrid();
+    });
+  }
+
+  drawGrid();
 }

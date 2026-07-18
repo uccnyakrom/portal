@@ -402,23 +402,117 @@ function drawPieChart(ctx, canvas, labels, data, colors) {
 // ROOM MAP
 // ─────────────────────────────────────────────────────────────────────────────
 async function loadRoomMap() {
-  const rooms = await fetchRooms();
-  renderRoomGrid("roomMapGrid", rooms, async (room) => {
-    const { room: r, occupants } = await fetchRoomWithOccupants(room.id);
-    const info = document.getElementById("roomInfoPanel");
-    if (!info) return;
-    info.innerHTML = `
-      <button onclick="document.getElementById('roomInfoPanel').classList.remove('open')"
-        style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400)">×</button>
-      <h3>Block ${r.block} – Room ${r.room_number}</h3>
-      <p><strong>Capacity:</strong> ${r.capacity} &nbsp; <strong>Occupied:</strong> ${r.occupancy_count}</p>
-      <p><strong>Status:</strong> <span class="badge badge-${r.type}">${r.type}</span></p>
-      <h4 style="margin-top:1rem">Occupants</h4>
-      ${occupants.length===0
-        ? "<p style='color:#9ca3af'>No occupants</p>"
-        : `<ul>${occupants.map(o=>`<li>${o.full_name||o.name||"—"} (${o.reg_number}) – ${o.program}</li>`).join("")}</ul>`}
-    `;
-    info.classList.add("open");
+  const [rooms, occRes] = await Promise.all([
+    fetchRooms(),
+    supabase.from("students")
+      .select("id, full_name, reg_number, program, level, sex, room_id")
+      .not("room_id", "is", null),
+  ]);
+
+  const occupantsByRoom = {};
+  (occRes.data || []).forEach(s => (occupantsByRoom[s.room_id] ||= []).push(s));
+
+  renderRoomGrid("roomMapGrid", rooms, openRoomPanel, {
+    occupantsByRoom,
+    showTypeSelect: true,
+    showFilters: true,
+  });
+}
+
+// ── Room info panel: occupants + assign / remove without leaving the map ─────
+async function openRoomPanel(room) {
+  const info = document.getElementById("roomInfoPanel");
+  if (!info) return;
+  info.innerHTML = `<p style="color:var(--gray-400);margin-top:2rem">Loading room…</p>`;
+  info.classList.add("open");
+
+  const [{ room: r, occupants }, unassignedRes] = await Promise.all([
+    fetchRoomWithOccupants(room.id),
+    supabase.from("students")
+      .select("id, full_name, reg_number, sex")
+      .is("room_id", null)
+      .order("full_name"),
+  ]);
+  if (!r) { info.innerHTML = `<p style="color:#ef4444;margin-top:2rem">Room not found.</p>`; return; }
+
+  const unassigned = unassignedRes.data || [];
+  const hasSpace   = r.occupancy_count < r.capacity;
+  const canManage  = getPermissions(ADMIN?.role).canAssignRooms;
+  const esc = s => String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  info.innerHTML = `
+    <button class="panel-close" id="roomPanelClose">×</button>
+    <h3>Block ${esc(r.block)} – Room ${esc(r.room_number)}</h3>
+    <div class="panel-meta">
+      <span><strong>Capacity:</strong> ${r.capacity}</span>
+      <span><strong>Occupied:</strong> ${r.occupancy_count}</span>
+      <span class="badge badge-${r.type}">${r.type}</span>
+    </div>
+
+    <h4 class="panel-subhead">Occupants (${occupants.length})</h4>
+    ${occupants.length === 0
+      ? `<p class="panel-empty">No occupants</p>`
+      : `<ul class="panel-occupants">${occupants.map(o => `
+          <li>
+            <div class="occ-details">
+              <span class="occ-name">${(o.sex||"").toUpperCase()==="F"?"♀":"♂"} ${esc(o.full_name || "—")}</span>
+              <span class="occ-sub">${esc(o.reg_number)} · ${esc(o.program || "")}</span>
+            </div>
+            ${canManage ? `<button class="btn-sm btn-danger occ-remove" data-sid="${o.id}" data-name="${esc(o.full_name || o.reg_number)}" title="Remove from room">✕</button>` : ""}
+          </li>`).join("")}
+        </ul>`}
+
+    ${canManage ? `
+    <h4 class="panel-subhead">Assign a Student</h4>
+    ${!hasSpace
+      ? `<p class="panel-empty">Room is at full capacity.</p>`
+      : unassigned.length === 0
+        ? `<p class="panel-empty">No unassigned students.</p>`
+        : `<div class="panel-assign">
+            <select id="panelAssignSelect">
+              <option value="">— Select student —</option>
+              ${unassigned.map(s => `<option value="${s.id}">${esc(s.full_name || s.reg_number)} (${esc(s.reg_number)}) ${(s.sex||"").toUpperCase()==="F"?"♀":"♂"}</option>`).join("")}
+            </select>
+            <button class="btn-sm btn-gold" id="panelAssignBtn">➕ Assign</button>
+          </div>`}` : ""}
+  `;
+
+  // ── Wire actions ──
+  document.getElementById("roomPanelClose").addEventListener("click", () => info.classList.remove("open"));
+
+  info.querySelectorAll(".occ-remove").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (!confirm(`Remove ${btn.dataset.name} from Room ${r.block}-${r.room_number}?`)) return;
+      btn.disabled = true;
+      const result = await removeRoomAssignment(btn.dataset.sid, ADMIN?.username || "admin");
+      if (result.success) {
+        showToast("Occupant removed.", "success");
+        await loadRoomMap();
+        openRoomPanel({ id: r.id });
+      } else {
+        showToast(result.error || "Failed to remove occupant.", "error");
+        btn.disabled = false;
+      }
+    });
+  });
+
+  document.getElementById("panelAssignBtn")?.addEventListener("click", async () => {
+    const sel = document.getElementById("panelAssignSelect");
+    const studentId = sel?.value;
+    if (!studentId) { showToast("Select a student first.", "warning"); return; }
+    const btn = document.getElementById("panelAssignBtn");
+    btn.disabled = true; btn.textContent = "Assigning…";
+    const result = await assignRoom(studentId, r.id, ADMIN?.username || "admin");
+    if (result.success) {
+      showToast(`Student assigned to ${r.block}-${r.room_number}.`, "success");
+      await loadRoomMap();
+      openRoomPanel({ id: r.id });
+    } else {
+      showToast(result.error || "Failed to assign.", "error");
+      btn.disabled = false; btn.textContent = "➕ Assign";
+    }
   });
 }
 
