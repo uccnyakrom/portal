@@ -1322,13 +1322,30 @@ tbody td { padding: .6rem 1rem; color: var(--gray-800); vertical-align: middle; 
 }
 .room-type-select {
   width: 100%;
-  font-size: 9px;
-  padding: .15rem .2rem;
-  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: .3rem .25rem;
+  border-radius: 6px;
   border: 1px solid var(--gray-200);
   background: var(--gray-50);
-  color: var(--gray-600);
+  color: var(--gray-700);
   cursor: pointer;
+}
+.room-sync-warn {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  font-size: 11px;
+  cursor: pointer;
+  vertical-align: middle;
+  padding: 0;
+  animation: chipDotFlash 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-sync-warn { animation: none; }
 }
 .room-type-select:focus { border-color: var(--navy); }
 
