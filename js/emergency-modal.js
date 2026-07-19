@@ -85,6 +85,9 @@ function contactIcon(c) {
 }
 
 function callButtonsHTML(contacts) {
+  // Hide contacts without a real dialable number (e.g. "[REPLACE]" placeholders)
+  contacts = contacts.filter(c => /\d/.test(String(c.phone)));
+
   // Campus contacts first, then national — each group by display_order
   const sorted = [...contacts].sort((a, b) =>
     (a.category === b.category)
