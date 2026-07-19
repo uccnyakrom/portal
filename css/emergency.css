@@ -7,7 +7,8 @@
 .sos-btn {
   position: fixed;
   bottom: 1.25rem;
-  right: 1.25rem;
+  left: 1.25rem;   /* bottom-left: the Botpress chatbot occupies bottom-right */
+  right: auto;
   z-index: 9999;
   background: #DC2626;
   color: #fff;
@@ -152,7 +153,8 @@
 @media (max-width: 480px) {
   .sos-btn {
     bottom: 1rem;
-    right: 1rem;
+    left: 1rem;
+    right: auto;
     padding: .7rem 1.1rem;
     font-size: 14px;
   }
