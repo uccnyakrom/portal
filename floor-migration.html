@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One-time Floor Migration — UCC Nyakrom</title>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #f7f7f5; color: #0d1b3e; max-width: 720px; margin: 3rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.3rem; }
+  .rule { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.2rem; margin: 1rem 0; font-size: 14px; }
+  button { background: #0d1b3e; color: #fff; border: none; border-radius: 8px; padding: .7rem 1.4rem; font-size: 15px; font-weight: 600; cursor: pointer; margin-right: .6rem; }
+  button.gold { background: #c9a030; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  pre { background: #0d1b3e; color: #d9e2ff; padding: 1rem; border-radius: 10px; font-size: 13px; white-space: pre-wrap; min-height: 120px; }
+  .warn { color: #b45309; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>🏢 One-time Floor Migration</h1>
+<div class="rule">
+  Sets the <strong>floor</strong> column on every room based on the room number prefix:<br><br>
+  A → <strong>Ground</strong> &nbsp;·&nbsp; B → <strong>First</strong> &nbsp;·&nbsp; C → <strong>Second</strong> &nbsp;·&nbsp; D → <strong>Third</strong>
+</div>
+<button id="previewBtn">1 · Preview</button>
+<button id="runBtn" class="gold" disabled>2 · Apply Update</button>
+<p class="warn">Run Preview first. Delete this file after the migration is done.</p>
+<pre id="log">Ready.</pre>
+
+<script>
+const URL_  = "https://zzunkfzpkgrtkiivbsqr.supabase.co";
+const KEY   = "sb_publishable_BFWxJe2fOMQKVlsvH-J66A_nnIAKglG";
+const RULES = [["A","Ground"],["B","First"],["C","Second"],["D","Third"]];
+const logEl = document.getElementById("log");
+const log = m => logEl.textContent += "\n" + m;
+
+const headers = {
+  "apikey": KEY,
+  "Authorization": "Bearer " + KEY,
+  "Content-Type": "application/json",
+};
+
+document.getElementById("previewBtn").addEventListener("click", async () => {
+  logEl.textContent = "Previewing…";
+  let total = 0;
+  for (const [prefix, floor] of RULES) {
+    const r = await fetch(`${URL_}/rest/v1/rooms?select=id&room_number=ilike.${prefix}*`,
+      { headers: { ...headers, "Prefer": "count=exact", "Range": "0-0" } });
+    const count = parseInt((r.headers.get("content-range") || "/0").split("/")[1], 10) || 0;
+    total += count;
+    log(`${prefix}-rooms → "${floor}": ${count} room(s)`);
+  }
+  const r2 = await fetch(`${URL_}/rest/v1/rooms?select=id&room_number=not.ilike.A*&room_number=not.ilike.B*&room_number=not.ilike.C*&room_number=not.ilike.D*`,
+    { headers: { ...headers, "Prefer": "count=exact", "Range": "0-0" } });
+  const other = parseInt((r2.headers.get("content-range") || "/0").split("/")[1], 10) || 0;
+  log(`Rooms not starting with A/B/C/D (left untouched): ${other}`);
+  log(`\nTotal to update: ${total}. Click "Apply Update" to proceed.`);
+  document.getElementById("runBtn").disabled = total === 0;
+});
+
+document.getElementById("runBtn").addEventListener("click", async () => {
+  document.getElementById("runBtn").disabled = true;
+  logEl.textContent = "Applying…";
+  for (const [prefix, floor] of RULES) {
+    const r = await fetch(`${URL_}/rest/v1/rooms?room_number=ilike.${prefix}*`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=representation" },
+      body: JSON.stringify({ floor }),
+    });
+    if (!r.ok) { log(`❌ ${prefix}-rooms failed: ${r.status} ${await r.text()}`); continue; }
+    const rows = await r.json();
+    log(`✅ ${prefix}-rooms → "${floor}": ${rows.length} updated`);
+  }
+  log("\nDone. Refresh the admin Room Map to see floors. You can delete this file now.");
+});
+</script>
+</body>
+</html>
