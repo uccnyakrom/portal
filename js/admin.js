@@ -257,6 +257,7 @@ function navigateTo(section) {
     history:      () => {},
     statistics:   loadStatistics,
     programmes:   loadProgrammesList,
+    emergency:    loadEmergencySection,
   };
   if (loaders[section]) loaders[section]();
 }
@@ -1344,6 +1345,209 @@ window.openAssignRoomModal = async (studentId, studentName, preferredRoom = "") 
 
   document.getElementById("assignModal").classList.add("open");
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMERGENCY SERVICES
+// ─────────────────────────────────────────────────────────────────────────────
+const escT = s => String(s ?? "")
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+let _emInitDone = false;
+
+async function loadEmergencySection() {
+  const role      = ADMIN?.role || "";
+  const canManage = ["admin", "superadmin"].includes(role);
+  const canLookup = ["admin", "superadmin", "security"].includes(role);
+
+  document.getElementById("emContactsCard").style.display = canManage ? "" : "none";
+  document.getElementById("emIceCard").style.display      = canLookup ? "" : "none";
+
+  if (!_emInitDone) { initEmergencyHandlers(); _emInitDone = true; }
+  if (canManage) await loadEmergencyContacts();
+}
+
+async function loadEmergencyContacts() {
+  const tbody = document.getElementById("emContactsBody");
+  if (!tbody) return;
+
+  const { data, error } = await supabase
+    .from("emergency_contacts").select("*")
+    .order("display_order").order("label");
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#ef4444">Could not load contacts: ${escT(error.message)}</td></tr>`;
+    return;
+  }
+  if (!data?.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--gray-400)">No emergency contacts yet. Add one above.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(c => emContactRowHTML(c)).join("");
+}
+
+function emContactRowHTML(c) {
+  return `<tr data-id="${c.id}">
+    <td><strong>${escT(c.label)}</strong></td>
+    <td><a href="tel:${escT(c.phone)}" style="color:var(--navy);font-weight:600">${escT(c.phone)}</a></td>
+    <td><span class="badge ${c.category === "campus" ? "badge-facility" : "badge-open"}">${escT(c.category)}</span></td>
+    <td>${escT(c.location_note) || "—"}</td>
+    <td>${c.display_order}</td>
+    <td>${c.is_active
+      ? `<span class="badge badge-resolved">Active</span>`
+      : `<span class="badge badge-closed">Hidden</span>`}</td>
+    <td><div class="table-actions">
+      <button class="btn-sm btn-warning em-edit">✏️ Edit</button>
+      <button class="btn-sm btn-secondary em-toggle">${c.is_active ? "🙈 Hide" : "👁 Show"}</button>
+    </div></td>
+  </tr>`;
+}
+
+function emContactEditRowHTML(c) {
+  return `<tr data-id="${c.id}" class="em-editing">
+    <td><input type="text"  class="em-f-label" value="${escT(c.label)}" style="width:100%;min-width:130px"></td>
+    <td><input type="tel"   class="em-f-phone" value="${escT(c.phone)}" style="width:100%;min-width:100px"></td>
+    <td><select class="em-f-category">
+      <option value="campus"   ${c.category === "campus"   ? "selected" : ""}>campus</option>
+      <option value="national" ${c.category === "national" ? "selected" : ""}>national</option>
+    </select></td>
+    <td><input type="text"   class="em-f-note"  value="${escT(c.location_note || "")}" style="width:100%;min-width:130px"></td>
+    <td><input type="number" class="em-f-order" value="${c.display_order}" min="1" style="width:64px"></td>
+    <td>${c.is_active
+      ? `<span class="badge badge-resolved">Active</span>`
+      : `<span class="badge badge-closed">Hidden</span>`}</td>
+    <td><div class="table-actions">
+      <button class="btn-sm btn-gold em-save">💾 Save</button>
+      <button class="btn-sm btn-secondary em-cancel">Cancel</button>
+    </div></td>
+  </tr>`;
+}
+
+function initEmergencyHandlers() {
+  // ── Add-contact form show/hide + submit ──
+  const addWrap = document.getElementById("emAddFormWrap");
+  document.getElementById("emAddContactBtn")?.addEventListener("click", () => {
+    addWrap.style.display = addWrap.style.display === "none" ? "" : "none";
+  });
+  document.getElementById("emAddCancel")?.addEventListener("click", () => {
+    addWrap.style.display = "none";
+    document.getElementById("emAddForm").reset();
+  });
+
+  document.getElementById("emAddForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const payload = {
+      label:         document.getElementById("emNewLabel").value.trim(),
+      phone:         document.getElementById("emNewPhone").value.trim(),
+      category:      document.getElementById("emNewCategory").value,
+      location_note: document.getElementById("emNewNote").value.trim() || null,
+      display_order: parseInt(document.getElementById("emNewOrder").value, 10) || 1,
+      is_active:     true,
+    };
+    const { error } = await supabase.from("emergency_contacts").insert([payload]);
+    if (error) { showToast("Could not save contact: " + error.message, "error"); return; }
+    showToast("Emergency contact added.", "success");
+    logAudit(`Added emergency contact "${payload.label}"`, ADMIN?.username || "admin");
+    e.target.reset();
+    addWrap.style.display = "none";
+    loadEmergencyContacts();
+  });
+
+  // ── Row actions via delegation (Edit / Toggle / Save / Cancel) ──
+  document.getElementById("emContactsBody")?.addEventListener("click", async e => {
+    const row = e.target.closest("tr[data-id]");
+    if (!row) return;
+    const id = row.dataset.id;
+
+    const fetchRow = async () => {
+      const { data } = await supabase.from("emergency_contacts").select("*").eq("id", id).single();
+      return data;
+    };
+
+    if (e.target.closest(".em-edit")) {
+      const c = await fetchRow();
+      if (!c) { showToast("Contact not found.", "error"); return; }
+      row.outerHTML = emContactEditRowHTML(c);
+      return;
+    }
+
+    if (e.target.closest(".em-cancel")) { loadEmergencyContacts(); return; }
+
+    if (e.target.closest(".em-save")) {
+      const payload = {
+        label:         row.querySelector(".em-f-label").value.trim(),
+        phone:         row.querySelector(".em-f-phone").value.trim(),
+        category:      row.querySelector(".em-f-category").value,
+        location_note: row.querySelector(".em-f-note").value.trim() || null,
+        display_order: parseInt(row.querySelector(".em-f-order").value, 10) || 1,
+      };
+      if (!payload.label || !payload.phone) { showToast("Label and phone are required.", "warning"); return; }
+      const { error } = await supabase.from("emergency_contacts").update(payload).eq("id", id);
+      if (error) { showToast("Update failed: " + error.message, "error"); return; }
+      showToast("Contact updated.", "success");
+      logAudit(`Updated emergency contact "${payload.label}"`, ADMIN?.username || "admin");
+      loadEmergencyContacts();
+      return;
+    }
+
+    if (e.target.closest(".em-toggle")) {
+      const c = await fetchRow();
+      if (!c) { showToast("Contact not found.", "error"); return; }
+      const { error } = await supabase.from("emergency_contacts")
+        .update({ is_active: !c.is_active }).eq("id", id);
+      if (error) { showToast("Toggle failed: " + error.message, "error"); return; }
+      showToast(`"${c.label}" is now ${c.is_active ? "hidden" : "active"}.`, "success");
+      logAudit(`${c.is_active ? "Hid" : "Activated"} emergency contact "${c.label}"`, ADMIN?.username || "admin");
+      loadEmergencyContacts();
+    }
+  });
+
+  // ── ICE lookup ──
+  const runIceSearch = async () => {
+    const q = document.getElementById("emIceSearch").value.trim();
+    const tbody = document.getElementById("emIceLookupBody");
+    if (!q) { showToast("Type a name or reg number first.", "warning"); return; }
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Searching…</td></tr>`;
+
+    const { data, error } = await supabase
+      .from("students")
+      .select("id, full_name, reg_number, ice_contacts(contact_name, relationship, phone, alt_phone)")
+      .or(`full_name.ilike.%${q}%,reg_number.ilike.%${q}%`)
+      .order("full_name")
+      .limit(25);
+
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:#ef4444">Search failed: ${escT(error.message)}</td></tr>`;
+      return;
+    }
+    if (!data?.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">No students match "${escT(q)}".</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(s => {
+      const ice = Array.isArray(s.ice_contacts) ? s.ice_contacts[0] : s.ice_contacts;
+      return `<tr>
+        <td><strong>${escT(s.full_name)}</strong></td>
+        <td>${escT(s.reg_number)}</td>
+        ${ice ? `
+          <td>${escT(ice.contact_name)}</td>
+          <td>${escT(ice.relationship)}</td>
+          <td><a href="tel:${escT(ice.phone)}" style="color:var(--navy);font-weight:700">📞 ${escT(ice.phone)}</a></td>
+          <td>${ice.alt_phone ? `<a href="tel:${escT(ice.alt_phone)}" style="color:var(--navy)">📞 ${escT(ice.alt_phone)}</a>` : "—"}</td>
+        ` : `
+          <td colspan="4" style="color:var(--gray-400);font-style:italic">No ICE contact set</td>
+        `}
+      </tr>`;
+    }).join("");
+  };
+
+  document.getElementById("emIceSearchBtn")?.addEventListener("click", runIceSearch);
+  document.getElementById("emIceSearch")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); runIceSearch(); }
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITY

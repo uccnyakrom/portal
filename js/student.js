@@ -93,6 +93,64 @@ function loadProfile() {
   if (pwHint) {
     pwHint.textContent = generateStudentPassword(STUDENT.reg_number, STUDENT.full_name);
   }
+
+  loadIceContact();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMERGENCY (ICE) CONTACT
+// ─────────────────────────────────────────────────────────────────────────────
+let _iceLoaded = false;
+
+async function loadIceContact() {
+  if (_iceLoaded || !document.getElementById("iceForm")) return;
+  _iceLoaded = true;
+
+  try {
+    const { data, error } = await supabase
+      .from("ice_contacts")
+      .select("contact_name, relationship, phone, alt_phone")
+      .eq("student_id", STUDENT.id)
+      .maybeSingle();
+    if (error) throw error;
+
+    if (data) {
+      document.getElementById("iceName").value         = data.contact_name || "";
+      document.getElementById("iceRelationship").value = data.relationship || "";
+      document.getElementById("icePhone").value        = data.phone || "";
+      document.getElementById("iceAltPhone").value     = data.alt_phone || "";
+    }
+  } catch (err) {
+    console.error("loadIceContact:", err);
+    showToast("Could not load your ICE contact. Please refresh.", "warning");
+  }
+
+  document.getElementById("iceForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = document.getElementById("iceSaveBtn");
+    btn.disabled = true; btn.textContent = "Saving…";
+
+    const payload = {
+      student_id:   STUDENT.id,
+      contact_name: document.getElementById("iceName").value.trim(),
+      relationship: document.getElementById("iceRelationship").value.trim(),
+      phone:        document.getElementById("icePhone").value.trim(),
+      alt_phone:    document.getElementById("iceAltPhone").value.trim() || null,
+    };
+
+    try {
+      const { error } = await supabase
+        .from("ice_contacts")
+        .upsert([payload], { onConflict: "student_id" });
+      if (error) throw error;
+      showToast("ICE contact saved. Thank you!", "success");
+    } catch (err) {
+      console.error("saveIceContact:", err);
+      showToast("Could not save your ICE contact. Please try again.", "error");
+    } finally {
+      btn.disabled = false; btn.textContent = "💾 Save ICE Contact";
+    }
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
