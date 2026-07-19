@@ -123,6 +123,9 @@
       <a href="#" class="nav-link" data-section="audit">
         <span class="nav-icon">📝</span> Audit Log
       </a>
+      <a href="#" class="nav-link" data-section="emergency">
+        <span class="nav-icon">🆘</span> Emergency Services
+      </a>
     </nav>
 
     <div class="sidebar-footer">
@@ -1014,6 +1017,85 @@
       <!-- ── MAINTENANCE ────────────────────────────────────────────────────── -->
       <section id="section-maintenance" class="dash-section hidden">
         <div id="maintenanceContainer"><p style="color:var(--gray-400)">Loading maintenance requests…</p></div>
+      </section>
+
+      <!-- ── EMERGENCY SERVICES ─────────────────────────────────────────────── -->
+      <section id="section-emergency" class="dash-section hidden">
+
+        <!-- Emergency contacts manager (admin / superadmin) -->
+        <div class="table-card" id="emContactsCard">
+          <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="table-card-title">🆘 Emergency Contacts</span>
+            <button class="btn btn-gold" id="emAddContactBtn" style="background:var(--gold);color:#fff;padding:.5rem 1rem;font-size:13px">+ Add Contact</button>
+          </div>
+
+          <div id="emAddFormWrap" style="display:none;padding:1rem 1.2rem;border-bottom:1px solid var(--gray-100);background:var(--gray-50)">
+            <form id="emAddForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Label</label>
+                  <input type="text" id="emNewLabel" placeholder="e.g. Campus Infirmary" required>
+                </div>
+                <div class="form-group">
+                  <label>Phone</label>
+                  <input type="tel" id="emNewPhone" placeholder="e.g. 024XXXXXXX" required>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Category</label>
+                  <select id="emNewCategory">
+                    <option value="campus">Campus</option>
+                    <option value="national">National</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Display Order</label>
+                  <input type="number" id="emNewOrder" value="1" min="1">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Location Note (optional)</label>
+                <input type="text" id="emNewNote" placeholder="e.g. Ground Floor, Main Block">
+              </div>
+              <button type="submit" class="btn-sm btn-gold">💾 Save Contact</button>
+              <button type="button" class="btn-sm btn-secondary" id="emAddCancel">Cancel</button>
+            </form>
+          </div>
+
+          <div class="table-wrap">
+            <table class="beautiful-table">
+              <thead>
+                <tr><th>Label</th><th>Phone</th><th>Category</th><th>Location Note</th><th>Order</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="emContactsBody">
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--gray-400)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ICE lookup (admin / superadmin / security) -->
+        <div class="table-card" id="emIceCard" style="margin-top:1.5rem">
+          <div class="table-card-header">
+            <span class="table-card-title">👨‍👩‍👧 ICE Contact Lookup</span>
+          </div>
+          <div class="table-filter-bar">
+            <input id="emIceSearch" type="text" placeholder="🔍 Student name or reg number…" style="min-width:240px">
+            <button class="btn-sm btn-gold" id="emIceSearchBtn">Search</button>
+          </div>
+          <div class="table-wrap">
+            <table class="beautiful-table">
+              <thead>
+                <tr><th>Student</th><th>Reg Number</th><th>ICE Name</th><th>Relationship</th><th>Phone</th><th>Alt Phone</th></tr>
+              </thead>
+              <tbody id="emIceLookupBody">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400)">Search for a student to view their ICE contact.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </section>
 
     </div><!-- /dash-content -->
