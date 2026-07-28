@@ -582,6 +582,7 @@
     <li><a href="#features">Portal Features</a></li>
     <li><a href="#news">News</a></li>
     <li><a href="#" onclick="event.preventDefault();openApplyModal()">Apply</a></li>
+    <li><a href="#" onclick="event.preventDefault();openBookingModal()">Book a Room</a></li>
   </ul>
   <button id="signInBtn" onclick="document.getElementById('loginModal').classList.add('open')">Sign In →</button>
 
@@ -596,6 +597,7 @@
   <a href="#features" onclick="closeLandingNav()">Portal Features</a>
   <a href="#news" onclick="closeLandingNav()">News</a>
   <a href="#" onclick="event.preventDefault();closeLandingNav();openApplyModal()">Apply for Room</a>
+  <a href="#" onclick="event.preventDefault();closeLandingNav();openBookingModal()">Book Staff Room / Suite</a>
   <a class="nav-mobile-signin" href="#" onclick="event.preventDefault();closeLandingNav();document.getElementById('loginModal').classList.add('open')">Sign In →</a>
 </div>
 
@@ -638,6 +640,7 @@
     <div class="hero-actions">
       <button class="btn btn-gold" id="signInBtnHero" onclick="document.getElementById('loginModal').classList.add('open')">Sign In to Dashboard</button>
       <button class="btn btn-outline" id="applyPublicBtn">Apply for Room →</button>
+      <button class="btn btn-outline" id="bookRoomBtn" onclick="openBookingModal()">Book Staff Room / Suite →</button>
       <!-- Applications status badge — shown when closed -->
       <div id="appClosedBadge" style="display:none;
            background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);
@@ -1490,6 +1493,181 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════
      LOGIN MODAL
      ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- ══ BOOK STAFF ROOM / SUITE MODAL ══════════════════════════════════════════ -->
+<div id="bookingModal" style="display:none;position:fixed;inset:0;z-index:9999;
+     background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);
+     overflow-y:auto;padding:2rem 1rem">
+  <div style="max-width:620px;margin:0 auto;position:relative">
+    <button onclick="closeBookingModal()" aria-label="Close"
+      style="position:absolute;top:-0.5rem;right:0;width:36px;height:36px;border-radius:50%;
+             border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:1.3rem;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             line-height:1;z-index:1">×</button>
+
+    <div style="background:var(--white);border-radius:var(--radius-lg);
+                box-shadow:0 24px 64px rgba(0,0,0,0.35);overflow:hidden">
+      <div style="background:var(--navy);padding:1.4rem 2rem;display:flex;align-items:center;gap:.8rem">
+        <span style="font-size:1.5rem">🛏️</span>
+        <div>
+          <div style="color:#fff;font-weight:700;font-size:1.1rem;font-family:var(--font-serif)">Book a Staff Room or Suite</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:2px">
+            For visiting staff, officials and guests. Requests are reviewed and confirmed by the General Office.
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:1.6rem 2rem 2rem">
+        <div id="bookingFormSection">
+          <form id="publicBookingForm">
+            <div class="form-group">
+              <label>Room</label>
+              <select id="bkRoom" required><option value="">Loading available rooms…</option></select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="bkName" placeholder="Your full name" required>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="bkPhone" placeholder="e.g. 024XXXXXXX" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="bkEmail" placeholder="e.g. you@example.com" required>
+              </div>
+              <div class="form-group">
+                <label>Department / Organisation</label>
+                <input type="text" id="bkDept" placeholder="e.g. UCC School of Nursing">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Purpose of Stay</label>
+              <textarea id="bkPurpose" rows="2" placeholder="e.g. External examination duties" required></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Arrival Date</label>
+                <input type="date" id="bkStart" required>
+              </div>
+              <div class="form-group">
+                <label>Departure Date (optional)</label>
+                <input type="date" id="bkEnd">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="bkSubmitBtn"
+              style="font-size:15px;padding:.8rem">Submit Booking Request</button>
+          </form>
+        </div>
+        <div id="bookingResult" style="display:none;text-align:center;padding:2rem 1rem">
+          <div style="font-size:3rem">✅</div>
+          <h3 style="color:var(--navy);margin:.6rem 0 .4rem">Request Received</h3>
+          <p style="color:var(--gray-500);font-size:14px">
+            Your booking request has been submitted. The General Office will contact you
+            on the phone number or email you provided once it has been reviewed.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, showToast } from "./js/supabaseClient.js";
+
+  window.openBookingModal = async function () {
+    document.getElementById("bookingModal").style.display = "block";
+    document.getElementById("bookingFormSection").style.display = "";
+    document.getElementById("bookingResult").style.display = "none";
+    document.body.style.overflow = "hidden";
+
+    // Bookable rooms: staff / NSP / suite, minus those with an active approved booking
+    const today = new Date().toISOString().slice(0, 10);
+    const [roomsRes, activeRes] = await Promise.all([
+      supabase.from("rooms")
+        .select("id, block, room_number, type")
+        .in("type", ["staff", "NSP", "suite"])
+        .order("block").order("room_number"),
+      supabase.from("facility_bookings")
+        .select("room_id, end_date")
+        .eq("status", "approved")
+        .not("room_id", "is", null),
+    ]);
+
+    const occupied = new Set(
+      (activeRes.data || [])
+        .filter(b => !b.end_date || b.end_date >= today)
+        .map(b => b.room_id)
+    );
+    const rooms = (roomsRes.data || []).filter(r => !occupied.has(r.id));
+
+    const sel = document.getElementById("bkRoom");
+    sel.innerHTML = rooms.length
+      ? `<option value="">— Select a room —</option>` +
+        rooms.map(r => {
+          const t = r.type === "staff" ? "Staff Room" : r.type === "NSP" ? "NSP Room" : "Suite";
+          return `<option value="${r.id}" data-type="${r.type}">Block ${r.block} – ${r.room_number} (${t})</option>`;
+        }).join("")
+      : `<option value="">No rooms currently available</option>`;
+  };
+
+  window.closeBookingModal = function () {
+    document.getElementById("bookingModal").style.display = "none";
+    document.body.style.overflow = "";
+  };
+
+  document.getElementById("bookingModal").addEventListener("click", e => {
+    if (e.target === document.getElementById("bookingModal")) closeBookingModal();
+  });
+
+  document.getElementById("publicBookingForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const sel     = document.getElementById("bkRoom");
+    const roomId  = sel.value;
+    if (!roomId) { showToast("Please select a room.", "warning"); return; }
+
+    const start = document.getElementById("bkStart").value;
+    const end   = document.getElementById("bkEnd").value;
+    if (end && end < start) { showToast("Departure date cannot be before arrival.", "warning"); return; }
+
+    const roomType    = sel.selectedOptions[0]?.dataset.type;
+    const bookingType = roomType === "NSP" ? "NSP" : roomType === "staff" ? "staff_room" : "suite";
+
+    const btn = document.getElementById("bkSubmitBtn");
+    btn.disabled = true; btn.textContent = "Submitting…";
+
+    const { error } = await supabase.from("facility_bookings").insert([{
+      room_id:       roomId,
+      facility_id:   null,
+      booking_type:  bookingType,
+      assignee_name: document.getElementById("bkName").value.trim(),
+      department:    document.getElementById("bkDept").value.trim() || null,
+      purpose:       document.getElementById("bkPurpose").value.trim(),
+      start_date:    start,
+      end_date:      end || null,
+      status:        "pending",
+      requested_by:  "public",
+      contact_phone: document.getElementById("bkPhone").value.trim(),
+      contact_email: document.getElementById("bkEmail").value.trim(),
+    }]);
+
+    btn.disabled = false; btn.textContent = "Submit Booking Request";
+
+    if (error) {
+      const hint = error.message.includes("contact_phone")
+        ? " (Admin: run booking-setup.sql in Supabase.)" : "";
+      showToast("Could not submit booking: " + error.message + hint, "error");
+      return;
+    }
+
+    document.getElementById("bookingFormSection").style.display = "none";
+    document.getElementById("bookingResult").style.display = "";
+    e.target.reset();
+  });
+</script>
+
 <div class="modal-overlay" id="loginModal">
   <div class="modal-box">
     <div class="modal-header">
