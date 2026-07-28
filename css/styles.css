@@ -651,6 +651,16 @@ tbody tr { border-bottom: 1px solid var(--gray-100); }
 tbody tr:hover { background: var(--gray-50); }
 tbody td { padding: .6rem 1rem; color: var(--gray-800); vertical-align: middle; }
 
+/* ── Clickable student name (admin "view as student") ────────────────────── */
+.student-name-link {
+  cursor: pointer;
+  transition: color var(--transition);
+}
+.student-name-link:hover {
+  color: var(--gold);
+  text-decoration: underline;
+}
+
 /* ── Room Grid ───────────────────────────────────────────────────────────── */
 .room-legend {
   display: flex;
