@@ -529,11 +529,13 @@ async function loadApply() {
 
   const student = freshStudent || STUDENT;
 
-  // Check existing application using reg_number
+  // Check for a LIVE application (pending or approved). Archived ones from
+  // previous years — and rejections — do not block a fresh application.
   const { data: existing } = await supabase
     .from("applications")
     .select("status, submitted_at, preferred_block, notes")
     .eq("reg_number", student.reg_number)
+    .in("status", ["pending", "approved"])
     .order("submitted_at", { ascending: false })
     .limit(1);
 
