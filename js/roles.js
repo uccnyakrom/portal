@@ -20,7 +20,7 @@ export const ROLE_PERMISSIONS = {
     label: "Administrator",
     sections: ["overview","students","rooms","allocations","roomchanges","applications","publicapps",
                "managerooms","programmes","reports","statistics","users","notices","campusnews","herophotos","appsettings",
-               "export","audit","facilities","bookings","maintenance","emergency"],
+               "export","audit","facilities","bookings","maintenance","emergency","waiting","academicyear"],
     canExport: true,
     canManageUsers: true,
     canEditStudents: true,
