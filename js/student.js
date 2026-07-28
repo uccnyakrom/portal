@@ -99,12 +99,27 @@ function loadProfile() {
     "profileProgram": STUDENT.program,
     "profileLevel":   `Level ${STUDENT.level}`,
     "profileSex":     STUDENT.sex,
-    "profileStatus":  STUDENT.program,
   };
   Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   });
+
+  // Residential status — same definition as the admin overview statistics:
+  // room assigned → Residential; declared "NR" → Non-Residential; else Not Decided
+  (async () => {
+    const statusEl = document.getElementById("profileStatus");
+    if (!statusEl) return;
+    const { data: s } = await supabase
+      .from("students").select("room, room_id").eq("id", STUDENT.id).maybeSingle();
+    let label = "Not Decided", fg = "#6b7280", bg = "#f3f4f6";
+    if (s?.room_id) {
+      label = "🏠 Residential"; fg = "#065f46"; bg = "#d1fae5";
+    } else if ((s?.room || "").toUpperCase() === "NR") {
+      label = "Non-Residential"; fg = "#92400e"; bg = "#fef3c7";
+    }
+    statusEl.innerHTML = `<span style="background:${bg};color:${fg};padding:.2rem .7rem;border-radius:999px;font-size:12px;font-weight:700">${label}</span>`;
+  })();
 
   // Show auto-generated password hint
   const pwHint = document.getElementById("passwordHint");

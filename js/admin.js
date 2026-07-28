@@ -261,7 +261,7 @@ async function loadOverview() {
   const [roomsRes, appsRes, studentsRes, housedRes, totalRes] = await Promise.all([
     supabase.from("rooms").select("*"),
     supabase.from("applications").select("id, status"),
-    supabase.from("students").select("id, program, level, sex"),
+    supabase.from("students").select("id, program, level, sex, room, room_id"),
     supabase.from("students").select("id", { count: "exact", head: true }).not("room_id", "is", null),
     supabase.from("students").select("id", { count: "exact", head: true })
   ]);
@@ -277,9 +277,14 @@ async function loadOverview() {
   const totalBeds    = studentRooms.reduce((a,r)=>a+r.capacity,0);
   const occupiedBeds = studentRooms.reduce((a,r)=>a+r.occupancy_count,0);
 
+  // Residential = room assigned · Non-Residential = declared "NR" · rest = Not Decided
+  const nonResidential = students.filter(s => !s.room_id && (s.room || "").toUpperCase() === "NR").length;
+  const notDecided     = Math.max(0, totalStudents - residential - nonResidential);
+
   setCard("statTotal",     totalStudents);
   setCard("statResidents", residential);
-  setCard("statHoused",    totalStudents - residential);          // Non-Residential Students
+  setCard("statHoused",    nonResidential);                       // Non-Residential Students
+  setCard("statUndecided", notDecided);                           // Not Decided
   setCard("statUnhoused",  studentRooms.length);                  // Student Rooms (total)
   setCard("statBeds",      totalBeds - occupiedBeds);             // Available Beds
   setCard("statVacant",    studentRooms.filter(r=>r.occupancy_count===0).length); // Vacant Rooms
