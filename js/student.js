@@ -21,6 +21,24 @@ const STUDENT = getSession();
 // ─────────────────────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Admin preview banner (when opened via "View as student" in the admin panel)
+  if (STUDENT?.impersonated_by) {
+    const banner = document.createElement("div");
+    banner.style.cssText = `
+      position: sticky; top: 0; z-index: 9998;
+      background: #7c3aed; color: #fff;
+      padding: .55rem 1rem; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; justify-content: space-between; gap: .8rem;`;
+    banner.innerHTML = `
+      <span>👁 Admin preview — you are viewing this portal as
+        <strong>${STUDENT.full_name}</strong> (${STUDENT.reg_number}).
+        Any changes you make are real.</span>
+      <button onclick="window.close()" style="background:rgba(255,255,255,.2);
+        border:1px solid rgba(255,255,255,.4);color:#fff;padding:.25rem .8rem;
+        border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap">Exit Preview</button>`;
+    document.body.prepend(banner);
+  }
+
   document.getElementById("studentWelcome").textContent = `Welcome, ${STUDENT.full_name.split(" ")[0]}!`;
   document.getElementById("logoutBtn").addEventListener("click", logout);
   initChangePasswordModal();

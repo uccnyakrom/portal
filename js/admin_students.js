@@ -21,6 +21,39 @@ import { fetchAvailableRooms, assignRoom, removeRoomAssignment } from "./rooms.j
 const ADMIN = getSession();
 
 // ─────────────────────────────────────────────────────────────────────────────
+// VIEW AS STUDENT (admin preview / impersonation)
+// Clicking a student's name opens their portal in a new tab. The new tab
+// inherits a copy of sessionStorage, so we briefly swap in a student session,
+// open the tab, then restore the admin session in this tab.
+// ─────────────────────────────────────────────────────────────────────────────
+window.viewAsStudent = async (studentId) => {
+  const { data: s, error } = await supabase
+    .from("students").select("*").eq("id", studentId).single();
+  if (error || !s) { showToast("Could not load student record.", "error"); return; }
+
+  const adminSessionRaw = sessionStorage.getItem("portalUser");
+
+  const studentSession = JSON.stringify({
+    ...s,
+    role: "student",
+    type: "student",
+    impersonated_by: ADMIN?.username || "admin",
+  });
+
+  sessionStorage.setItem("portalUser", studentSession);
+  const win = window.open("student.html", "_blank");
+  // Restore the admin session in THIS tab (the new tab keeps its copy)
+  if (adminSessionRaw) sessionStorage.setItem("portalUser", adminSessionRaw);
+  else sessionStorage.removeItem("portalUser");
+
+  if (!win) {
+    showToast("Pop-up blocked — please allow pop-ups for this site.", "warning");
+    return;
+  }
+  logAudit(`Opened student portal preview for ${s.reg_number}`, ADMIN?.username || "admin");
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // LOAD STUDENTS TABLE
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -73,7 +106,8 @@ function renderStudentTable(students) {
         <div class="student-name-cell">
           <div class="student-avatar ${isFemale ? "female" : ""}">${initials}</div>
           <div>
-            <div class="student-name-text">${name}</div>
+            <div class="student-name-text student-name-link" onclick="viewAsStudent('${s.id}')"
+                 title="Open this student's portal (admin preview)">${name}</div>
             <div class="student-reg-text">${s.reg_number}</div>
           </div>
         </div>
