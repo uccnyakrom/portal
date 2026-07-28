@@ -168,6 +168,106 @@ export async function syncRoomOccupancy(roomId, actorName = "admin") {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// VACATION-STAY ELIGIBILITY RULES
+//   Doctor of Pharmacy            → D floor (Third Floor)
+//   Medicine & Surgery (MBChB)    → C floor (Second Floor)
+//   BSc Nursing                   → B floor (B1–B28) + A floor (A13–A24)
+//   Other programmes              → no floor restriction
+// Gender: males and females are steered to different blocks (a block's gender
+// is inferred from its current occupants; empty blocks are open to anyone).
+// If no same-gender rooms remain, the gender rule is relaxed per policy.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FLOOR_RULES = [
+  {
+    test:   p => /pharm/i.test(p),
+    label:  "Doctor of Pharmacy students are housed on the D Floor (Third Floor).",
+    floors: [{ letter: "D" }],
+  },
+  {
+    test:   p => /(medicine|surgery|mbchb)/i.test(p),
+    label:  "Medicine & Surgery students are housed on the C Floor (Second Floor).",
+    floors: [{ letter: "C" }],
+  },
+  {
+    test:   p => /nursing/i.test(p),
+    label:  "BSc Nursing students are housed on the B Floor (B1–B28) and A Floor (A13–A24).",
+    floors: [{ letter: "B", min: 1, max: 28 }, { letter: "A", min: 13, max: 24 }],
+  },
+];
+
+export function getFloorRule(program) {
+  return FLOOR_RULES.find(r => r.test(String(program || ""))) || null;
+}
+
+function parseRoomNumber(rn) {
+  const m = String(rn || "").trim().match(/^([A-Za-z])\s*-?\s*(\d+)$/);
+  return m ? { letter: m[1].toUpperCase(), num: parseInt(m[2], 10) } : null;
+}
+
+export function roomMatchesFloorRule(room, rule) {
+  if (!rule) return true;
+  const p = parseRoomNumber(room.room_number);
+  if (!p) return false; // unparseable numbers (e.g. "Suite A1") never match a floor rule
+  return rule.floors.some(f =>
+    p.letter === f.letter &&
+    (f.min === undefined || p.num >= f.min) &&
+    (f.max === undefined || p.num <= f.max));
+}
+
+/**
+ * Rooms a given student may select, applying programme floor rules and
+ * gender-by-block separation. Returns { rooms, rule, genderRelaxed }.
+ */
+export async function fetchEligibleRooms(student = {}) {
+  const [roomsRes, occRes] = await Promise.all([
+    supabase.from("rooms").select("*").order("block").order("room_number"),
+    supabase.from("students").select("room_id, sex").not("room_id", "is", null),
+  ]);
+
+  const allRooms = roomsRes.data || [];
+  const rule     = getFloorRule(student.program);
+
+  // Student-bookable + space left + floor rule
+  let list = allRooms.filter(r =>
+    ["vacant", "partial"].includes(r.type) &&
+    r.occupancy_count < r.capacity &&
+    roomMatchesFloorRule(r, rule));
+
+  // Gender-by-block: infer each block's gender from current occupants
+  const sex = String(student.sex || "").toUpperCase();
+  let genderRelaxed = false;
+
+  if (sex === "M" || sex === "F") {
+    const blockOf = {};
+    allRooms.forEach(r => blockOf[r.id] = r.block);
+
+    const blockSex = {};
+    (occRes.data || []).forEach(o => {
+      const b = blockOf[o.room_id];
+      if (!b) return;
+      const s = (blockSex[b] ||= { M: 0, F: 0 });
+      s[(o.sex || "").toUpperCase() === "F" ? "F" : "M"]++;
+    });
+
+    const blockAllows = b => {
+      const s = blockSex[b];
+      if (!s || (s.M > 0 && s.F > 0)) return true;  // empty or already mixed
+      return sex === "F" ? s.F > 0 : s.M > 0;        // single-gender block
+    };
+
+    const sameGender = list.filter(r => blockAllows(r.block));
+    if (sameGender.length) {
+      list = sameGender;
+    } else if (list.length) {
+      genderRelaxed = true;  // "unless there are no rooms left"
+    }
+  }
+
+  return { rooms: list, rule, genderRelaxed };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ROOM GRID RENDERER
 // ─────────────────────────────────────────────────────────────────────────────
 
