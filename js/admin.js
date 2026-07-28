@@ -1772,7 +1772,7 @@ async function loadAcademicYearSection() {
         </div>
         <div class="form-group" style="display:flex;align-items:center;gap:.5rem">
           <input type="checkbox" id="rolloverPromote" style="width:auto">
-          <label for="rolloverPromote" style="margin:0;font-size:13px">Promote Level 100 students to Level 200</label>
+          <label for="rolloverPromote" style="margin:0;font-size:13px">Promote all students one level up (100→200, 200→300, 300→400)</label>
         </div>
         <button type="submit" class="btn btn-primary" id="rolloverBtn"
           style="background:#b91c1c">🔄 Run Rollover</button>
