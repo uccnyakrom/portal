@@ -24,122 +24,101 @@
 </head>
 <body>
 <div class="dash-layout">
-  <!-- Mobile menu toggle -->
-  <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()">☰</button>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileMenu()"></div>
-
   <!-- ════════════════════════════════════════════════════════════════════════
-       SIDEBAR
+       HORIZONTAL TAB BAR
        ════════════════════════════════════════════════════════════════════════ -->
-  <aside class="sidebar" id="sidebar">
-
-    <div class="sidebar-brand">
-      <div class="sidebar-logo">
-        UCC Accommodation
-        <span>Admin Console</span>
+  <header class="admin-tabbar">
+    <div class="tabbar-top">
+      <div class="tabbar-brand">
+        UCC Accommodation <span>Admin Console</span>
+      </div>
+      <nav class="tabbar-groups" aria-label="Sections">
+        <button class="tab-group-btn active" data-group="grp-overview">📊 Overview</button>
+        <button class="tab-group-btn" data-group="grp-students">🎓 Students</button>
+        <button class="tab-group-btn" data-group="grp-housing">🏠 Housing</button>
+        <button class="tab-group-btn" data-group="grp-operations">🛠️ Operations</button>
+        <button class="tab-group-btn" data-group="grp-content">📰 Content</button>
+        <button class="tab-group-btn" data-group="grp-system">⚙️ System</button>
+      </nav>
+      <div class="tabbar-user">
+        <span class="tabbar-user-info">
+          <strong id="adminName">Admin</strong>
+          <span id="adminRoleBadge"></span>
+        </span>
+        <button class="tabbar-icon-btn" onclick="openChangePasswordModal()" title="Change Password">🔐</button>
+        <button class="tabbar-icon-btn tabbar-logout" id="logoutBtn" title="Sign Out">⇦ Sign Out</button>
       </div>
     </div>
 
-    <div class="sidebar-user">
-      Logged in as<br>
-      <strong id="adminName">Admin</strong><br>
-      <span id="adminRoleBadge" style="margin-top:.3rem;display:inline-block"></span>
+    <div class="tabbar-subrow">
+      <div class="nav-subtabs" id="grp-overview">
+        <a href="#" class="nav-link" data-section="overview"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="#" class="nav-link" data-section="reports"><span class="nav-icon">📈</span> Reports</a>
+        <a href="#" class="nav-link" data-section="statistics"><span class="nav-icon">📊</span> Statistics</a>
+      </div>
+      <div class="nav-subtabs hidden" id="grp-students">
+        <a href="#" class="nav-link" data-section="students"><span class="nav-icon">🎓</span> All Students</a>
+        <a href="#" class="nav-link" data-section="allocations"><span class="nav-icon">🔑</span> Allocations</a>
+        <a href="#" class="nav-link" data-section="roomchanges"><span class="nav-icon">🔁</span> Room Changes</a>
+        <a href="#" class="nav-link" data-section="applications"><span class="nav-icon">📋</span> Applications</a>
+        <a href="#" class="nav-link" data-section="publicapps"><span class="nav-icon">📩</span> Public Applications</a>
+        <a href="#" class="nav-link" data-section="waiting"><span class="nav-icon">⏳</span> Waiting List</a>
+      </div>
+      <div class="nav-subtabs hidden" id="grp-housing">
+        <a href="#" class="nav-link" data-section="rooms"><span class="nav-icon">🏠</span> Room Map</a>
+        <a href="#" class="nav-link" data-section="managerooms"><span class="nav-icon">🚪</span> Manage Rooms</a>
+        <a href="#" class="nav-link" data-section="bookings"><span class="nav-icon">📅</span> Bookings</a>
+      </div>
+      <div class="nav-subtabs hidden" id="grp-operations">
+        <a href="#" class="nav-link" data-section="facilities"><span class="nav-icon">🏛️</span> Facilities</a>
+        <a href="#" class="nav-link" data-section="maintenance"><span class="nav-icon">🔧</span> Maintenance</a>
+        <a href="#" class="nav-link" data-section="emergency"><span class="nav-icon">🆘</span> Emergency Services</a>
+      </div>
+      <div class="nav-subtabs hidden" id="grp-content">
+        <a href="#" class="nav-link" data-section="notices"><span class="nav-icon">📢</span> Notices</a>
+        <a href="#" class="nav-link" data-section="campusnews"><span class="nav-icon">📰</span> Campus News</a>
+        <a href="#" class="nav-link" data-section="herophotos"><span class="nav-icon">🖼️</span> Hero Slideshow</a>
+      </div>
+      <div class="nav-subtabs hidden" id="grp-system">
+        <a href="#" class="nav-link" data-section="users"><span class="nav-icon">👤</span> User Management</a>
+        <a href="#" class="nav-link" data-section="programmes"><span class="nav-icon">🎓</span> Programmes</a>
+        <a href="#" class="nav-link" data-section="appsettings"><span class="nav-icon">🔓</span> Application Settings</a>
+        <a href="#" class="nav-link" data-section="academicyear"><span class="nav-icon">📅</span> Academic Year</a>
+        <a href="timetable.html" class="nav-link"><span class="nav-icon">📅</span> Timetable</a>
+        <a href="#" class="nav-link" data-section="export"><span class="nav-icon">💾</span> Export Data</a>
+        <a href="#" class="nav-link" data-section="audit"><span class="nav-icon">📝</span> Audit Log</a>
+      </div>
     </div>
+  </header>
 
-    <nav class="sidebar-nav">
-      <div class="nav-group-label">Overview</div>
-      <a href="#" class="nav-link" data-section="overview">
-        <span class="nav-icon">📊</span> Dashboard
-      </a>
+  <script>
+    // Group-tab switching + hide groups emptied by role filtering
+    (function () {
+      const groupBtns = document.querySelectorAll(".tab-group-btn");
+      const showGroup = id => {
+        groupBtns.forEach(b => b.classList.toggle("active", b.dataset.group === id));
+        document.querySelectorAll(".nav-subtabs").forEach(p =>
+          p.classList.toggle("hidden", p.id !== id));
+      };
+      groupBtns.forEach(b => b.addEventListener("click", () => showGroup(b.dataset.group)));
 
-      <div class="nav-group-label">Management</div>
-      <a href="#" class="nav-link" data-section="students">
-        <span class="nav-icon">🎓</span> All Students
-      </a>
-      <a href="#" class="nav-link" data-section="rooms">
-        <span class="nav-icon">🏠</span> Room Map
-      </a>
-      <a href="#" class="nav-link" data-section="allocations">
-        <span class="nav-icon">🔑</span> Allocations
-      </a>
-      <a href="#" class="nav-link" data-section="roomchanges">
-        <span class="nav-icon">🔁</span> Room Changes
-      </a>
-      <a href="#" class="nav-link" data-section="applications">
-        <span class="nav-icon">📋</span> Applications
-      </a>
-      <a href="#" class="nav-link" data-section="publicapps">
-        <span class="nav-icon">📩</span> Public Applications
-      </a>
-      <a href="#" class="nav-link" data-section="managerooms">
-        <span class="nav-icon">🚪</span> Manage Rooms
-      </a>
-      <a href="#" class="nav-link" data-section="programmes">
-        <span class="nav-icon">🎓</span> Programmes
-      </a>
-
-      <div class="nav-group-label">Analytics</div>
-      <a href="#" class="nav-link" data-section="reports">
-        <span class="nav-icon">📈</span> Reports
-      </a>
-      <a href="#" class="nav-link" data-section="statistics">
-        <span class="nav-icon">📊</span> Statistics
-      </a>
-
-      <div class="nav-group-label">Administration</div>
-      <a href="#" class="nav-link" data-section="users">
-        <span class="nav-icon">👤</span> User Management
-      </a>
-      <a href="#" class="nav-link" data-section="notices">
-        <span class="nav-icon">📢</span> Notices
-      </a>
-      <a href="#" class="nav-link" data-section="campusnews">
-        <span class="nav-icon">📰</span> Campus News
-      </a>
-      <a href="#" class="nav-link" data-section="herophotos">
-        <span class="nav-icon">🖼️</span> Hero Slideshow
-      </a>
-      <a href="#" class="nav-link" data-section="appsettings">
-        <span class="nav-icon">🔓</span> Application Settings
-      </a>
-      <a href="timetable.html" class="nav-link">
-        <span class="nav-icon">📅</span> Timetable
-      </a>
-      <a href="#" class="nav-link" data-section="export">
-        <span class="nav-icon">💾</span> Export Data
-      </a>
-      <a href="#" class="nav-link" data-section="facilities">
-        <span class="nav-icon">🏛️</span> Facilities
-      </a>
-      <a href="#" class="nav-link" data-section="bookings">
-        <span class="nav-icon">📅</span> Bookings
-      </a>
-      <a href="#" class="nav-link" data-section="maintenance">
-        <span class="nav-icon">🔧</span> Maintenance
-      </a>
-      <a href="#" class="nav-link" data-section="waiting">
-        <span class="nav-icon">⏳</span> Waiting List
-      </a>
-      <a href="#" class="nav-link" data-section="academicyear">
-        <span class="nav-icon">📅</span> Academic Year
-      </a>
-      <a href="#" class="nav-link" data-section="audit">
-        <span class="nav-icon">📝</span> Audit Log
-      </a>
-      <a href="#" class="nav-link" data-section="emergency">
-        <span class="nav-icon">🆘</span> Emergency Services
-      </a>
-    </nav>
-
-    <div class="sidebar-footer">
-      <button class="btn-sm btn-secondary" onclick="openChangePasswordModal()" 
-        style="width:100%;margin-bottom:.5rem;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15)">
-        🔐 Change Password
-      </button>
-      <button class="logout-btn" id="logoutBtn">⇦ Sign Out</button>
-    </div>
-
-  </aside><!-- /sidebar -->
+      // After roles.js hides links, hide any group with no visible tabs
+      window.addEventListener("load", () => setTimeout(() => {
+        groupBtns.forEach(b => {
+          const panel = document.getElementById(b.dataset.group);
+          const anyVisible = panel &&
+            [...panel.querySelectorAll(".nav-link")].some(l => l.style.display !== "none");
+          if (!anyVisible) {
+            b.style.display = "none";
+            if (b.classList.contains("active")) {
+              const first = [...groupBtns].find(x => x.style.display !== "none");
+              if (first) showGroup(first.dataset.group);
+            }
+          }
+        });
+      }, 250));
+    })();
+  </script>
 
   <!-- ════════════════════════════════════════════════════════════════════════
        MAIN CONTENT
@@ -1581,33 +1560,10 @@
 </script>
 
 <script>
-function toggleMobileMenu() {
-  const sidebar = document.getElementById("sidebar");
-  const overlay = document.getElementById("sidebarOverlay");
-  const isOpen = sidebar.classList.contains("open");
-  if (isOpen) {
-    sidebar.classList.remove("open");
-    overlay.classList.remove("open");
-    document.body.style.overflow = "";
-  } else {
-    sidebar.classList.add("open");
-    overlay.classList.add("open");
-    document.body.style.overflow = "hidden"; // prevent background scroll on iOS
-  }
-}
-function closeMobileMenu() {
-  document.getElementById("sidebar").classList.remove("open");
-  document.getElementById("sidebarOverlay").classList.remove("open");
-  document.body.style.overflow = "";
-}
-// Close sidebar when nav link clicked on mobile
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".nav-link").forEach(link => {
-    link.addEventListener("click", () => {
-      if (window.innerWidth <= 768) closeMobileMenu();
-    });
-  });
-});
+// Legacy mobile-sidebar helpers — kept as safe no-ops after the move to the
+// horizontal tab bar (nothing references #sidebar any more).
+function toggleMobileMenu() {}
+function closeMobileMenu() {}
 </script>
 <script type="module">
 // ─────────────────────────────────────────────────────────────────────────────
