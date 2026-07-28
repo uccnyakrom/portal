@@ -1401,6 +1401,7 @@
                 <option value="">No preference</option>
               </select>
               <small style="color:var(--gray-400)">Subject to availability and admin approval.</small>
+              <small id="pubRoomHint" style="display:block;color:#b45309;font-size:11px;margin-top:.2rem"></small>
             </div>
             <div class="form-group">
               <label>Any special requests or notes (optional)</label>
@@ -1728,7 +1729,7 @@
 <script type="module">
   import { supabase }       from "./js/supabaseClient.js";
   import { initLoginModal, checkIdleRedirect } from "./js/auth.js";
-  import { fetchRooms, renderRoomGrid } from "./js/rooms.js";
+  import { fetchRooms, renderRoomGrid, fetchEligibleRooms } from "./js/rooms.js";
   import { populateProgramSelect, fetchActiveProgrammes } from "./js/programmes.js";
 
   initLoginModal();
@@ -1881,18 +1882,27 @@
 
   // Available rooms dropdown
   async function loadRoomDropdown() {
-    const { data } = await supabase
-      .from("rooms")
-      .select("block, room_number, capacity, occupancy_count, type")
-      .not("type","in",'("full","staff","NSP")')
-      .order("block").order("room_number");
+    const program = document.getElementById("pubProgram")?.value || "";
+    const sex     = document.getElementById("pubSex")?.value || "";
+    const { rooms, rule, genderRelaxed } = await fetchEligibleRooms({ program, sex });
+
     const sel = document.getElementById("pubRoom");
-    if (!sel || !data) return;
+    if (!sel) return;
     sel.innerHTML = '<option value="">No preference</option>' +
-      data.map(r=>`<option value="${r.block}-${r.room_number}">Block ${r.block} – Room ${r.room_number} (${r.occupancy_count}/${r.capacity})</option>`).join("");
+      rooms.map(r=>`<option value="${r.block}-${r.room_number}">Block ${r.block} – Room ${r.room_number} (${r.occupancy_count}/${r.capacity})</option>`).join("");
+
+    const hint = document.getElementById("pubRoomHint");
+    if (hint) {
+      hint.textContent =
+        (rule ? rule.label : "") +
+        (genderRelaxed ? " Same-gender blocks are full, so other blocks are shown." : "");
+    }
   }
 
   loadRoomDropdown();
+  // Re-filter eligible rooms whenever programme or sex changes
+  document.getElementById("pubProgram")?.addEventListener("change", loadRoomDropdown);
+  document.getElementById("pubSex")?.addEventListener("change", loadRoomDropdown);
 
   // Check existing student on reg number blur
   document.getElementById("pubReg")?.addEventListener("blur", async function() {
