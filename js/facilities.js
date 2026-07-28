@@ -244,6 +244,43 @@ window.updateBooking = async (id, status) => {
     .eq("id", id);
   if (error) { showToast("Update failed.", "error"); return; }
   await logAudit(`Booking ${id} ${status}`, SESSION?.username || "admin");
+
+  // On approval: auto-reject pending bookings for the same room with
+  // overlapping dates (no end date = open-ended stay)
+  if (status === "approved") {
+    const { data: approved } = await supabase
+      .from("facility_bookings")
+      .select("room_id, start_date, end_date")
+      .eq("id", id).single();
+
+    if (approved?.room_id) {
+      const { data: pendings } = await supabase
+        .from("facility_bookings")
+        .select("id, start_date, end_date, assignee_name")
+        .eq("room_id", approved.room_id)
+        .eq("status", "pending")
+        .neq("id", id);
+
+      const overlaps = (pendings || []).filter(p =>
+        (!approved.end_date || !p.start_date || p.start_date <= approved.end_date) &&
+        (!p.end_date || !approved.start_date || p.end_date >= approved.start_date)
+      );
+
+      if (overlaps.length) {
+        await supabase.from("facility_bookings")
+          .update({ status: "rejected", approved_by: (SESSION?.username || "admin") + " (auto: dates clash)" })
+          .in("id", overlaps.map(p => p.id));
+        await logAudit(
+          `Auto-rejected ${overlaps.length} overlapping booking(s) for room after approving ${id}`,
+          SESSION?.username || "admin"
+        );
+        showToast(`Booking approved. ${overlaps.length} overlapping pending request(s) auto-rejected.`, "success");
+        loadBookings("bookingsContainer");
+        return;
+      }
+    }
+  }
+
   showToast(`Booking ${status}.`, "success");
   loadBookings("bookingsContainer");
 };
