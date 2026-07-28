@@ -211,8 +211,10 @@ export async function loadBookings(containerId) {
                     : "—";
                   return `<tr>
                     <td>${loc}</td>
-                    <td><span class="badge badge-${b.booking_type}">${b.booking_type}</span></td>
-                    <td>${b.assignee_name}</td>
+                    <td><span class="badge badge-${b.booking_type}">${b.booking_type}</span>${b.requested_by === "public" ? `<br><small style="color:#b45309;font-weight:700">public request</small>` : ""}</td>
+                    <td>${b.assignee_name}
+                      ${b.contact_phone ? `<br><small><a href="tel:${b.contact_phone}" style="color:var(--navy)">📞 ${b.contact_phone}</a></small>` : ""}
+                      ${b.contact_email ? `<br><small><a href="mailto:${b.contact_email}" style="color:var(--navy)">✉️ ${b.contact_email}</a></small>` : ""}</td>
                     <td>${b.department || "—"}</td>
                     <td>${b.purpose || "—"}</td>
                     <td>${b.start_date || "—"}</td>
