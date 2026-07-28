@@ -10,7 +10,7 @@
 
 import { supabase, showToast, generateStudentPassword } from "./supabaseClient.js";
 import { requireAuth, getSession, logout, initChangePasswordModal } from "./auth.js";
-import { fetchRoomWithOccupants } from "./rooms.js";
+import { fetchRoomWithOccupants, fetchAvailableRooms } from "./rooms.js";
 
 // ── Guard ─────────────────────────────────────────────────────────────────────
 requireAuth("student");
@@ -154,6 +154,115 @@ async function loadIceContact() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ROOM CHANGE REQUEST (student side)
+// ─────────────────────────────────────────────────────────────────────────────
+const RCR_STATUS_BADGE = {
+  pending:  { bg: "#fef3c7", fg: "#92400e", label: "⏳ Pending review" },
+  approved: { bg: "#d1fae5", fg: "#065f46", label: "✅ Approved" },
+  rejected: { bg: "#fee2e2", fg: "#991b1b", label: "✕ Rejected" },
+  cancelled:{ bg: "#f3f4f6", fg: "#6b7280", label: "Cancelled" },
+  expired:  { bg: "#f3f4f6", fg: "#6b7280", label: "Expired" },
+};
+
+async function renderRoomChangeUI(studentRow) {
+  const wrap = document.getElementById("roomChangeWrap");
+  if (!wrap) return;
+
+  // Latest request (if any)
+  const { data: req } = await supabase
+    .from("room_change_requests")
+    .select("*, rooms:requested_room_id(block, room_number)")
+    .eq("student_id", studentRow.id)
+    .order("requested_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const badge = req ? (RCR_STATUS_BADGE[req.status] || RCR_STATUS_BADGE.cancelled) : null;
+  const reqRoomLabel = req?.rooms ? `${req.rooms.block}-${req.rooms.room_number}` : "";
+
+  wrap.innerHTML = `
+    <div class="form-card" style="max-width:560px;margin:1.2rem auto 0">
+      <h4 style="color:var(--navy);margin-bottom:.5rem">🔁 Room Change</h4>
+      ${req ? `
+        <div style="background:${badge.bg};color:${badge.fg};padding:.6rem .9rem;border-radius:8px;font-size:13px;margin-bottom:.8rem">
+          <strong>${badge.label}</strong> — request for Room <strong>${reqRoomLabel}</strong>
+          (${new Date(req.requested_at).toLocaleDateString()})
+          ${req.review_note ? `<br><small>Note: ${req.review_note}</small>` : ""}
+        </div>` : ""}
+      ${req?.status === "pending" ? `
+        <button class="btn btn-secondary" id="rcrCancelBtn" style="font-size:13px">Cancel Request</button>
+      ` : `
+        <button class="btn btn-primary" id="rcrOpenBtn" style="font-size:13px">Request a Room Change</button>
+        <form id="rcrForm" style="display:none;margin-top:1rem">
+          <div class="form-group">
+            <label>Preferred Room</label>
+            <select id="rcrRoom" required><option value="">Loading rooms…</option></select>
+          </div>
+          <div class="form-group">
+            <label>Reason for the change</label>
+            <textarea id="rcrReason" rows="3" required
+              placeholder="e.g. medical grounds, conflict, proximity to facilities…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" id="rcrSubmitBtn" style="font-size:13px">Submit Request</button>
+        </form>
+      `}
+    </div>`;
+
+  // Cancel a pending request
+  document.getElementById("rcrCancelBtn")?.addEventListener("click", async () => {
+    if (!confirm("Cancel your pending room change request?")) return;
+    const { error } = await supabase.from("room_change_requests")
+      .update({ status: "cancelled" }).eq("id", req.id).eq("status", "pending");
+    if (error) { showToast("Could not cancel: " + error.message, "error"); return; }
+    showToast("Request cancelled.", "info");
+    renderRoomChangeUI(studentRow);
+  });
+
+  // Open form + load available rooms (excluding the current one)
+  document.getElementById("rcrOpenBtn")?.addEventListener("click", async () => {
+    const form = document.getElementById("rcrForm");
+    form.style.display = "";
+    document.getElementById("rcrOpenBtn").style.display = "none";
+    const rooms = (await fetchAvailableRooms()).filter(r => r.id !== studentRow.room_id);
+    const sel = document.getElementById("rcrRoom");
+    sel.innerHTML = rooms.length
+      ? `<option value="">— Select a room —</option>` +
+        rooms.map(r => `<option value="${r.id}">Block ${r.block} – ${r.room_number} (${r.occupancy_count}/${r.capacity})</option>`).join("")
+      : `<option value="">No rooms currently available</option>`;
+  });
+
+  // Submit
+  document.getElementById("rcrForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const roomId = document.getElementById("rcrRoom").value;
+    const reason = document.getElementById("rcrReason").value.trim();
+    if (!roomId)  { showToast("Please select a room.", "warning"); return; }
+    if (!reason)  { showToast("Please give a reason.", "warning"); return; }
+
+    const btn = document.getElementById("rcrSubmitBtn");
+    btn.disabled = true; btn.textContent = "Submitting…";
+
+    const { error } = await supabase.from("room_change_requests").insert([{
+      student_id:        studentRow.id,
+      current_room_id:   studentRow.room_id,
+      requested_room_id: roomId,
+      reason,
+    }]);
+
+    if (error) {
+      const msg = error.message.includes("one_pending_request")
+        ? "You already have a pending request."
+        : "Could not submit: " + error.message;
+      showToast(msg, "error");
+      btn.disabled = false; btn.textContent = "Submit Request";
+      return;
+    }
+    showToast("Room change request submitted for approval.", "success");
+    renderRoomChangeUI(studentRow);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SECTION: MY ROOM
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -252,7 +361,9 @@ async function loadRoom() {
                     </div>
                   </div>`).join("")}
               </div>`}
-        </div>`;
+        </div>
+        <div id="roomChangeWrap"></div>`;
+      renderRoomChangeUI(s);
       return;
     }
 

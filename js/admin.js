@@ -10,18 +10,9 @@ import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoom
 import { requireAuth, getSession, logout, initChangePasswordModal, initIdleTimeout } from "./auth.js";
 import { fetchRooms, fetchAvailableRooms, fetchRoomWithOccupants, assignRoom, removeRoomAssignment, renderRoomGrid, changeRoomType } from "./rooms.js";
 import { loadFacilitiesList, loadBookings, loadMaintenance, initFacStatusModal, initBookingModal, initMaintenanceModal } from "./facilities.js";
-
-
-// Stubs for features pending full deployment
-async function generateOccupancyReport() { showToast("Upload reports.js to enable PDF reports.", "info"); }
-async function loadWaitingList() { return []; }
-async function addToWaitingList() { showToast("Upload reports.js to enable waiting list.", "info"); }
-async function removeFromWaitingList() {}
-async function loadAcademicYears() { return []; }
-async function setActiveYear() {}
-async function createNewYear() {}
-async function recordRoomHistory() {}
-async function loadRoomHistory() { return []; }
+import { generateOccupancyReport, recordRoomHistory, loadRoomHistory,
+         loadAcademicYears, setActiveYear, createNewYear,
+         loadWaitingList, addToWaitingList, removeFromWaitingList } from "./reports.js";
 async function sendSMS(phone, message) {
   if (!phone) return;
 
@@ -241,6 +232,7 @@ function navigateTo(section) {
     students:     () => loadStudents(),
     rooms:        loadRoomMap,
     allocations:  loadAllocations,
+    roomchanges:  loadRoomChanges,
     applications: loadApplications,
     publicapps:   loadPublicApps,
     managerooms:  loadManageRooms,
@@ -1347,6 +1339,116 @@ window.openAssignRoomModal = async (studentId, studentName, preferredRoom = "") 
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ROOM CHANGE REQUESTS (admin review)
+// ─────────────────────────────────────────────────────────────────────────────
+let _rcrInitDone = false;
+
+async function loadRoomChanges() {
+  const tbody = document.getElementById("rcrTableBody");
+  if (!tbody) return;
+
+  if (!_rcrInitDone) {
+    document.getElementById("rcrFilterStatus")?.addEventListener("change", loadRoomChanges);
+    _rcrInitDone = true;
+  }
+
+  const statusFilter = document.getElementById("rcrFilterStatus")?.value ?? "pending";
+
+  let query = supabase
+    .from("room_change_requests")
+    .select(`*,
+      students:student_id(full_name, reg_number, program, level, sex, phone),
+      cur:current_room_id(block, room_number),
+      req:requested_room_id(block, room_number, capacity, occupancy_count, type)`)
+    .order("requested_at", { ascending: false })
+    .limit(100);
+  if (statusFilter) query = query.eq("status", statusFilter);
+
+  const { data, error } = await query;
+  const footer = document.getElementById("rcrTableFooter");
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#ef4444">Could not load requests: ${error.message}<br>
+      <small>Have you run room-change-setup.sql in Supabase?</small></td></tr>`;
+    return;
+  }
+  if (!data?.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="table-empty"><div class="table-empty-icon">🔁</div><h4>No ${statusFilter || ""} requests</h4></div></td></tr>`;
+    if (footer) footer.textContent = "0 requests";
+    return;
+  }
+  if (footer) footer.textContent = `${data.length} request${data.length !== 1 ? "s" : ""}`;
+
+  const canAct = getPermissions(ADMIN?.role).canAssignRooms;
+  const badge = s => ({
+    pending:  `<span class="badge badge-in_progress">Pending</span>`,
+    approved: `<span class="badge badge-resolved">Approved</span>`,
+    rejected: `<span class="badge badge-open">Rejected</span>`,
+    cancelled:`<span class="badge badge-closed">Cancelled</span>`,
+    expired:  `<span class="badge badge-closed">Expired</span>`,
+  }[s] || s);
+
+  tbody.innerHTML = data.map(r => {
+    const st       = r.students || {};
+    const curLabel = r.cur ? `${r.cur.block}-${r.cur.room_number}` : "—";
+    const reqRoom  = r.req;
+    const reqLabel = reqRoom ? `${reqRoom.block}-${reqRoom.room_number}` : "—";
+    const reqFull  = reqRoom && reqRoom.occupancy_count >= reqRoom.capacity;
+    return `<tr>
+      <td><strong>${st.full_name || "—"}</strong><br><small style="color:var(--gray-400)">${st.reg_number || ""} · ${st.program || ""}</small></td>
+      <td>${curLabel}</td>
+      <td>${reqLabel}${reqRoom ? `<br><small style="color:${reqFull ? "#ef4444" : "var(--gray-400)"}">${reqRoom.occupancy_count}/${reqRoom.capacity}${reqFull ? " — now full" : ""}</small>` : ""}</td>
+      <td style="max-width:220px;font-size:12px">${(r.reason || "").slice(0, 200)}</td>
+      <td>${new Date(r.requested_at).toLocaleDateString()}</td>
+      <td>${badge(r.status)}${r.reviewed_by ? `<br><small style="color:var(--gray-400)">by ${r.reviewed_by}</small>` : ""}</td>
+      <td>${r.status === "pending" && canAct ? `<div class="table-actions">
+        <button class="btn-sm btn-primary" onclick="approveRoomChange('${r.id}')" ${reqFull ? "disabled title='Requested room is full'" : ""}>✓ Approve</button>
+        <button class="btn-sm btn-danger" onclick="rejectRoomChange('${r.id}')">✕ Reject</button>
+      </div>` : "—"}</td>
+    </tr>`;
+  }).join("");
+}
+
+window.approveRoomChange = async (requestId) => {
+  const { data: r } = await supabase
+    .from("room_change_requests")
+    .select("*, students:student_id(full_name, reg_number), req:requested_room_id(block, room_number)")
+    .eq("id", requestId).single();
+  if (!r || r.status !== "pending") { showToast("Request not found or already handled.", "warning"); loadRoomChanges(); return; }
+
+  const label = r.req ? `${r.req.block}-${r.req.room_number}` : "the requested room";
+  if (!confirm(`Move ${r.students?.full_name || "student"} to Room ${label}?`)) return;
+
+  // assignRoom handles capacity check, old-room decrement, counts and audit
+  const result = await assignRoom(r.student_id, r.requested_room_id, ADMIN?.username || "admin");
+  if (!result.success) { showToast("Could not move student: " + result.error, "error"); return; }
+
+  await recordRoomHistory(r.student_id, r.requested_room_id, r.req?.block, r.req?.room_number, ADMIN?.username || "admin");
+  await supabase.from("room_change_requests").update({
+    status: "approved",
+    reviewed_by: ADMIN?.username || "admin",
+    reviewed_at: new Date().toISOString(),
+  }).eq("id", requestId);
+
+  showToast(`Approved — ${r.students?.reg_number || "student"} moved to ${label}.`, "success");
+  loadRoomChanges();
+};
+
+window.rejectRoomChange = async (requestId) => {
+  const note = prompt("Reason for rejection (shown to the student, optional):") ?? "";
+  const { error } = await supabase.from("room_change_requests").update({
+    status: "rejected",
+    review_note: note.trim() || null,
+    reviewed_by: ADMIN?.username || "admin",
+    reviewed_at: new Date().toISOString(),
+  }).eq("id", requestId).eq("status", "pending");
+  if (error) { showToast("Could not reject: " + error.message, "error"); return; }
+  await logAudit(`Rejected room change request ${requestId}`, ADMIN?.username || "admin");
+  showToast("Request rejected.", "info");
+  loadRoomChanges();
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // EMERGENCY SERVICES
 // ─────────────────────────────────────────────────────────────────────────────
 const escT = s => String(s ?? "")
@@ -1644,6 +1746,39 @@ async function loadAcademicYearSection() {
         </table>
       </div>
     </div>
+
+    <div class="form-card" style="margin-top:1.5rem;border:2px solid #fca5a5">
+      <h3 style="color:#b91c1c">🔄 End-of-Year Rollover</h3>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:1rem">
+        Closes the current academic year: archives every allocation to room history,
+        vacates <strong>all</strong> students, resets student rooms to vacant
+        (staff/NSP/suite rooms untouched), archives pending applications, expires the
+        waiting list, and activates the new year — all in a single transaction.
+        <strong>Export your data first.</strong>
+      </p>
+      <form id="rolloverForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>New Academic Year</label>
+            <input type="text" id="rolloverYear" placeholder="e.g. 2026/2027" required>
+          </div>
+          <div class="form-group">
+            <label>Semester</label>
+            <select id="rolloverSemester">
+              <option value="Semester 1">Semester 1</option>
+              <option value="Semester 2">Semester 2</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" id="rolloverPromote" style="width:auto">
+          <label for="rolloverPromote" style="margin:0;font-size:13px">Promote Level 100 students to Level 200</label>
+        </div>
+        <button type="submit" class="btn btn-primary" id="rolloverBtn"
+          style="background:#b91c1c">🔄 Run Rollover</button>
+      </form>
+      <div id="rolloverResult" style="display:none;margin-top:1rem;padding:1rem;background:#d1fae5;border-radius:8px;font-size:13px;color:#065f46"></div>
+    </div>
   `;
 
   document.getElementById("newYearForm")?.addEventListener("submit", async e => {
@@ -1651,6 +1786,50 @@ async function loadAcademicYearSection() {
     const year = document.getElementById("newYearValue").value.trim();
     const sem  = document.getElementById("newSemesterValue").value;
     await createNewYear(year, sem);
+    loadAcademicYearSection();
+  });
+
+  document.getElementById("rolloverForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const newYear = document.getElementById("rolloverYear").value.trim();
+    const newSem  = document.getElementById("rolloverSemester").value;
+    const promote = document.getElementById("rolloverPromote").checked;
+
+    if (!/^\d{4}\/\d{4}$/.test(newYear)) {
+      showToast("Year must look like 2026/2027.", "warning"); return;
+    }
+    const typed = prompt(
+      `⚠️ This will vacate ALL students and activate ${newYear} ${newSem}.\n` +
+      `It cannot be undone from the portal.\n\nType ROLLOVER to confirm:`
+    );
+    if (typed !== "ROLLOVER") { showToast("Rollover cancelled.", "info"); return; }
+
+    const btn = document.getElementById("rolloverBtn");
+    btn.disabled = true; btn.textContent = "Running…";
+
+    const { data, error } = await supabase.rpc("perform_year_rollover", {
+      p_new_year:     newYear,
+      p_new_semester: newSem,
+      p_promote:      promote,
+      p_actor:        ADMIN?.username || "admin",
+    });
+
+    btn.disabled = false; btn.textContent = "🔄 Run Rollover";
+
+    if (error) {
+      showToast("Rollover failed — nothing was changed: " + error.message, "error");
+      return;
+    }
+
+    const box = document.getElementById("rolloverResult");
+    box.style.display = "";
+    box.innerHTML = `✅ <strong>${data.old_year}</strong> closed → <strong>${data.new_year}</strong> active.<br>
+      Students vacated: <strong>${data.vacated}</strong> ·
+      Rooms reset: <strong>${data.rooms_reset}</strong> ·
+      Promoted: <strong>${data.promoted}</strong> ·
+      Applications archived: <strong>${data.apps_archived}</strong> ·
+      Waiting list expired: <strong>${data.waitlist_expired}</strong>`;
+    showToast("Year rollover completed successfully.", "success");
     loadAcademicYearSection();
   });
 }
