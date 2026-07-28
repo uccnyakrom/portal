@@ -10,7 +10,7 @@
 
 import { supabase, showToast, generateStudentPassword } from "./supabaseClient.js";
 import { requireAuth, getSession, logout, initChangePasswordModal } from "./auth.js";
-import { fetchRoomWithOccupants, fetchAvailableRooms } from "./rooms.js";
+import { fetchRoomWithOccupants, fetchEligibleRooms } from "./rooms.js";
 
 // ── Guard ─────────────────────────────────────────────────────────────────────
 requireAuth("student");
@@ -218,12 +218,13 @@ async function renderRoomChangeUI(studentRow) {
     renderRoomChangeUI(studentRow);
   });
 
-  // Open form + load available rooms (excluding the current one)
+  // Open form + load eligible rooms (excluding the current one)
   document.getElementById("rcrOpenBtn")?.addEventListener("click", async () => {
     const form = document.getElementById("rcrForm");
     form.style.display = "";
     document.getElementById("rcrOpenBtn").style.display = "none";
-    const rooms = (await fetchAvailableRooms()).filter(r => r.id !== studentRow.room_id);
+    const { rooms: eligible } = await fetchEligibleRooms({ program: STUDENT.program, sex: STUDENT.sex });
+    const rooms = eligible.filter(r => r.id !== studentRow.room_id);
     const sel = document.getElementById("rcrRoom");
     sel.innerHTML = rooms.length
       ? `<option value="">— Select a room —</option>` +
@@ -537,16 +538,16 @@ async function loadApply() {
     return;
   }
 
-  // Load available rooms for preferred room dropdown
-  const { data: availRooms } = await supabase
-    .from("rooms")
-    .select("id, block, room_number, capacity, occupancy_count")
-    .not("type", "in", '("full","staff","NSP")')
-    .order("block").order("room_number");
+  // Load rooms this student is eligible for (programme floor rules + gender blocks)
+  const { rooms: availRooms, rule: floorRule, genderRelaxed } =
+    await fetchEligibleRooms({ program: student.program, sex: student.sex });
 
-  const roomOptions = (availRooms || []).map(r =>
+  const roomOptions = availRooms.map(r =>
     `<option value="${r.block}-${r.room_number}">Block ${r.block} – Room ${r.room_number} (${r.occupancy_count}/${r.capacity})</option>`
   ).join("");
+  const roomRuleHint =
+    (floorRule ? floorRule.label : "") +
+    (genderRelaxed ? " Same-gender blocks are full, so other blocks are shown." : "");
 
   container.innerHTML = `
     <div class="apply-form-card">
@@ -582,6 +583,7 @@ async function loadApply() {
         </div>
         <div class="form-group">
           <label>Preferred Room (optional)</label>
+          ${roomRuleHint ? `<small style="display:block;color:#b45309;font-size:11px;margin-bottom:.3rem">${roomRuleHint}</small>` : ""}
           <select id="applyPreferredRoom">
             <option value="">No preference</option>
             ${roomOptions}
