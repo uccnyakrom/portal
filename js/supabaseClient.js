@@ -166,6 +166,59 @@ export function showToast(message, type = "info") {
   }, 4000);
 }
 
+// ── 6b. In-app confirm/prompt dialogs ────────────────────────────────────────
+//   Replacements for window.confirm()/window.prompt(). Browsers let users
+//   permanently mute native dialogs ("prevent additional dialogs"), which
+//   silently breaks every action that asks for confirmation. These modals
+//   cannot be muted. Both return a Promise — always `await` them.
+function _appDialog({ message, input = false, defaultValue = "", okText = "OK", cancelText = "Cancel" }) {
+  return new Promise(resolve => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText =
+      "position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.5);" +
+      "display:flex;align-items:center;justify-content:center;padding:1rem";
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:10px;max-width:440px;width:100%;
+                  padding:1.4rem;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+        <p style="margin:0 0 1rem;color:#111827;font-size:14px;line-height:1.55;white-space:pre-wrap"></p>
+        ${input ? `<input type="text" style="width:100%;padding:.5rem .6rem;border:1px solid #d1d5db;
+                     border-radius:6px;font-size:14px;margin-bottom:1rem;box-sizing:border-box">` : ""}
+        <div style="display:flex;gap:.6rem;justify-content:flex-end">
+          <button data-act="cancel" style="padding:.45rem 1rem;border:1px solid #d1d5db;background:#f9fafb;
+                  border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit"></button>
+          <button data-act="ok" style="padding:.45rem 1rem;border:none;background:#0d1b3e;color:#fff;
+                  border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit"></button>
+        </div>
+      </div>`;
+    overlay.querySelector("p").textContent = message;
+    overlay.querySelector('[data-act="cancel"]').textContent = cancelText;
+    overlay.querySelector('[data-act="ok"]').textContent = okText;
+
+    const inputEl = overlay.querySelector("input");
+    if (inputEl) inputEl.value = defaultValue;
+
+    const done = val => { overlay.remove(); resolve(val); };
+    overlay.querySelector('[data-act="ok"]').addEventListener("click", () => done(input ? inputEl.value : true));
+    overlay.querySelector('[data-act="cancel"]').addEventListener("click", () => done(input ? null : false));
+    overlay.addEventListener("click", e => { if (e.target === overlay) done(input ? null : false); });
+    overlay.addEventListener("keydown", e => {
+      if (e.key === "Enter")  { e.preventDefault(); done(input ? inputEl.value : true); }
+      if (e.key === "Escape") done(input ? null : false);
+    });
+
+    document.body.appendChild(overlay);
+    (inputEl || overlay.querySelector('[data-act="ok"]')).focus();
+  });
+}
+
+/** In-app confirm() — resolves true/false. */
+export function appConfirm(message) { return _appDialog({ message }); }
+
+/** In-app prompt() — resolves the entered string, or null if cancelled. */
+export function appPrompt(message, defaultValue = "") {
+  return _appDialog({ message, input: true, defaultValue });
+}
+
 // ── 7. Helper: generate a student's auto-password ────────────────────────────
 //   Format: first 2 chars of reg_number + last 4 chars of reg_number + initials
 //   Example: reg "SN/NSU/25/001", name "Ama Kumi" → "SN001AK"

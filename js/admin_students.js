@@ -13,7 +13,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { supabase, showToast, logAudit, generateStudentPassword, sendApplicationEmail, callEdgeFunction } from "./supabaseClient.js";
+import { supabase, showToast, logAudit, generateStudentPassword, sendApplicationEmail, callEdgeFunction, appConfirm } from "./supabaseClient.js";
 import { populateProgramSelect, programmePillHTML, fetchActiveProgrammes } from "./programmes.js";
 import { getSession } from "./auth.js";
 import { fetchAvailableRooms, assignRoom, removeRoomAssignment } from "./rooms.js";
@@ -338,7 +338,7 @@ export function initEditStudentModal() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 window.deleteStudent = async (studentId, name) => {
-  if (!confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return;
+  if (!await appConfirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return;
 
   const { error } = await supabase.from("students").delete().eq("id", studentId);
   if (error) { showToast("Error: " + error.message, "error"); return; }
@@ -376,7 +376,7 @@ window.enrolStudent = async (studentId, regNumber, name) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function bulkEnrolAll() {
-  if (!confirm("This will enrol ALL students who are not yet enrolled. Continue?")) return;
+  if (!await appConfirm("This will enrol ALL students who are not yet enrolled. Continue?")) return;
 
   const result = await callEdgeFunction("account-manager", {
     action: "bulk_enrol",
@@ -457,7 +457,7 @@ export function initAssignRoomModal() {
 }
 
 window.removeRoom = async (studentId) => {
-  if (!confirm("Remove this student's room assignment?")) return;
+  if (!await appConfirm("Remove this student's room assignment?")) return;
   const result = await removeRoomAssignment(studentId, ADMIN?.username);
   if (result.success) { showToast("Room removed.", "success"); loadStudents(); }
   else showToast(result.error, "error");

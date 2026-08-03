@@ -8,7 +8,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { supabase, showToast, generateStudentPassword } from "./supabaseClient.js";
+import { supabase, showToast, generateStudentPassword, appConfirm } from "./supabaseClient.js";
 import { requireAuth, getSession, logout, initChangePasswordModal } from "./auth.js";
 import { fetchRoomWithOccupants, fetchEligibleRooms } from "./rooms.js";
 
@@ -243,7 +243,7 @@ async function renderRoomChangeUI(studentRow) {
 
   // Cancel a pending request
   document.getElementById("rcrCancelBtn")?.addEventListener("click", async () => {
-    if (!confirm("Cancel your pending room change request?")) return;
+    if (!await appConfirm("Cancel your pending room change request?")) return;
     const { error } = await supabase.from("room_change_requests")
       .update({ status: "cancelled" }).eq("id", req.id).eq("status", "pending");
     if (error) { showToast("Could not cancel: " + error.message, "error"); return; }

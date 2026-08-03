@@ -3,7 +3,7 @@
  * PLACE THIS FILE AT: /js/admin.js
  */
 
-import { supabase, showToast, logAudit, sendApplicationEmail, callEdgeFunction } from "./supabaseClient.js";
+import { supabase, showToast, logAudit, sendApplicationEmail, callEdgeFunction, appConfirm, appPrompt } from "./supabaseClient.js";
 import { fetchActiveProgrammes, fetchAllProgrammes, clearProgrammeCache, populateProgramSelect, programmePillHTML } from "./programmes.js";
 import { getPermissions, filterSidebarByRole, getRoleBadgeHTML } from "./roles.js";
 import { loadStudents, initAddStudentModal, initEditStudentModal, initAssignRoomModal, bulkEnrolAll, initBulkUpload } from "./admin_students.js";
@@ -482,7 +482,7 @@ async function openRoomPanel(room) {
 
   info.querySelectorAll(".occ-remove").forEach(btn => {
     btn.addEventListener("click", async () => {
-      if (!confirm(`Remove ${btn.dataset.name} from Room ${r.block}-${r.room_number}?`)) return;
+      if (!await appConfirm(`Remove ${btn.dataset.name} from Room ${r.block}-${r.room_number}?`)) return;
       btn.disabled = true;
       const result = await removeRoomAssignment(btn.dataset.sid, ADMIN?.username || "admin");
       if (result.success) {
@@ -559,7 +559,7 @@ async function loadAllocations() {
 }
 
 window.removeRoom = async (studentId) => {
-  if (!confirm("Remove this student's room assignment?")) return;
+  if (!await appConfirm("Remove this student's room assignment?")) return;
   const result = await removeRoomAssignment(studentId, ADMIN.username);
   if (result.success) { showToast("Room removed.", "success"); loadAllocations(); loadStudents(); }
   else showToast(result.error, "error");
@@ -710,7 +710,7 @@ async function loadPublicApps() {
 }
 
 window.enrollPublicApplicant = async (appId, name, regNumber, program, level, sex, preferredRoom="", email="") => {
-  if (!confirm(`Enrol ${name} (${regNumber}) as a student?`)) return;
+  if (!await appConfirm(`Enrol ${name} (${regNumber}) as a student?`)) return;
 
   // Check not already enrolled
   const { data: existing } = await supabase
@@ -761,7 +761,7 @@ window.enrollPublicApplicant = async (appId, name, regNumber, program, level, se
 };
 
 window.rejectPublicApp = async (appId, name="", email="") => {
-  if (!confirm("Reject this application?")) return;
+  if (!await appConfirm("Reject this application?")) return;
   await supabase.from("public_applications").update({ status: "rejected" }).eq("id", appId);
 
   // Send rejection email (applicant was not approved for a room)
@@ -821,7 +821,7 @@ async function loadUserManagement() {
 }
 
 window.deleteUser = async (userId, username) => {
-  if (!confirm(`Delete user "${username}"?`)) return;
+  if (!await appConfirm(`Delete user "${username}"?`)) return;
   const result = await callEdgeFunction("account-manager", {
     action: "delete_staff_user",
     token: ADMIN?.token,
@@ -862,7 +862,7 @@ async function loadNotices() {
 }
 
 window.deleteNotice = async (id) => {
-  if (!confirm("Delete this notice?")) return;
+  if (!await appConfirm("Delete this notice?")) return;
   await supabase.from("notices").delete().eq("id", id);
   showToast("Notice deleted.", "success");
   loadNotices();
@@ -1001,7 +1001,7 @@ window.toggleProgrammeActive = async function(id, newActive) {
 };
 
 window.deleteProgramme = async function(id, name) {
-  if (!confirm(`Delete "${name}"? This only removes it from the programmes list — any students already recorded under this programme name are unaffected, but it will stop appearing as a coloured pill (shown in grey instead). Consider deactivating instead if you might need it again.`)) return;
+  if (!await appConfirm(`Delete "${name}"? This only removes it from the programmes list — any students already recorded under this programme name are unaffected, but it will stop appearing as a coloured pill (shown in grey instead). Consider deactivating instead if you might need it again.`)) return;
   const { error } = await supabase.from("programmes").delete().eq("id", id);
   if (error) { showToast("Delete failed: " + error.message, "error"); return; }
   clearProgrammeCache();
@@ -1204,7 +1204,7 @@ window.exportStatistics = function(format = "csv") {
 
 
 window.exportData = async (type, format) => {
-  const confirmPass = prompt("Enter your admin password to confirm export:");
+  const confirmPass = await appPrompt("Enter your admin password to confirm export:");
   if (!confirmPass) return;
   const check = await callEdgeFunction("account-manager", {
     action: "verify_staff_password",
@@ -1298,7 +1298,7 @@ window.openEditRoomModal = (id, block, roomNum, capacity, type, floor="") => {
 };
 
 window.deleteRoom = async (roomId, block, roomNum) => {
-  if (!confirm(`Delete Room ${block}-${roomNum}?`)) return;
+  if (!await appConfirm(`Delete Room ${block}-${roomNum}?`)) return;
   const { error } = await supabase.from("rooms").delete().eq("id", roomId);
   if (error) { showToast("Error: " + error.message, "error"); return; }
   await logAudit(`Deleted room: ${block}-${roomNum}`, ADMIN.username);
@@ -1450,7 +1450,7 @@ window.approveRoomChange = async (requestId) => {
   if (!r || r.status !== "pending") { showToast("Request not found or already handled.", "warning"); loadRoomChanges(); return; }
 
   const label = r.req ? `${r.req.block}-${r.req.room_number}` : "the requested room";
-  if (!confirm(`Move ${r.students?.full_name || "student"} to Room ${label}?`)) return;
+  if (!await appConfirm(`Move ${r.students?.full_name || "student"} to Room ${label}?`)) return;
 
   // assignRoom handles capacity check, old-room decrement, counts and audit
   const result = await assignRoom(r.student_id, r.requested_room_id, ADMIN?.username || "admin");
@@ -1468,7 +1468,8 @@ window.approveRoomChange = async (requestId) => {
 };
 
 window.rejectRoomChange = async (requestId) => {
-  const note = prompt("Reason for rejection (shown to the student, optional):") ?? "";
+  const note = await appPrompt("Reason for rejection (shown to the student, optional):");
+  if (note === null) return; // cancelled — don't reject
   const { error } = await supabase.from("room_change_requests").update({
     status: "rejected",
     review_note: note.trim() || null,
@@ -1728,7 +1729,7 @@ window.assignFromWaiting = async (waitingId, studentId, name) => {
 };
 
 window.removeWaiting = async (id, name) => {
-  if (!confirm(`Remove ${name} from waiting list?`)) return;
+  if (!await appConfirm(`Remove ${name} from waiting list?`)) return;
   await removeFromWaitingList(id, "cancelled");
   showToast(`${name} removed from waiting list.`, "success");
   loadWaitingListSection();
@@ -1831,7 +1832,7 @@ async function loadAcademicYearSection() {
     if (!/^\d{4}\/\d{4}$/.test(newYear)) {
       showToast("Year must look like 2026/2027.", "warning"); return;
     }
-    const typed = prompt(
+    const typed = await appPrompt(
       `⚠️ This will vacate ALL students and activate ${newYear} ${newSem}.\n` +
       `It cannot be undone from the portal.\n\nType ROLLOVER to confirm:`
     );
@@ -1991,7 +1992,7 @@ window.assignPreferredRoom = async (regNumber, preferredRoom, studentName) => {
       return;
     }
     // Confirm and assign
-    if (confirm(`Assign ${studentName} to Block ${room.block} – Room ${room.room_number}?`)) {
+    if (await appConfirm(`Assign ${studentName} to Block ${room.block} – Room ${room.room_number}?`)) {
       const result = await assignRoom(studentId, room.id, ADMIN.username);
       if (result.success) {
         showToast(`${studentName} assigned to ${room.block}-${room.room_number}!`, "success");
