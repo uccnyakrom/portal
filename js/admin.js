@@ -1316,6 +1316,34 @@ window.openEditRoomModal = (id, block, roomNum, capacity, type) => {
 };
 
 window.openAssignRoomModal = async (studentId, studentName, preferredRoom = "") => {
+  // No preferred room passed in? Look it up from the student's latest
+  // application — portal applications store it in preferred_block, public
+  // (landing-page) applications in preferred_room.
+  if (!preferredRoom) {
+    try {
+      const { data: st } = await supabase
+        .from("students").select("reg_number").eq("id", studentId).single();
+      if (st?.reg_number) {
+        const [appRes, pubRes] = await Promise.all([
+          supabase.from("applications")
+            .select("preferred_block")
+            .eq("reg_number", st.reg_number)
+            .in("status", ["pending", "approved"])
+            .order("submitted_at", { ascending: false })
+            .limit(1),
+          supabase.from("public_applications")
+            .select("preferred_room")
+            .eq("reg_number", st.reg_number)
+            .order("created_at", { ascending: false })
+            .limit(1),
+        ]);
+        preferredRoom =
+          appRes.data?.[0]?.preferred_block ||
+          pubRes.data?.[0]?.preferred_room  || "";
+      }
+    } catch (e) { /* lookup is best-effort — modal still works without it */ }
+  }
+
   const rooms = await fetchAvailableRooms();
   const select = document.getElementById("assignRoomSelect");
 
