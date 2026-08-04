@@ -69,11 +69,19 @@ export async function assignRoom(studentId, roomId, actorName = "admin") {
     await decrementRoom(student.room_id);
   }
 
-  const { error: sErr } = await supabase
+  const { data: updatedStudent, error: sErr } = await supabase
     .from("students")
     .update({ room_id: roomId })
-    .eq("id", studentId);
+    .eq("id", studentId)
+    .select("id")
+    .maybeSingle();
   if (sErr) return { success: false, error: sErr.message };
+  if (!updatedStudent) {
+    // Supabase returned no error but no row came back either — almost always
+    // a Row Level Security policy silently blocking the UPDATE (0 rows
+    // affected). Fail loudly instead of reporting a false "success".
+    return { success: false, error: "Assignment did not save (blocked by database permissions). Check RLS policies on the students table." };
+  }
 
   const newCount = room.occupancy_count + 1;
   const newType  = determineRoomType(room, newCount);
@@ -96,10 +104,14 @@ export async function removeRoomAssignment(studentId, actorName = "admin") {
 
   await decrementRoom(student.room_id);
 
-  const { error } = await supabase
-    .from("students").update({ room_id: null }).eq("id", studentId);
+  const { data: updatedStudent, error } = await supabase
+    .from("students").update({ room_id: null }).eq("id", studentId)
+    .select("id").maybeSingle();
 
   if (error) return { success: false, error: error.message };
+  if (!updatedStudent) {
+    return { success: false, error: "Removal did not save (blocked by database permissions). Check RLS policies on the students table." };
+  }
 
   await logAudit(`Removed room from student ${student.reg_number}`, actorName);
   return { success: true };

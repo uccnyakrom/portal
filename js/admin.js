@@ -518,16 +518,23 @@ async function openRoomPanel(room) {
 // ALLOCATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 async function loadAllocations() {
-  const { data: students } = await supabase
+  const { data: students, error } = await supabase
     .from("students")
     .select("id, full_name, reg_number, program, level, sex, room_id, rooms:room_id(block, room_number)")
     .not("room_id", "is", null)
     .order("full_name");
 
-  const programmes = await fetchActiveProgrammes();
   const tbody = document.getElementById("allocTableBody");
   const footer = document.getElementById("allocTableFooter");
   if (!tbody) return;
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:#ef4444">Could not load allocations: ${error.message}</td></tr>`;
+    if (footer) footer.textContent = "0 allocations";
+    return;
+  }
+
+  const programmes = await fetchActiveProgrammes();
   const list = students || [];
   if (footer) footer.textContent = `${list.length} allocation${list.length!==1?"s":""}`;
 
